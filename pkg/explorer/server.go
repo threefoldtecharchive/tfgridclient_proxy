@@ -118,6 +118,18 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	nodeId := mux.Vars(r)["node_id"]
+
+	value, err := a.redis.Get(a.ctx, fmt.Sprintf("GRID3NODE:%s", nodeId)).Result()
+
+	if err != nil {
+		err = errors.Wrap(err, "couldn't push entry to redis queue")
+		log.Error().Str("Couldn't find entry to redis", string(err.Error())).Msg("")
+
+	}
+	if value != "" {
+		w.Write([]byte(value))
+		return
+	}
 	twinId := getNodeTwinId(nodeId)
 	if twinId < 1 {
 		value, err := json.Marshal("Invalid node ID")
@@ -144,6 +156,12 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(totalCapacity)
+
+	// caching for 30 mins
+	_, err = a.redis.Set(a.ctx, fmt.Sprintf("GRID3NODE:%s", nodeId), totalCapacity, 1800000000000).Result()
+	if err != nil {
+		panic(err)
+	}
 
 }
 func Setup(router *mux.Router, debug bool, explorer string, redisServer string) {
