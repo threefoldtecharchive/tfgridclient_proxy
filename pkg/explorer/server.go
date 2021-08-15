@@ -16,10 +16,6 @@ import (
 
 func (a *App) run_server() {
 	log.Info().Str("Server started ... listening on", string(a.explorer)).Msg("")
-
-	// TODO
-	// do queries
-	// do cash
 }
 
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
