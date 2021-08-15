@@ -11,7 +11,7 @@ Interact with TFgridDB using rest APIs
 
 ## Endpoints
 
-### /farms
+### `/farms`
 
 - Bring all nodes information and public ips
 
@@ -47,7 +47,7 @@ Interact with TFgridDB using rest APIs
     }
     ```
 
-### /nodes
+### `/nodes`
 
 - Bring all nodes information and public configurations
 
@@ -90,7 +90,7 @@ Interact with TFgridDB using rest APIs
     }
     ```
 
-### /nodes/<node-id>
+### `/nodes/<node-id>`
 
 - Bring the node active used and total resources
 
