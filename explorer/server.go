@@ -16,6 +16,10 @@ import (
 
 func (a *App) run_server() {
 	log.Info().Str("Server started ... listening on", string(a.explorer)).Msg("")
+	log.Info().Msg("Preparing Redis Pool ...")
+	InitRedisPool()
+	log.Info().Msg("Redis pool is ready.")
+
 }
 
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
@@ -115,10 +119,9 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	nodeId := mux.Vars(r)["node_id"]
 
-	value, err := a.redis.Get(a.ctx, fmt.Sprintf("GRID3NODE:%s", nodeId)).Result()
+	value, err := GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeId))
 
 	if err != nil {
-		err = errors.Wrap(err, "couldn't push entry to redis queue")
 		log.Warn().Str("Couldn't find entry to redis", string(err.Error())).Msg("")
 
 	}
@@ -154,7 +157,7 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	w.Write(totalCapacity)
 
 	// caching for 30 mins
-	_, err = a.redis.Set(a.ctx, fmt.Sprintf("GRID3NODE:%s", nodeId), totalCapacity, 1800000000000).Result()
+	err = SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeId), totalCapacity, 1800000000000)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't cache to redis")).Msg("connection error")
 	}
