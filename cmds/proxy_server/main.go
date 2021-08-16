@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/waleedhammam/graphql-server/pkg/explorer"
+	"github.com/waleedhammam/graphql-server/explorer"
 )
 
 type flags struct {
