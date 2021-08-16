@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/waleedhammam/graphql-server/pkg/explorer"
@@ -29,7 +30,7 @@ func main() {
 	setupLogging(f.debug)
 	s, err := createServer(f)
 	if err != nil {
-		panic(err)
+		log.Error().Err(errors.Wrap(err, "Failed to create mux server")).Msg("connection error")
 	}
 
 	if err := s.ListenAndServe(); err != nil {

@@ -119,7 +119,7 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		err = errors.Wrap(err, "couldn't push entry to redis queue")
-		log.Error().Str("Couldn't find entry to redis", string(err.Error())).Msg("")
+		log.Warn().Str("Couldn't find entry to redis", string(err.Error())).Msg("")
 
 	}
 	if value != "" {
@@ -128,27 +128,27 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	}
 	twinId := getNodeTwinId(nodeId)
 	if twinId < 1 {
-		value, err := json.Marshal("Invalid node ID")
+		value, err := json.Marshal("Couldn't find node ID.")
 		if err != nil {
-			panic(err)
+			log.Error().Err(errors.Wrap(err, "Couldn't get node twin ID")).Msg("")
 		}
 		w.Write(value)
 		return
 	}
 	rmbClient, err := rmb.Default()
 	if err != nil {
-		panic(err)
+		log.Error().Err(errors.Wrap(err, "Couldn't connect to rmb")).Msg("connection error")
 	}
 
 	nodeClient := NewNodeClient(twinId, rmbClient)
 	nodeCapacity, err := nodeClient.NodeStatistics(a.ctx)
 	if err != nil {
-		panic(err)
+		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
 	}
 
 	totalCapacity, err := json.Marshal(nodeCapacity)
 	if err != nil {
-		panic(err)
+		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
 	}
 
 	w.Write(totalCapacity)
@@ -156,7 +156,7 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	// caching for 30 mins
 	_, err = a.redis.Set(a.ctx, fmt.Sprintf("GRID3NODE:%s", nodeId), totalCapacity, 1800000000000).Result()
 	if err != nil {
-		panic(err)
+		log.Error().Err(errors.Wrap(err, "Couldn't cache to redis")).Msg("connection error")
 	}
 
 }

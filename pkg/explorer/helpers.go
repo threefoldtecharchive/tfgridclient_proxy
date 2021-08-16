@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
@@ -37,7 +39,7 @@ func getNodeTwinId(nodeId string) uint32 {
 	err := json.Unmarshal(result, &res)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(errors.Wrap(err, "couldn't parse json")).Msg("connection error")
 	}
 	nodeStats := res.Data.NodeResult
 	if len(nodeStats) > 0 {
@@ -69,17 +71,17 @@ func query(jsonQuery string) string {
 	request, err := http.NewRequest("POST", "https://explorer.devnet.grid.tf/graphql/", bytes.NewBuffer(jsonValue))
 	request.Header.Set("Content-Type", "application/json")
 	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to graphql network due to %s", err))
+		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
 	}
 
 	client := &http.Client{Timeout: time.Second * 10}
 	response, err := client.Do(request)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to graphql network due to %s", err))
+		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
 	}
 	defer response.Body.Close()
 	if err != nil {
-		panic(fmt.Sprintf("The HTTP request failed %s", err))
+		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network, Response Failed")).Msg("connection error")
 	}
 	data, _ := ioutil.ReadAll(response.Body)
 	return string(data)
