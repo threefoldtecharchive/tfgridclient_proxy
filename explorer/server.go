@@ -25,7 +25,8 @@ func (a *App) run_server() {
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.Write(errorReply("couldn't read body"))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
 		return
 	}
 	log.Debug().Str("request_body", string(body)).Msg("request from external agent")
@@ -53,8 +54,8 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	`
 	farmsData := query(queryString)
 	if err != nil {
-		err = errors.Wrap(err, "couldn't push entry to reply queue")
-		w.Write(errorReply(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
 	}
 	jsonBytes := []byte(farmsData)
 
@@ -74,7 +75,8 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		w.Write(errorReply("couldn't read body"))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
 		return
 	}
 	log.Debug().Str("request_body", string(body)).Msg("request from external agent")
@@ -107,10 +109,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	`, isSpecificFarm)
 
 	farmsData := query(queryString)
-	if err != nil {
-		err = errors.Wrap(err, "couldn't push entry to reply queue")
-		w.Write(errorReply(err.Error()))
-	}
+
 	jsonBytes := []byte(farmsData)
 
 	w.Write(jsonBytes)
@@ -134,6 +133,9 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		value, err := json.Marshal("Couldn't find node ID.")
 		if err != nil {
 			log.Error().Err(errors.Wrap(err, "Couldn't get node twin ID")).Msg("")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("500 - Something bad happened!"))
+			return
 		}
 		w.Write(value)
 		return
@@ -141,17 +143,26 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	rmbClient, err := rmb.Default()
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't connect to rmb")).Msg("connection error")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
+		return
 	}
 
 	nodeClient := NewNodeClient(twinId, rmbClient)
 	nodeCapacity, err := nodeClient.NodeStatistics(a.ctx)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
+		return
 	}
 
 	totalCapacity, err := json.Marshal(nodeCapacity)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
+		return
 	}
 
 	w.Write(totalCapacity)
@@ -160,6 +171,9 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	err = SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeId), totalCapacity, 1800000000000)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't cache to redis")).Msg("connection error")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
+		return
 	}
 
 }

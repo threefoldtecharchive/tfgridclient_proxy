@@ -2,7 +2,6 @@ package explorer
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
@@ -19,7 +18,6 @@ func InitRedisPool() {
 			conn, err := redis.Dial("tcp", "localhost:6379")
 			if err != nil {
 				log.Error().Err(errors.Wrap(err, "ERROR: fail init redis")).Msg("")
-				os.Exit(1)
 			}
 			return conn, err
 		},
