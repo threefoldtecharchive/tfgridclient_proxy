@@ -12,8 +12,8 @@ var pool *redis.Pool
 
 func InitRedisPool() {
 	pool = &redis.Pool{
-		MaxIdle:   100,
-		MaxActive: 12000,
+		MaxIdle:   10,
+		MaxActive: 10,
 		Dial: func() (redis.Conn, error) {
 			conn, err := redis.Dial("tcp", "localhost:6379")
 			if err != nil {

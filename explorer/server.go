@@ -14,7 +14,7 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
-func (a *App) run_server() {
+func (a *App) runServer() {
 	log.Info().Str("Server started ... listening on", string(a.explorer)).Msg("")
 	log.Info().Msg("Preparing Redis Pool ...")
 	InitRedisPool()
@@ -189,7 +189,7 @@ func Setup(router *mux.Router, debug bool, explorer string, redisServer string) 
 		redis:    rdb,
 		ctx:      context.Background(),
 	}
-	go a.run_server()
+	go a.runServer()
 	router.HandleFunc("/farms", a.listFarms)
 	router.HandleFunc("/nodes", a.listNodes)
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)

@@ -46,14 +46,14 @@ func createServer(f flags) (*http.Server, error) {
 	log.Info().Msg("Creating server")
 	router := mux.NewRouter().StrictSlash(true)
 	debug := false
-	explorer_flags := f.explorer
+	explorerFlags := f.explorer
 	redis := f.redis
 	if f.debug == "all" {
 		debug = true
 	}
 
 	// setup explorer
-	explorer.Setup(router, debug, explorer_flags, redis)
+	explorer.Setup(router, debug, explorerFlags, redis)
 
 	return &http.Server{
 		Handler: router,
