@@ -15,10 +15,6 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
-func errorReply(message string) []byte {
-	return []byte(fmt.Sprintf("{\"status\": \"error\", \"message\": \"%s\"}", message))
-}
-
 func NewNodeClient(nodeTwin uint32, bus rmb.Client) *NodeClient {
 	return &NodeClient{nodeTwin, bus}
 }
