@@ -9,6 +9,12 @@ Interact with TFgridDB using rest APIs
 3. yggdrasil service running with a valid ip assigned to the twin on polkadot.
 4. Golang compiler > 1.13 to run the grid proxy server.
 
+## Build and run
+
+- Start the msgbus with your twin ID
+- Then to run `go run cmds/proxy_server/main.go`
+- To build `go run cmds/proxy_server/main.go`
+
 ## Endpoints
 
 ### `/farms`
