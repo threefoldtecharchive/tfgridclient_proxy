@@ -1,4 +1,4 @@
-module github.com/waleedhammam/graphql-server
+module github.com/threefoldtech/grid_proxy_server
 
 go 1.13
 
@@ -9,8 +9,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.23.0
 	github.com/threefoldtech/zos v0.4.10-0.20210814102443-3cf4d7b75604
-	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	golang.org/x/tools v0.1.5 // indirect
 )
 
-replace github.com/waleedhammam/graphql-server v1.0.0 => ./
+// replace github.com/threefoldtech/grid_proxy_server v1.0.0 => ./
