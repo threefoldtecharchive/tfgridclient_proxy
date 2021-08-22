@@ -135,15 +135,8 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		w.Write(value)
 		return
 	}
-	rmbClient, err := rmb.Default()
-	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Couldn't connect to rmb")).Msg("connection error")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-		return
-	}
 
-	nodeClient := NewNodeClient(twinId, rmbClient)
+	nodeClient := NewNodeClient(twinId, a.rmb)
 	nodeCapacity, err := nodeClient.NodeStatistics(a.ctx)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
@@ -186,11 +179,19 @@ func Setup(router *mux.Router, debug bool, explorer string, redisServer string) 
 			return conn, err
 		},
 	}
+
+	rmbClient, err := rmb.Default()
+	if err != nil {
+		log.Error().Err(errors.Wrap(err, "Couldn't connect to rmb")).Msg("connection error")
+		return
+	}
+
 	a := App{
 		debug:    debug,
 		explorer: explorer,
 		redis:    redis,
 		ctx:      context.Background(),
+		rmb:      rmbClient,
 	}
 	go a.runServer()
 	router.HandleFunc("/farms", a.listFarms)

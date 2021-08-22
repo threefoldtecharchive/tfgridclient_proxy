@@ -13,6 +13,7 @@ type App struct {
 	explorer string
 	redis    *redis.Pool
 	ctx      context.Context
+	rmb      rmb.Client
 }
 
 const (
