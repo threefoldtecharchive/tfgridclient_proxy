@@ -93,13 +93,13 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 			mru
 			sru
 			hru
-		}
-		publicConfigs{
+		publicConfig{
 			gw4
 			ipv4
 			ipv6
 			gw6
 		  }
+		}
 	}
 	`, isSpecificFarm)
 
