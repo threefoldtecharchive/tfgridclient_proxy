@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -16,9 +16,6 @@ import (
 
 func (a *App) runServer() {
 	log.Info().Str("Server started ... listening on", string(a.explorer)).Msg("")
-	log.Info().Msg("Preparing Redis Pool ...")
-	InitRedisPool()
-	log.Info().Msg("Redis pool is ready.")
 
 }
 
@@ -37,9 +34,7 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 			farmId
 			twinId
 			version
-			cityId
 			farmId
-			countryId
 			pricingPolicyId
 		}
 		publicIps{
@@ -88,9 +83,9 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 			nodeId        
 			farmId          
 			twinId          
-			countryId
+			country
 			gridVersion  
-			cityId          
+			city         
 			uptime           
 			created          
 			farmingPolicyId
@@ -118,7 +113,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	nodeId := mux.Vars(r)["node_id"]
 
-	value, err := GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeId))
+	value, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeId))
 
 	if err != nil {
 		log.Warn().Str("Couldn't find entry to redis", string(err.Error())).Msg("")
@@ -168,7 +163,7 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	w.Write(totalCapacity)
 
 	// caching for 30 mins
-	err = SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeId), totalCapacity, 1800000000000)
+	err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeId), totalCapacity, 30*60)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't cache to redis")).Msg("connection error")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -178,15 +173,23 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 
 }
 func Setup(router *mux.Router, debug bool, explorer string, redisServer string) {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     redisServer,
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+	log.Info().Msg("Preparing Redis Pool ...")
+
+	redis := &redis.Pool{
+		MaxIdle:   10,
+		MaxActive: 10,
+		Dial: func() (redis.Conn, error) {
+			conn, err := redis.Dial("tcp", "localhost:6379")
+			if err != nil {
+				log.Error().Err(errors.Wrap(err, "ERROR: fail init redis")).Msg("")
+			}
+			return conn, err
+		},
+	}
 	a := App{
 		debug:    debug,
 		explorer: explorer,
-		redis:    rdb,
+		redis:    redis,
 		ctx:      context.Background(),
 	}
 	go a.runServer()

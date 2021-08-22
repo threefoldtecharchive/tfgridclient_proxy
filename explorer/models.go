@@ -3,7 +3,7 @@ package explorer
 import (
 	"context"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/gomodule/redigo/redis"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
@@ -11,7 +11,7 @@ import (
 type App struct {
 	debug    bool
 	explorer string
-	redis    *redis.Client
+	redis    *redis.Pool
 	ctx      context.Context
 }
 
