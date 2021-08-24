@@ -15,19 +15,19 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
+// NewNodeClient Creates new node client from the twin id
 func NewNodeClient(nodeTwin uint32, bus rmb.Client) *NodeClient {
 	return &NodeClient{nodeTwin, bus}
 }
 
-func getNodeTwinId(nodeId string) uint32 {
-
+func getNodeTwinID(nodeID string) uint32 {
 	queryString := fmt.Sprintf(`
 	{
 		nodes(limit:10, where:{nodeId_eq:%s}){
 		  twinId
 		}
 	}
-	`, nodeId)
+	`, nodeID)
 
 	result := []byte(query(queryString))
 
@@ -39,13 +39,13 @@ func getNodeTwinId(nodeId string) uint32 {
 	}
 	nodeStats := res.Data.NodeResult
 	if len(nodeStats) > 0 {
-		return nodeStats[0].TwinId
-	} else {
-		return 0
+		return nodeStats[0].TwinID
 	}
+	return 0
 
 }
 
+// NodeStatistics Returns actual node Statistics from the node itself over the msgbus
 func (n *NodeClient) NodeStatistics(ctx context.Context) (total CapacityResult, err error) {
 	const cmd = "zos.statistics.get"
 	var result struct {

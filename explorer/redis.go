@@ -8,8 +8,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// SetRedisKey to Get conn and put back when exit from method
 func (a *App) SetRedisKey(key string, val []byte, expiration uint64) error {
-	// get conn and put back when exit from method
 	conn := a.redis.Get()
 	defer conn.Close()
 
@@ -22,8 +22,8 @@ func (a *App) SetRedisKey(key string, val []byte, expiration uint64) error {
 	return nil
 }
 
+// GetRedisKey to Get conn and put back when exit from method
 func (a *App) GetRedisKey(key string) (string, error) {
-	// get conn and put back when exit from method
 	conn := a.redis.Get()
 	defer conn.Close()
 

@@ -68,10 +68,10 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug().Str("request_body", string(body)).Msg("request from external agent")
 
-	farmId := r.URL.Query().Get("farm_id")
+	farmID := r.URL.Query().Get("farm_id")
 	isSpecificFarm := ""
-	if farmId != "" {
-		isSpecificFarm = fmt.Sprintf(",where:{farmId_eq:%s}", farmId)
+	if farmID != "" {
+		isSpecificFarm = fmt.Sprintf(",where:{farmId_eq:%s}", farmID)
 	} else {
 		isSpecificFarm = ""
 	}
@@ -126,9 +126,9 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
-	nodeId := mux.Vars(r)["node_id"]
+	nodeID := mux.Vars(r)["node_id"]
 
-	value, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeId))
+	value, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
 
 	if err != nil {
 		log.Warn().Str("Couldn't find entry to redis", string(err.Error())).Msg("")
@@ -138,8 +138,8 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(value))
 		return
 	}
-	twinId := getNodeTwinId(nodeId)
-	if twinId < 1 {
+	TwinID := getNodeTwinID(nodeID)
+	if TwinID < 1 {
 		value, err := json.Marshal("Couldn't find node ID.")
 		if err != nil {
 			log.Error().Err(errors.Wrap(err, "Couldn't get node twin ID")).Msg("")
@@ -151,7 +151,7 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nodeClient := NewNodeClient(twinId, a.rmb)
+	nodeClient := NewNodeClient(TwinID, a.rmb)
 	nodeCapacity, err := nodeClient.NodeStatistics(a.ctx)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
@@ -171,7 +171,7 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	w.Write(totalCapacity)
 
 	// caching for 30 mins
-	err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeId), totalCapacity, 30*60)
+	err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), totalCapacity, 30*60)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't cache to redis")).Msg("connection error")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -180,6 +180,8 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+// Setup is the server and do initial configurations
 func Setup(router *mux.Router, debug bool, explorer string, redisServer string) {
 	log.Info().Msg("Preparing Redis Pool ...")
 

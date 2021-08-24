@@ -8,6 +8,7 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
+// App is the main app objects
 type App struct {
 	debug    bool
 	explorer string
@@ -16,10 +17,10 @@ type App struct {
 	rmb      rmb.Client
 }
 
-const (
-	Diy       = "DIY"
-	Certified = "CERTIFIED"
-)
+// const (
+// 	Diy       = "DIY"
+// 	Certified = "CERTIFIED"
+// )
 
 // type PublicIP struct {
 // 	ip          int   `json:"ip"`
@@ -73,22 +74,28 @@ const (
 // 	farming_policy_id int            `json:"farming_policy_id"`
 // }
 
-type NodeTwinId struct {
-	TwinId uint32 `json:"twinId"`
+// NodeTwinID is the node twin ID to unmarshal json in it
+type NodeTwinID struct {
+	TwinID uint32 `json:"twinId"`
 }
 
+// NodeData is the NodeData to unmarshal json in it
 type NodeData struct {
-	NodeResult []NodeTwinId `json:"nodes"`
+	NodeResult []NodeTwinID `json:"nodes"`
 }
+
+// NodeResult is the NodeData  to unmarshal json in it
 type NodeResult struct {
 	Data NodeData `json:"data"`
 }
 
+// NodeClient is the Nodeclient  to unmarshal json in it
 type NodeClient struct {
 	nodeTwin uint32
 	bus      rmb.Client
 }
 
+// CapacityResult is the NodeData capacity results to unmarshal json in it
 type CapacityResult struct {
 	Total gridtypes.Capacity `json:"total"`
 	Used  gridtypes.Capacity `json:"used"`

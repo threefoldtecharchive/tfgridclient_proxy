@@ -25,6 +25,11 @@ jobs:
       env:
         GO111MODULE: on
 
+    - name: Code linter
+      uses: Jerome1337/golint-action@v1.0.2
+      with:
+        golint-path: './...'
+
 #     - name: Test
 #       run: go test -v ./...
 
