@@ -170,3 +170,12 @@ Interact with TFgridDB using rest APIs
       }
     }
     ```
+
+### Dockerfile
+
+To build & run dockerfile
+
+```bash
+docker build -t waleedhammam/grid_proxy_server:0.0.1 .
+docker run --name example waleedhammam/grid_proxy_server:0.0.1
+```
