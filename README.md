@@ -13,7 +13,8 @@ Interact with TFgridDB using rest APIs
 
 - Start the msgbus with your twin ID
 - Then to run `go run cmds/proxy_server/main.go`
-- To build `go run cmds/proxy_server/main.go`
+- To build `go build cmds/proxy_server/main.go`
+- Then visit `http://localhost:8080/<endpoint>`
 
 ## Endpoints
 
@@ -95,6 +96,52 @@ Interact with TFgridDB using rest APIs
       }
     }
     ```
+
+- Query params
+
+  - farm_id:
+
+    select nodes from specific farm using farm id, example: `?farm_id=1`
+  
+  - page:
+
+    default view is for 50 nodes and paginated to make it faster and easier to parse, example: `?page=1`
+
+- Example full query
+
+```json
+// 20210824113426
+// http://localhost:8080/nodes?farm_id=1&page=1
+
+  {
+    "data": {
+      "nodes": [
+        {
+          "version": 1,
+          "id": "-ldFCBmX8Y_",
+          "nodeId": 2,
+          "farmId": 1,
+          "twinId": 2,
+          "country": "BE",
+          "gridVersion": 1,
+          "city": "Unknown",
+          "uptime": 0,
+          "created": 1629466038,
+          "farmingPolicyId": 1,
+          "cru": "24",
+          "mru": "202875785216",
+          "sru": "512110190592",
+          "hru": "9001778946048",
+          "publicConfig": {
+            "gw4": "185.206.122.1",
+            "ipv4": "185.206.122.31/24",
+            "ipv6": "2a10:b600:1:0:fc38:90ff:feb4:b15d/64",
+            "gw6": "fe80::2e0:ecff:fe7b:7a67"
+          }
+        .
+        .
+        .
+  ```
 
 ### `/nodes/<node-id>`
 

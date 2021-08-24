@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
@@ -60,6 +61,12 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
+		return
+	}
+	log.Debug().Str("request_body", string(body)).Msg("request from external agent")
 
 	farmId := r.URL.Query().Get("farm_id")
 	isSpecificFarm := ""
@@ -68,16 +75,24 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	} else {
 		isSpecificFarm = ""
 	}
-
+	page := r.URL.Query().Get("page")
+	if page == "" {
+		page = "0"
+	}
+	pageNumber, err := strconv.Atoi(page)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - Bad page number!"))
 		return
 	}
-	log.Debug().Str("request_body", string(body)).Msg("request from external agent")
+	offset := 0
+	if pageNumber > 1 {
+		offset = pageNumber * 50
+	}
+	log.Debug().Str("page number", fmt.Sprint(pageNumber)).Msg("Requested page number")
 	queryString := fmt.Sprintf(`
 	{
-		nodes(limit:10%s){
+		nodes(limit:50,offset:%d,%s){
 			version          
 			id
 			nodeId        
@@ -101,7 +116,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 		  }
 		}
 	}
-	`, isSpecificFarm)
+	`, offset, isSpecificFarm)
 
 	farmsData := query(queryString)
 
