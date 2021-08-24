@@ -1,5 +1,7 @@
 # Grid proxy server
 
+![golang workflow](https://github.com/threefoldtech/grid_proxy_server/actions/workflows/go.yml/badge.svg)
+
 Interact with TFgridDB using rest APIs
 
 ## Prerequisites
