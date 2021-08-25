@@ -15,6 +15,8 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
+const URL string = "https://explorer.devnet.grid.tf/graphql/"
+
 // NewNodeClient Creates new node client from the twin id
 func NewNodeClient(nodeTwin uint32, bus rmb.Client) *NodeClient {
 	return &NodeClient{nodeTwin, bus}
@@ -64,7 +66,7 @@ func query(jsonQuery string) string {
 		"query": jsonQuery,
 	}
 	jsonValue, _ := json.Marshal(jsonData)
-	request, err := http.NewRequest("POST", "https://explorer.devnet.grid.tf/graphql/", bytes.NewBuffer(jsonValue))
+	request, err := http.NewRequest("POST", URL, bytes.NewBuffer(jsonValue))
 	request.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
@@ -76,9 +78,10 @@ func query(jsonQuery string) string {
 		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
 	}
 	defer response.Body.Close()
+
+	data, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network, Response Failed")).Msg("connection error")
+		log.Error().Err(errors.Wrap(err, "Failed to read the response body")).Msg("connection error")
 	}
-	data, _ := ioutil.ReadAll(response.Body)
 	return string(data)
 }
