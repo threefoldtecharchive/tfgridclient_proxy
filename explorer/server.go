@@ -20,6 +20,56 @@ func (a *App) runServer() {
 
 }
 
+// take the request and restore the query paramas, handle errors and set default values if not available
+func (a *App) HandleRequestsQueryParams(r *http.Request) (*http.Request, error) {
+
+	farmID := r.URL.Query().Get("farm_id")
+	isSpecificFarm := ""
+	if farmID != "" {
+		isSpecificFarm = fmt.Sprintf(",where:{farmId_eq:%s}", farmID)
+	} else {
+		isSpecificFarm = ""
+	}
+
+	log.Info().Str("farm", fmt.Sprint(isSpecificFarm)).Msg("Preparing param specific farm id")
+
+	maxResultPerpage := r.URL.Query().Get("max_result")
+	if maxResultPerpage == "" {
+		maxResultPerpage = "50"
+	}
+
+	maxResult, err := strconv.Atoi(maxResultPerpage)
+	if err != nil {
+		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid max result number %s", err))).Msg("")
+		return &http.Request{}, fmt.Errorf("error: invalid max result number : %w", err)
+	}
+
+	log.Info().Str("max result", fmt.Sprint(maxResult)).Msg("Preparing param max result")
+
+	page := r.URL.Query().Get("page")
+	if page == "" {
+		page = "0"
+	}
+
+	pageNumber, err := strconv.Atoi(page)
+	if err != nil {
+		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid page number %s", err))).Msg("")
+		return &http.Request{}, fmt.Errorf("error: invalid page number : %w", err)
+	}
+
+	offset := 0
+	if pageNumber > 1 {
+		offset = pageNumber * maxResult
+	}
+
+	log.Info().Str("offset", fmt.Sprint(offset)).Msg("Preparing param page offset")
+
+	r = r.WithContext(context.WithValue(r.Context(), ContextKey("specific_farm"), isSpecificFarm))
+	r = r.WithContext(context.WithValue(r.Context(), ContextKey("page_offset"), offset))
+	r = r.WithContext(context.WithValue(r.Context(), ContextKey("max_result"), maxResult))
+	return r, nil
+}
+
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -27,10 +77,20 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("500 - Something bad happened!"))
 		return
 	}
-	log.Debug().Str("request_body", string(body)).Msg("request from external agent")
-	queryString := `
+	log.Debug().Str("request body", string(body)).Msg("request from external agent")
+
+	r, err = a.HandleRequestsQueryParams(r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
+	}
+
+	maxResult := r.Context().Value(ContextKey("max_result"))
+	pageOffset := r.Context().Value(ContextKey("page_offset"))
+
+	queryString := fmt.Sprintf(`
 	{
-		farms {
+		farms (limit:%d,offset:%d) {
 			name
 			farmId
 			twinId
@@ -47,7 +107,8 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 			
 		}
 	}
-	`
+	`, maxResult, pageOffset)
+
 	_, err = queryProxy(queryString, w)
 
 	if err != nil {
@@ -67,31 +128,19 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug().Str("request_body", string(body)).Msg("request from external agent")
 
-	farmID := r.URL.Query().Get("farm_id")
-	isSpecificFarm := ""
-	if farmID != "" {
-		isSpecificFarm = fmt.Sprintf(",where:{farmId_eq:%s}", farmID)
-	} else {
-		isSpecificFarm = ""
-	}
-	page := r.URL.Query().Get("page")
-	if page == "" {
-		page = "0"
-	}
-	pageNumber, err := strconv.Atoi(page)
+	r, err = a.HandleRequestsQueryParams(r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - Bad page number!"))
-		return
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
 	}
-	offset := 0
-	if pageNumber > 1 {
-		offset = pageNumber * 50
-	}
-	log.Debug().Str("page number", fmt.Sprint(pageNumber)).Msg("Requested page number")
+
+	maxResult := r.Context().Value(ContextKey("max_result"))
+	pageOffset := r.Context().Value(ContextKey("page_offset"))
+	isSpecificFarm := r.Context().Value(ContextKey("specific_farm"))
+
 	queryString := fmt.Sprintf(`
 	{
-		nodes(limit:50,offset:%d,%s){
+		nodes(limit:%d,offset:%d,%s){
 			version          
 			id
 			nodeId        
@@ -115,7 +164,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 		  }
 		}
 	}
-	`, offset, isSpecificFarm)
+	`, maxResult, pageOffset, isSpecificFarm)
 
 	_, err = queryProxy(queryString, w)
 

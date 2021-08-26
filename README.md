@@ -108,6 +108,10 @@ Interact with TFgridDB using rest APIs
   - page:
 
     default view is for 50 nodes and paginated to make it faster and easier to parse, example: `?page=1`
+  
+  - max_result:
+
+    default max result for page, example: ``?max_result=50`
 
 - Example full query
 
