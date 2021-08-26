@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
+// URL is the default explorer graphql url
 const URL string = "https://explorer.devnet.grid.tf/graphql/"
 
 // NewNodeClient Creates new node client from the twin id
@@ -100,4 +102,54 @@ func queryProxy(queryString string, w io.Writer) (written int64, err error) {
 	}
 	defer response.Close()
 	return io.Copy(w, response)
+}
+
+// HandleRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
+func (a *App) HandleRequestsQueryParams(r *http.Request) (*http.Request, error) {
+
+	farmID := r.URL.Query().Get("farm_id")
+	isSpecificFarm := ""
+	if farmID != "" {
+		isSpecificFarm = fmt.Sprintf(",where:{farmId_eq:%s}", farmID)
+	} else {
+		isSpecificFarm = ""
+	}
+
+	log.Info().Str("farm", fmt.Sprint(isSpecificFarm)).Msg("Preparing param specific farm id")
+
+	maxResultPerpage := r.URL.Query().Get("max_result")
+	if maxResultPerpage == "" {
+		maxResultPerpage = "50"
+	}
+
+	maxResult, err := strconv.Atoi(maxResultPerpage)
+	if err != nil {
+		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid max result number %s", err))).Msg("")
+		return &http.Request{}, fmt.Errorf("error: invalid max result number : %w", err)
+	}
+
+	log.Info().Str("max result", fmt.Sprint(maxResult)).Msg("Preparing param max result")
+
+	page := r.URL.Query().Get("page")
+	if page == "" {
+		page = "0"
+	}
+
+	pageNumber, err := strconv.Atoi(page)
+	if err != nil {
+		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid page number %s", err))).Msg("")
+		return &http.Request{}, fmt.Errorf("error: invalid page number : %w", err)
+	}
+
+	offset := 0
+	if pageNumber > 1 {
+		offset = pageNumber * maxResult
+	}
+
+	log.Info().Str("offset", fmt.Sprint(offset)).Msg("Preparing param page offset")
+
+	r = r.WithContext(context.WithValue(r.Context(), ContextKey("specific_farm"), isSpecificFarm))
+	r = r.WithContext(context.WithValue(r.Context(), ContextKey("page_offset"), offset))
+	r = r.WithContext(context.WithValue(r.Context(), ContextKey("max_result"), maxResult))
+	return r, nil
 }

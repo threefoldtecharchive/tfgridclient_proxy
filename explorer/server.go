@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
@@ -20,66 +18,12 @@ func (a *App) runServer() {
 
 }
 
-// take the request and restore the query paramas, handle errors and set default values if not available
-func (a *App) HandleRequestsQueryParams(r *http.Request) (*http.Request, error) {
-
-	farmID := r.URL.Query().Get("farm_id")
-	isSpecificFarm := ""
-	if farmID != "" {
-		isSpecificFarm = fmt.Sprintf(",where:{farmId_eq:%s}", farmID)
-	} else {
-		isSpecificFarm = ""
-	}
-
-	log.Info().Str("farm", fmt.Sprint(isSpecificFarm)).Msg("Preparing param specific farm id")
-
-	maxResultPerpage := r.URL.Query().Get("max_result")
-	if maxResultPerpage == "" {
-		maxResultPerpage = "50"
-	}
-
-	maxResult, err := strconv.Atoi(maxResultPerpage)
-	if err != nil {
-		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid max result number %s", err))).Msg("")
-		return &http.Request{}, fmt.Errorf("error: invalid max result number : %w", err)
-	}
-
-	log.Info().Str("max result", fmt.Sprint(maxResult)).Msg("Preparing param max result")
-
-	page := r.URL.Query().Get("page")
-	if page == "" {
-		page = "0"
-	}
-
-	pageNumber, err := strconv.Atoi(page)
-	if err != nil {
-		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid page number %s", err))).Msg("")
-		return &http.Request{}, fmt.Errorf("error: invalid page number : %w", err)
-	}
-
-	offset := 0
-	if pageNumber > 1 {
-		offset = pageNumber * maxResult
-	}
-
-	log.Info().Str("offset", fmt.Sprint(offset)).Msg("Preparing param page offset")
-
-	r = r.WithContext(context.WithValue(r.Context(), ContextKey("specific_farm"), isSpecificFarm))
-	r = r.WithContext(context.WithValue(r.Context(), ContextKey("page_offset"), offset))
-	r = r.WithContext(context.WithValue(r.Context(), ContextKey("max_result"), maxResult))
-	return r, nil
-}
-
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-		return
-	}
-	log.Debug().Str("request body", string(body)).Msg("request from external agent")
 
-	r, err = a.HandleRequestsQueryParams(r)
+	log.Debug().Str("request params", fmt.Sprint(r.URL.Query())).Msg("request from external agent")
+
+	r, err := a.HandleRequestsQueryParams(r)
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Something bad happened!"))
@@ -120,15 +64,9 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-		return
-	}
-	log.Debug().Str("request_body", string(body)).Msg("request from external agent")
+	log.Debug().Str("request params", fmt.Sprint(r.URL.Query())).Msg("request from external agent")
 
-	r, err = a.HandleRequestsQueryParams(r)
+	r, err := a.HandleRequestsQueryParams(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Something bad happened!"))
@@ -175,8 +113,10 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
-	nodeID := mux.Vars(r)["node_id"]
 
+	log.Debug().Str("request params", fmt.Sprint(r.URL.Query())).Msg("request from external agent")
+
+	nodeID := mux.Vars(r)["node_id"]
 	value, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
 
 	if err != nil {

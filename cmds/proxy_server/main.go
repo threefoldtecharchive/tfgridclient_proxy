@@ -23,7 +23,7 @@ type flags struct {
 
 func main() {
 	f := flags{}
-	flag.StringVar(&f.explorer, "explorer", "https://explorer.devnet.grid.tf/graphql/", "explorer url")
+	flag.StringVar(&f.explorer, "explorer", explorer.URL, "explorer url")
 	flag.StringVar(&f.debug, "log-level", "debug", "log level [debug|info|warn|error|fatal|panic]")
 	flag.StringVar(&f.redis, "redis", "127.0.0.1:6379", "redis url")
 	flag.Parse()

@@ -9,5 +9,3 @@ require (
 	github.com/rs/zerolog v1.23.0
 	github.com/threefoldtech/zos v0.4.10-0.20210814102443-3cf4d7b75604
 )
-
-// replace github.com/threefoldtech/grid_proxy_server v1.0.0 => ./

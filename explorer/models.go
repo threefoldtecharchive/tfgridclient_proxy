@@ -17,9 +17,10 @@ type App struct {
 	rmb      rmb.Client
 }
 
-// Contextkey is the type holds the request context
+// ContextKey is the type holds the request context
 type ContextKey string
 
+// TODO: if not needed for future work delete it
 // const (
 // 	Diy       = "DIY"
 // 	Certified = "CERTIFIED"
