@@ -16,7 +16,7 @@ func (a *App) SetRedisKey(key string, val []byte, expiration uint64) error {
 	_, err := conn.Do("SET", key, val, "EX", expiration)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: fail set key %s, val %s", key, val))).Msg("")
-		return err
+		return fmt.Errorf("error: fail set key %s, val %s : %w", key, val, err)
 	}
 
 	return nil
@@ -30,7 +30,7 @@ func (a *App) GetRedisKey(key string) (string, error) {
 	s, err := redis.String(conn.Do("GET", key))
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: fail get key %s", key))).Msg("")
-		return "", err
+		return "", fmt.Errorf("error: fail get key %s : %w", key, err)
 	}
 
 	return s, nil

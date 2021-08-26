@@ -48,14 +48,13 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	`
-	farmsData := query(queryString)
+	_, err = queryProxy(queryString, w)
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Something bad happened!"))
 	}
-	jsonBytes := []byte(farmsData)
 
-	w.Write(jsonBytes)
 }
 
 func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
@@ -118,11 +117,12 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	`, offset, isSpecificFarm)
 
-	farmsData := query(queryString)
+	_, err = queryProxy(queryString, w)
 
-	jsonBytes := []byte(farmsData)
-
-	w.Write(jsonBytes)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
+	}
 }
 
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
@@ -138,17 +138,14 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(value))
 		return
 	}
-	TwinID := getNodeTwinID(nodeID)
-	if TwinID < 1 {
-		value, err := json.Marshal("Couldn't find node ID.")
-		if err != nil {
-			log.Error().Err(errors.Wrap(err, "Couldn't get node twin ID")).Msg("")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("500 - Something bad happened!"))
-			return
-		}
-		w.Write(value)
+	TwinID, err := getNodeTwinID(nodeID)
+	if err != nil {
+
+		log.Error().Err(errors.Wrap(err, "Couldn't get node twin ID")).Msg("")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
 		return
+
 	}
 
 	nodeClient := NewNodeClient(TwinID, a.rmb)
@@ -168,16 +165,13 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(totalCapacity)
-
 	// caching for 30 mins
 	err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), totalCapacity, 30*60)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Couldn't cache to redis")).Msg("connection error")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-		return
+		log.Fatal().Err(errors.Wrap(err, "Couldn't cache to redis")).Msg("connection error")
 	}
+
+	w.Write(totalCapacity)
 
 }
 

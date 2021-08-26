@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -22,7 +22,7 @@ func NewNodeClient(nodeTwin uint32, bus rmb.Client) *NodeClient {
 	return &NodeClient{nodeTwin, bus}
 }
 
-func getNodeTwinID(nodeID string) uint32 {
+func getNodeTwinID(nodeID string) (uint32, error) {
 	queryString := fmt.Sprintf(`
 	{
 		nodes(limit:10, where:{nodeId_eq:%s}){
@@ -31,19 +31,20 @@ func getNodeTwinID(nodeID string) uint32 {
 	}
 	`, nodeID)
 
-	result := []byte(query(queryString))
-
 	var res NodeResult
-	err := json.Unmarshal(result, &res)
+	err := query(queryString, &res)
 
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "couldn't parse json")).Msg("connection error")
+		return 0, fmt.Errorf("error: couldn't get node twinID %w", err)
 	}
+
 	nodeStats := res.Data.NodeResult
 	if len(nodeStats) > 0 {
-		return nodeStats[0].TwinID
+		log.Info().Str("Node twin id", fmt.Sprint(nodeStats[0].TwinID)).Msg("Preparing Node data")
+		return nodeStats[0].TwinID, nil
 	}
-	return 0
+	return 0, fmt.Errorf("failed to find node ID")
 
 }
 
@@ -61,9 +62,9 @@ func (n *NodeClient) NodeStatistics(ctx context.Context) (total CapacityResult, 
 	return result, nil
 }
 
-func query(jsonQuery string) string {
+func baseQuery(queryString string) (io.ReadCloser, error) {
 	jsonData := map[string]string{
-		"query": jsonQuery,
+		"query": queryString,
 	}
 	jsonValue, _ := json.Marshal(jsonData)
 	request, err := http.NewRequest("POST", URL, bytes.NewBuffer(jsonValue))
@@ -77,11 +78,26 @@ func query(jsonQuery string) string {
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
 	}
-	defer response.Body.Close()
+	return response.Body, err
+}
 
-	data, err := ioutil.ReadAll(response.Body)
+func query(queryString string, result interface{}) error {
+	response, err := baseQuery(queryString)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Failed to read the response body")).Msg("connection error")
+		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
 	}
-	return string(data)
+	defer response.Close()
+	if err := json.NewDecoder(response).Decode(result); err != nil {
+		return err
+	}
+	return nil
+}
+
+func queryProxy(queryString string, w io.Writer) (written int64, err error) {
+	response, err := baseQuery(queryString)
+	if err != nil {
+		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
+	}
+	defer response.Close()
+	return io.Copy(w, response)
 }
