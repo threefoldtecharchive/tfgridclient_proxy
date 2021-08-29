@@ -1,0 +1,2 @@
+exec: /usr/bin/redis-server
+log: stdout

@@ -1,0 +1,6 @@
+# TODO: pass env for explorer url and so on
+exec: /grid_proxy_server/server 
+test: bash -c "curl http://localhost:8080/farms --connect-timeout 10 -f"
+log: stdout
+after:
+  - msgbus

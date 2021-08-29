@@ -1,0 +1,4 @@
+exec: /usr/bin/msgbus --twin $TWIN
+log: stdout
+after:
+  - redis
