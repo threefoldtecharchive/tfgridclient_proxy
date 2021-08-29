@@ -1,0 +1,3 @@
+exec: yggdrasil --useconf < "/etc/yggdrasil.conf"
+log: stdout
+

@@ -1,4 +1,4 @@
-exec: /usr/bin/msgbus --twin $TWIN
+exec: sh -c "/usr/bin/msgbus --twin $TWIN"
 log: stdout
 after:
-  - redis
+  - ygg
