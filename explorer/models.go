@@ -17,8 +17,14 @@ type App struct {
 	rmb      rmb.Client
 }
 
-// ContextKey is the type holds the request context
-type ContextKey string
+// OffsetKey is the type holds the request context
+type OffsetKey struct{}
+
+// SpecificFarmKey is the type holds the request context
+type SpecificFarmKey struct{}
+
+// MaxResultKey is the type holds the request context
+type MaxResultKey struct{}
 
 // TODO: if not needed for future work delete it
 // const (

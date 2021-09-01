@@ -104,6 +104,58 @@ func queryProxy(queryString string, w io.Writer) (written int64, err error) {
 	return io.Copy(w, response)
 }
 
+// GetOffset is helper function to get offest from context
+func GetOffset(ctx context.Context) int {
+	return ctx.Value(OffsetKey{}).(int)
+}
+
+// GetMaxResult is helper function to get MaxResult from context
+func GetMaxResult(ctx context.Context) int {
+	return ctx.Value(MaxResultKey{}).(int)
+}
+
+// GetSpecificFarm is helper function to get SpecificFarm from context
+func GetSpecificFarm(ctx context.Context) string {
+	return ctx.Value(SpecificFarmKey{}).(string)
+}
+
+func calculateMaxResult(r *http.Request) (int, error) {
+	maxResultPerpage := r.URL.Query().Get("max_result")
+	if maxResultPerpage == "" {
+		maxResultPerpage = "50"
+	}
+
+	maxResult, err := strconv.Atoi(maxResultPerpage)
+	if err != nil {
+		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid max result number %s", err))).Msg("")
+		return 0, fmt.Errorf("error: invalid max result number : %w", err)
+	}
+
+	log.Info().Str("max result", fmt.Sprint(maxResult)).Msg("Preparing param max result")
+	return maxResult, nil
+}
+
+func calculateOffset(maxResult int, r *http.Request) (int, error) {
+	page := r.URL.Query().Get("page")
+	if page == "" {
+		page = "0"
+	}
+
+	pageNumber, err := strconv.Atoi(page)
+	if err != nil {
+		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid page number %s", err))).Msg("")
+		return 0, fmt.Errorf("error: invalid page number : %w", err)
+	}
+
+	offset := 0
+	if pageNumber > 1 {
+		offset = pageNumber * maxResult
+	}
+
+	log.Info().Str("offset", fmt.Sprint(offset)).Msg("Preparing param page offset")
+	return offset, nil
+}
+
 // HandleRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
 func (a *App) HandleRequestsQueryParams(r *http.Request) (*http.Request, error) {
 
@@ -117,39 +169,19 @@ func (a *App) HandleRequestsQueryParams(r *http.Request) (*http.Request, error) 
 
 	log.Info().Str("farm", fmt.Sprint(isSpecificFarm)).Msg("Preparing param specific farm id")
 
-	maxResultPerpage := r.URL.Query().Get("max_result")
-	if maxResultPerpage == "" {
-		maxResultPerpage = "50"
-	}
-
-	maxResult, err := strconv.Atoi(maxResultPerpage)
+	maxResult, err := calculateMaxResult(r)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid max result number %s", err))).Msg("")
+		return &http.Request{}, fmt.Errorf("error: invalid max result number : %w", err)
+	}
+	offset, err := calculateOffset(maxResult, r)
+	if err != nil {
 		return &http.Request{}, fmt.Errorf("error: invalid max result number : %w", err)
 	}
 
-	log.Info().Str("max result", fmt.Sprint(maxResult)).Msg("Preparing param max result")
+	ctx := r.Context()
+	ctx = context.WithValue(ctx, SpecificFarmKey{}, isSpecificFarm)
+	ctx = context.WithValue(ctx, OffsetKey{}, offset)
+	ctx = context.WithValue(ctx, MaxResultKey{}, maxResult)
 
-	page := r.URL.Query().Get("page")
-	if page == "" {
-		page = "0"
-	}
-
-	pageNumber, err := strconv.Atoi(page)
-	if err != nil {
-		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid page number %s", err))).Msg("")
-		return &http.Request{}, fmt.Errorf("error: invalid page number : %w", err)
-	}
-
-	offset := 0
-	if pageNumber > 1 {
-		offset = pageNumber * maxResult
-	}
-
-	log.Info().Str("offset", fmt.Sprint(offset)).Msg("Preparing param page offset")
-
-	r = r.WithContext(context.WithValue(r.Context(), ContextKey("specific_farm"), isSpecificFarm))
-	r = r.WithContext(context.WithValue(r.Context(), ContextKey("page_offset"), offset))
-	r = r.WithContext(context.WithValue(r.Context(), ContextKey("max_result"), maxResult))
-	return r, nil
+	return r.WithContext(ctx), nil
 }

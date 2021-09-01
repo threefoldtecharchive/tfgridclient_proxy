@@ -29,8 +29,8 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("500 - Something bad happened!"))
 	}
 
-	maxResult := r.Context().Value(ContextKey("max_result"))
-	pageOffset := r.Context().Value(ContextKey("page_offset"))
+	maxResult := GetMaxResult(r.Context())
+	pageOffset := GetOffset(r.Context())
 
 	queryString := fmt.Sprintf(`
 	{
@@ -72,9 +72,9 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("500 - Something bad happened!"))
 	}
 
-	maxResult := r.Context().Value(ContextKey("max_result"))
-	pageOffset := r.Context().Value(ContextKey("page_offset"))
-	isSpecificFarm := r.Context().Value(ContextKey("specific_farm"))
+	maxResult := GetMaxResult(r.Context())
+	pageOffset := GetOffset(r.Context())
+	isSpecificFarm := GetSpecificFarm(r.Context())
 
 	queryString := fmt.Sprintf(`
 	{
