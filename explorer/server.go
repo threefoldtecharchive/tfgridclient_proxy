@@ -10,12 +10,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+	"github.com/threefoldtech/zos/client"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
 func (a *App) runServer() {
 	log.Info().Str("Server started ... listening on", string(a.explorer)).Msg("")
-
 }
 
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +59,6 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Something bad happened!"))
 	}
-
 }
 
 func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
@@ -137,16 +136,19 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	nodeClient := NewNodeClient(TwinID, a.rmb)
-	nodeCapacity, err := nodeClient.NodeStatistics(a.ctx)
+	nodeClient := client.NewNodeClient(TwinID, a.rmb)
+	NodeCapacity, UsedCapacity, err := nodeClient.Counters(a.ctx)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Something bad happened!"))
 		return
 	}
+	totalResult := CapacityResult{}
+	totalResult.Total = NodeCapacity
+	totalResult.Used = UsedCapacity
 
-	totalCapacity, err := json.Marshal(nodeCapacity)
+	totalCapacity, err := json.Marshal(totalResult)
 	if err != nil {
 		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -161,7 +163,6 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(totalCapacity)
-
 }
 
 // Setup is the server and do initial configurations

@@ -12,17 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
-	"github.com/threefoldtech/zos/pkg/gridtypes"
-	"github.com/threefoldtech/zos/pkg/rmb"
 )
-
-// URL is the default explorer graphql url
-const URL string = "https://explorer.devnet.grid.tf/graphql/"
-
-// NewNodeClient Creates new node client from the twin id
-func NewNodeClient(nodeTwin uint32, bus rmb.Client) *NodeClient {
-	return &NodeClient{nodeTwin, bus}
-}
 
 func getNodeTwinID(nodeID string) (uint32, error) {
 	queryString := fmt.Sprintf(`
@@ -47,21 +37,6 @@ func getNodeTwinID(nodeID string) (uint32, error) {
 		return nodeStats[0].TwinID, nil
 	}
 	return 0, fmt.Errorf("failed to find node ID")
-
-}
-
-// NodeStatistics Returns actual node Statistics from the node itself over the msgbus
-func (n *NodeClient) NodeStatistics(ctx context.Context) (total CapacityResult, err error) {
-	const cmd = "zos.statistics.get"
-	var result struct {
-		Total gridtypes.Capacity `json:"total"`
-		Used  gridtypes.Capacity `json:"used"`
-	}
-	if err = n.bus.Call(ctx, n.nodeTwin, cmd, nil, &result); err != nil {
-		return
-	}
-
-	return result, nil
 }
 
 func baseQuery(queryString string) (io.ReadCloser, error) {
