@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
@@ -48,4 +49,11 @@ type NodeResult struct {
 type CapacityResult struct {
 	Total gridtypes.Capacity `json:"total"`
 	Used  gridtypes.Capacity `json:"used"`
+}
+
+// NodeInfo is node specific info, queried directly from the node
+type NodeInfo struct {
+	Capacity   CapacityResult `json:"capacity"`
+	DMI        dmi.DMI        `json:"dmi"`
+	Hypervisor string         `json:"hypervisor"`
 }
