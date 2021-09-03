@@ -7,5 +7,5 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.23.0
-	github.com/threefoldtech/zos v0.4.10-0.20210814102443-3cf4d7b75604
+	github.com/threefoldtech/zos v0.4.10-0.20210902091800-ae5c15350c50
 )

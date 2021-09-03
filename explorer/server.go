@@ -122,47 +122,69 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		log.Warn().Str("Couldn't find entry to redis", string(err.Error())).Msg("")
 
 	}
-	if value != "" {
-		w.Write([]byte(value))
-		return
+	// No value, fetch data from the node
+	if value == "" {
+		nodeInfo, err := a.fetchNodeData(r.Context(), nodeID)
+		if err != nil {
+			log.Error().Err(err).Msg("could not fetch node data")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			return
+		}
+		// Save value in redis
+		// caching for 30 mins
+		marshalledInfo, err := json.Marshal(nodeInfo)
+		if err != nil {
+			log.Error().Err(err).Msg("could not marshal node info")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			return
+		}
+		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 30*60)
+		if err != nil {
+			log.Warn().Err(err).Msg("could not cache data in redis")
+		}
+		value = string(marshalledInfo)
 	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write([]byte(value))
+}
+
+func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error) {
 	TwinID, err := getNodeTwinID(nodeID)
 	if err != nil {
-
-		log.Error().Err(errors.Wrap(err, "Couldn't get node twin ID")).Msg("")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-		return
+		return NodeInfo{}, errors.Wrap(err, "could not get node twin ID")
 
 	}
 
 	nodeClient := client.NewNodeClient(TwinID, a.rmb)
 	NodeCapacity, UsedCapacity, err := nodeClient.Counters(a.ctx)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-		return
+		return NodeInfo{}, errors.Wrap(err, "could not get node capacity")
 	}
-	totalResult := CapacityResult{}
-	totalResult.Total = NodeCapacity
-	totalResult.Used = UsedCapacity
 
-	totalCapacity, err := json.Marshal(totalResult)
+	dmi, err := nodeClient.SystemDMI(ctx)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-		return
+		return NodeInfo{}, errors.Wrap(err, "could not get node DMI info")
 	}
 
-	// caching for 30 mins
-	err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), totalCapacity, 30*60)
+	hypervisor, err := nodeClient.SystemHypervisor(ctx)
 	if err != nil {
-		log.Fatal().Err(errors.Wrap(err, "Couldn't cache to redis")).Msg("connection error")
+		return NodeInfo{}, errors.Wrap(err, "could not get node hypervisor info")
 	}
 
-	w.Write(totalCapacity)
+	capacity := CapacityResult{}
+	capacity.Total = NodeCapacity
+	capacity.Used = UsedCapacity
+
+	return NodeInfo{
+		Capacity:   capacity,
+		DMI:        dmi,
+		Hypervisor: hypervisor,
+	}, nil
+
 }
 
 // Setup is the server and do initial configurations
