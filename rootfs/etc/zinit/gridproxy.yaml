@@ -1,6 +1,5 @@
 # TODO: pass env for explorer url and so on
 exec: sh -c "/grid_proxy_server/server --address $SERVER_IP --redis $REDIS_URL --explorer $EXPLORER_URL"
-test: bash -c "curl http://localhost:8080/farms --connect-timeout 10 -f"
 log: stdout
 after:
   - msgbus
