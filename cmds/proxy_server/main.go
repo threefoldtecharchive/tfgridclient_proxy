@@ -19,6 +19,7 @@ type flags struct {
 	explorer string
 	debug    string
 	redis    string
+	address  string
 }
 
 func main() {
@@ -26,6 +27,7 @@ func main() {
 	flag.StringVar(&f.explorer, "explorer", explorer.URL, "explorer url")
 	flag.StringVar(&f.debug, "log-level", "debug", "log level [debug|info|warn|error|fatal|panic]")
 	flag.StringVar(&f.redis, "redis", "127.0.0.1:6379", "redis url")
+	flag.StringVar(&f.address, "address", "127.0.0.1", "explorer running ip address")
 	flag.Parse()
 	setupLogging(f.debug)
 	s, err := createServer(f)
@@ -57,7 +59,7 @@ func createServer(f flags) (*http.Server, error) {
 
 	return &http.Server{
 		Handler: router,
-		Addr:    "0.0.0.0:8080",
+		Addr:    fmt.Sprintf("%s:8080", f.address),
 	}, nil
 }
 
