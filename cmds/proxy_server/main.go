@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/grid_proxy_server/explorer"
@@ -32,7 +31,7 @@ func main() {
 	setupLogging(f.debug)
 	s, err := createServer(f)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Failed to create mux server")).Msg("connection error")
+		log.Error().Err(err).Msg("failed to create mux server")
 	}
 
 	if err := s.ListenAndServe(); err != nil {

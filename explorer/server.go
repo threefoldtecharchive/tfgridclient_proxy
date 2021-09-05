@@ -14,23 +14,14 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
-func (a *App) runServer() {
-	log.Info().Str("Server started ... listening on", string(a.explorer)).Msg("")
-}
-
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
-
-	log.Debug().Str("request params", fmt.Sprint(r.URL.Query())).Msg("request from external agent")
-
-	r, err := a.HandleRequestsQueryParams(r)
-
+	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+		return
 	}
-
-	maxResult := GetMaxResult(r.Context())
-	pageOffset := GetOffset(r.Context())
+	maxResult, pageOffset := getMaxResult(r.Context()), getOffset(r.Context())
 
 	queryString := fmt.Sprintf(`
 	{
@@ -56,24 +47,21 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	_, err = queryProxy(queryString, w)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
 	}
 }
 
 func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
-
-	log.Debug().Str("request params", fmt.Sprint(r.URL.Query())).Msg("request from external agent")
-
-	r, err := a.HandleRequestsQueryParams(r)
+	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
 	}
 
-	maxResult := GetMaxResult(r.Context())
-	pageOffset := GetOffset(r.Context())
-	isSpecificFarm := GetSpecificFarm(r.Context())
+	maxResult := getMaxResult(r.Context())
+	pageOffset := getOffset(r.Context())
+	isSpecificFarm := getSpecificFarm(r.Context())
 
 	queryString := fmt.Sprintf(`
 	{
@@ -104,31 +92,24 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	`, maxResult, pageOffset, isSpecificFarm)
 
 	_, err = queryProxy(queryString, w)
-
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
 	}
 }
 
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 
-	log.Debug().Str("request params", fmt.Sprint(r.URL.Query())).Msg("request from external agent")
-
 	nodeID := mux.Vars(r)["node_id"]
-	value, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
+	value, _ := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
 
-	if err != nil {
-		log.Warn().Str("Couldn't find entry to redis", string(err.Error())).Msg("")
-
-	}
 	// No value, fetch data from the node
 	if value == "" {
 		nodeInfo, err := a.fetchNodeData(r.Context(), nodeID)
 		if err != nil {
 			log.Error().Err(err).Msg("could not fetch node data")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(http.StatusText(http.StatusBadRequest)))
 			return
 		}
 		// Save value in redis
@@ -153,13 +134,13 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error) {
-	TwinID, err := getNodeTwinID(nodeID)
+	twinID, err := getNodeTwinID(nodeID)
 	if err != nil {
 		return NodeInfo{}, errors.Wrap(err, "could not get node twin ID")
 
 	}
 
-	nodeClient := client.NewNodeClient(TwinID, a.rmb)
+	nodeClient := client.NewNodeClient(twinID, a.rmb)
 	NodeCapacity, UsedCapacity, err := nodeClient.Counters(a.ctx)
 	if err != nil {
 		return NodeInfo{}, errors.Wrap(err, "could not get node capacity")
@@ -175,7 +156,7 @@ func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error
 		return NodeInfo{}, errors.Wrap(err, "could not get node hypervisor info")
 	}
 
-	capacity := CapacityResult{}
+	capacity := capacityResult{}
 	capacity.Total = NodeCapacity
 	capacity.Used = UsedCapacity
 
@@ -185,6 +166,10 @@ func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error
 		Hypervisor: hypervisor,
 	}, nil
 
+}
+
+func (a *App) runServer() {
+	log.Info().Str("listening on", a.explorer).Msg("Server started ...")
 }
 
 // Setup is the server and do initial configurations
@@ -197,7 +182,7 @@ func Setup(router *mux.Router, debug bool, explorer string, redisServer string) 
 		Dial: func() (redis.Conn, error) {
 			conn, err := redis.Dial("tcp", "localhost:6379")
 			if err != nil {
-				log.Error().Err(errors.Wrap(err, "ERROR: fail init redis")).Msg("")
+				log.Error().Err(err).Msg("fail init redis")
 			}
 			return conn, err
 		},
@@ -205,7 +190,7 @@ func Setup(router *mux.Router, debug bool, explorer string, redisServer string) 
 
 	rmbClient, err := rmb.Default()
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Couldn't connect to rmb")).Msg("connection error")
+		log.Error().Err(err).Msg("couldn't connect to rmb")
 		return
 	}
 

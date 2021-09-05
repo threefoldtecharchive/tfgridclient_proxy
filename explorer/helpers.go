@@ -9,9 +9,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 )
 
 func getNodeTwinID(nodeID string) (uint32, error) {
@@ -23,17 +20,15 @@ func getNodeTwinID(nodeID string) (uint32, error) {
 	}
 	`, nodeID)
 
-	var res NodeResult
+	var res nodeResult
 	err := query(queryString, &res)
 
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "couldn't parse json")).Msg("connection error")
-		return 0, fmt.Errorf("error: couldn't get node twinID %w", err)
+		return 0, fmt.Errorf("failed to query node %w", err)
 	}
 
 	nodeStats := res.Data.NodeResult
 	if len(nodeStats) > 0 {
-		log.Info().Str("Node twin id", fmt.Sprint(nodeStats[0].TwinID)).Msg("Preparing Node data")
 		return nodeStats[0].TwinID, nil
 	}
 	return 0, fmt.Errorf("failed to find node ID")
@@ -43,55 +38,67 @@ func baseQuery(queryString string) (io.ReadCloser, error) {
 	jsonData := map[string]string{
 		"query": queryString,
 	}
-	jsonValue, _ := json.Marshal(jsonData)
-	request, err := http.NewRequest("POST", URL, bytes.NewBuffer(jsonValue))
-	request.Header.Set("Content-Type", "application/json")
+	jsonValue, err := json.Marshal(jsonData)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
+		return nil, fmt.Errorf("invalid query string %w", err)
 	}
 
+	request, err := http.NewRequest("POST", URL, bytes.NewBuffer(jsonValue))
+	if err != nil {
+		return nil, fmt.Errorf("failed to query explorer network %w", err)
+	}
+
+	request.Header.Set("Content-Type", "application/json")
 	client := &http.Client{Timeout: time.Second * 10}
 	response, err := client.Do(request)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
+		return nil, fmt.Errorf("failed to query explorer network %w", err)
 	}
-	return response.Body, err
+	if response.StatusCode != 200 {
+		var errResult interface{}
+		if err := json.NewDecoder(response.Body).Decode(errResult); err != nil {
+			return nil, fmt.Errorf("request failed: %w", errResult)
+		}
+		return nil, fmt.Errorf("failed to query explorer network")
+	}
+	return response.Body, nil
 }
 
 func query(queryString string, result interface{}) error {
 	response, err := baseQuery(queryString)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
+		return err
 	}
+
 	defer response.Close()
 	if err := json.NewDecoder(response).Decode(result); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func queryProxy(queryString string, w io.Writer) (written int64, err error) {
 	response, err := baseQuery(queryString)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Failed to connect to graphql network")).Msg("connection error")
+		return 0, err
 	}
+
 	defer response.Close()
+
 	return io.Copy(w, response)
 }
 
-// GetOffset is helper function to get offest from context
-func GetOffset(ctx context.Context) int {
-	return ctx.Value(OffsetKey{}).(int)
+func getOffset(ctx context.Context) int {
+	return ctx.Value(offsetKey{}).(int)
 }
 
-// GetMaxResult is helper function to get MaxResult from context
-func GetMaxResult(ctx context.Context) int {
-	return ctx.Value(MaxResultKey{}).(int)
+func getMaxResult(ctx context.Context) int {
+	return ctx.Value(maxResultKey{}).(int)
 }
 
-// GetSpecificFarm is helper function to get SpecificFarm from context
-func GetSpecificFarm(ctx context.Context) string {
-	return ctx.Value(SpecificFarmKey{}).(string)
+func getSpecificFarm(ctx context.Context) string {
+	return ctx.Value(specificFarmKey{}).(string)
 }
 
 func calculateMaxResult(r *http.Request) (int, error) {
@@ -102,11 +109,9 @@ func calculateMaxResult(r *http.Request) (int, error) {
 
 	maxResult, err := strconv.Atoi(maxResultPerpage)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid max result number %s", err))).Msg("")
-		return 0, fmt.Errorf("error: invalid max result number : %w", err)
+		return 0, fmt.Errorf("invalid page number : %w", err)
 	}
 
-	log.Info().Str("max result", fmt.Sprint(maxResult)).Msg("Preparing param max result")
 	return maxResult, nil
 }
 
@@ -118,8 +123,7 @@ func calculateOffset(maxResult int, r *http.Request) (int, error) {
 
 	pageNumber, err := strconv.Atoi(page)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: invalid page number %s", err))).Msg("")
-		return 0, fmt.Errorf("error: invalid page number : %w", err)
+		return 0, fmt.Errorf("invalid page number : %w", err)
 	}
 
 	offset := 0
@@ -127,12 +131,11 @@ func calculateOffset(maxResult int, r *http.Request) (int, error) {
 		offset = pageNumber * maxResult
 	}
 
-	log.Info().Str("offset", fmt.Sprint(offset)).Msg("Preparing param page offset")
 	return offset, nil
 }
 
 // HandleRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
-func (a *App) HandleRequestsQueryParams(r *http.Request) (*http.Request, error) {
+func (a *App) handleRequestsQueryParams(r *http.Request) (*http.Request, error) {
 
 	farmID := r.URL.Query().Get("farm_id")
 	isSpecificFarm := ""
@@ -142,21 +145,19 @@ func (a *App) HandleRequestsQueryParams(r *http.Request) (*http.Request, error) 
 		isSpecificFarm = ""
 	}
 
-	log.Info().Str("farm", fmt.Sprint(isSpecificFarm)).Msg("Preparing param specific farm id")
-
 	maxResult, err := calculateMaxResult(r)
 	if err != nil {
-		return &http.Request{}, fmt.Errorf("error: invalid max result number : %w", err)
+		return nil, err
 	}
 	offset, err := calculateOffset(maxResult, r)
 	if err != nil {
-		return &http.Request{}, fmt.Errorf("error: invalid max result number : %w", err)
+		return nil, err
 	}
 
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, SpecificFarmKey{}, isSpecificFarm)
-	ctx = context.WithValue(ctx, OffsetKey{}, offset)
-	ctx = context.WithValue(ctx, MaxResultKey{}, maxResult)
+	ctx = context.WithValue(ctx, specificFarmKey{}, isSpecificFarm)
+	ctx = context.WithValue(ctx, offsetKey{}, offset)
+	ctx = context.WithValue(ctx, maxResultKey{}, maxResult)
 
 	return r.WithContext(ctx), nil
 }

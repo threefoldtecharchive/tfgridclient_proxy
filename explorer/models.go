@@ -22,38 +22,38 @@ type App struct {
 }
 
 // OffsetKey is the type holds the request context
-type OffsetKey struct{}
+type offsetKey struct{}
 
 // SpecificFarmKey is the type holds the request context
-type SpecificFarmKey struct{}
+type specificFarmKey struct{}
 
 // MaxResultKey is the type holds the request context
-type MaxResultKey struct{}
+type maxResultKey struct{}
 
 // NodeTwinID is the node twin ID to unmarshal json in it
-type NodeTwinID struct {
+type nodeTwinID struct {
 	TwinID uint32 `json:"twinId"`
 }
 
 // NodeData is the NodeData to unmarshal json in it
-type NodeData struct {
-	NodeResult []NodeTwinID `json:"nodes"`
+type nodeData struct {
+	NodeResult []nodeTwinID `json:"nodes"`
 }
 
 // NodeResult is the NodeData  to unmarshal json in it
-type NodeResult struct {
-	Data NodeData `json:"data"`
+type nodeResult struct {
+	Data nodeData `json:"data"`
 }
 
 // CapacityResult is the NodeData capacity results to unmarshal json in it
-type CapacityResult struct {
+type capacityResult struct {
 	Total gridtypes.Capacity `json:"total"`
 	Used  gridtypes.Capacity `json:"used"`
 }
 
 // NodeInfo is node specific info, queried directly from the node
 type NodeInfo struct {
-	Capacity   CapacityResult `json:"capacity"`
+	Capacity   capacityResult `json:"capacity"`
 	DMI        dmi.DMI        `json:"dmi"`
 	Hypervisor string         `json:"hypervisor"`
 }
