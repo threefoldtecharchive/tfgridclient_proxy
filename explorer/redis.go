@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 )
 
 // SetRedisKey to Get conn and put back when exit from method
@@ -15,8 +13,7 @@ func (a *App) SetRedisKey(key string, val []byte, expiration uint64) error {
 
 	_, err := conn.Do("SET", key, val, "EX", expiration)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: fail set key %s, val %s", key, val))).Msg("")
-		return fmt.Errorf("error: fail set key %s, val %s : %w", key, val, err)
+		return fmt.Errorf("failed set key %s, val %s : %w", key, val, err)
 	}
 
 	return nil
@@ -29,8 +26,7 @@ func (a *App) GetRedisKey(key string) (string, error) {
 
 	s, err := redis.String(conn.Do("GET", key))
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, fmt.Sprintf("ERROR: fail get key %s", key))).Msg("")
-		return "", fmt.Errorf("error: fail get key %s : %w", key, err)
+		return "", fmt.Errorf("failed get key %s : %w", key, err)
 	}
 
 	return s, nil

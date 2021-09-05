@@ -4,9 +4,13 @@ import (
 	"context"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
+
+// DefaultExplorerURL is the default explorer graphql url
+const DefaultExplorerURL string = "https://explorer.devnet.grid.tf/graphql/"
 
 // App is the main app objects
 type App struct {
@@ -17,90 +21,39 @@ type App struct {
 	rmb      rmb.Client
 }
 
-// ContextKey is the type holds the request context
-type ContextKey string
+// OffsetKey is the type holds the request context
+type offsetKey struct{}
 
-// TODO: if not needed for future work delete it
-// const (
-// 	Diy       = "DIY"
-// 	Certified = "CERTIFIED"
-// )
+// SpecificFarmKey is the type holds the request context
+type specificFarmKey struct{}
 
-// type PublicIP struct {
-// 	ip          int   `json:"ip"`
-// 	gateway     int   `json:"gateway"`
-// 	contract_id int64 `json:"contract_id"`
-// }
-
-// type Farm struct {
-// 	version            int        `json:"version"`
-// 	id                 int        `json:"id"`
-// 	name               []int      `json:"name"`
-// 	twin_id            []int      `json:"twin_id"`
-// 	pricing_policy_id  []int      `json:"pricing_policy_id"`
-// 	certification_type string     `json:"certification_type"`
-// 	country_id         []int      `json:"country_id"`
-// 	city_id            []int      `json:"city_id"`
-// 	public_ips         []PublicIP `json:"public_ips"`
-// }
-
-// type Location struct {
-// 	longitude []int `json:"longitude"`
-// 	latitude  []int `json:"latitude"`
-// }
-
-// type Resources struct {
-// 	hru int64 `json:"hru"`
-// 	sru int64 `json:"sru"`
-// 	cru int64 `json:"cru"`
-// 	mru int64 `json:"mru"`
-// }
-
-// type PublicConfig struct {
-// 	ipv4 []int `json: "ipv4"`
-// 	ipv6 []int `json: "ipv6"`
-// 	gw4  []int `json: "gw4"`
-// 	gw6  []int `json: "gw6"`
-// }
-
-// type Node struct {
-// 	Version           int            `json:"version"`
-// 	Id                int            `json:"id"`
-// 	farm_id           string         `json:"farm_id"`
-// 	twin_id           int64          `json:"twin_id"`
-// 	resources         []Resources    `json:"try"`
-// 	location          []Location     `json:"dat"`
-// 	country_id        int            `json:"country_id"`
-// 	city_id           int            `json:"city_id"`
-// 	public_config     []PublicConfig `json:"public_config"`
-// 	uptime            int64          `json:"uptime"`
-// 	created           int64          `json:"created"`
-// 	farming_policy_id int            `json:"farming_policy_id"`
-// }
+// MaxResultKey is the type holds the request context
+type maxResultKey struct{}
 
 // NodeTwinID is the node twin ID to unmarshal json in it
-type NodeTwinID struct {
+type nodeTwinID struct {
 	TwinID uint32 `json:"twinId"`
 }
 
 // NodeData is the NodeData to unmarshal json in it
-type NodeData struct {
-	NodeResult []NodeTwinID `json:"nodes"`
+type nodeData struct {
+	NodeResult []nodeTwinID `json:"nodes"`
 }
 
 // NodeResult is the NodeData  to unmarshal json in it
-type NodeResult struct {
-	Data NodeData `json:"data"`
-}
-
-// NodeClient is the Nodeclient  to unmarshal json in it
-type NodeClient struct {
-	nodeTwin uint32
-	bus      rmb.Client
+type nodeResult struct {
+	Data nodeData `json:"data"`
 }
 
 // CapacityResult is the NodeData capacity results to unmarshal json in it
-type CapacityResult struct {
+type capacityResult struct {
 	Total gridtypes.Capacity `json:"total"`
 	Used  gridtypes.Capacity `json:"used"`
+}
+
+// NodeInfo is node specific info, queried directly from the node
+type NodeInfo struct {
+	Capacity   capacityResult `json:"capacity"`
+	DMI        dmi.DMI        `json:"dmi"`
+	Hypervisor string         `json:"hypervisor"`
 }

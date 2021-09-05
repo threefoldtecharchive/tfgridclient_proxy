@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/grid_proxy_server/explorer"
@@ -19,18 +18,20 @@ type flags struct {
 	explorer string
 	debug    string
 	redis    string
+	address  string
 }
 
 func main() {
 	f := flags{}
-	flag.StringVar(&f.explorer, "explorer", explorer.URL, "explorer url")
+	flag.StringVar(&f.explorer, "explorer", explorer.DefaultExplorerURL, "explorer url")
 	flag.StringVar(&f.debug, "log-level", "debug", "log level [debug|info|warn|error|fatal|panic]")
-	flag.StringVar(&f.redis, "redis", "127.0.0.1:6379", "redis url")
+	flag.StringVar(&f.redis, "redis", ":6379", "redis url")
+	flag.StringVar(&f.address, "address", ":8080", "explorer running ip address")
 	flag.Parse()
 	setupLogging(f.debug)
 	s, err := createServer(f)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Failed to create mux server")).Msg("connection error")
+		log.Error().Err(err).Msg("failed to create mux server")
 	}
 
 	if err := s.ListenAndServe(); err != nil {
@@ -46,18 +47,16 @@ func createServer(f flags) (*http.Server, error) {
 	log.Info().Msg("Creating server")
 	router := mux.NewRouter().StrictSlash(true)
 	debug := false
-	explorerFlags := f.explorer
-	redis := f.redis
-	if f.debug == "all" {
+	if f.debug == "debug" {
 		debug = true
 	}
 
 	// setup explorer
-	explorer.Setup(router, debug, explorerFlags, redis)
+	explorer.Setup(router, debug, f.explorer, f.redis, f.address)
 
 	return &http.Server{
 		Handler: router,
-		Addr:    "0.0.0.0:8080",
+		Addr:    f.address,
 	}, nil
 }
 

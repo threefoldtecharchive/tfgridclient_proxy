@@ -10,27 +10,18 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+	"github.com/threefoldtech/zos/client"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
-func (a *App) runServer() {
-	log.Info().Str("Server started ... listening on", string(a.explorer)).Msg("")
-
-}
-
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
-
-	log.Debug().Str("request params", fmt.Sprint(r.URL.Query())).Msg("request from external agent")
-
-	r, err := a.HandleRequestsQueryParams(r)
-
+	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+		return
 	}
-
-	maxResult := r.Context().Value(ContextKey("max_result"))
-	pageOffset := r.Context().Value(ContextKey("page_offset"))
+	maxResult, pageOffset := getMaxResult(r.Context()), getOffset(r.Context())
 
 	queryString := fmt.Sprintf(`
 	{
@@ -53,28 +44,24 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	}
 	`, maxResult, pageOffset)
 
-	_, err = queryProxy(queryString, w)
+	_, err = queryProxy(queryString, a.explorer, w)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
 	}
-
 }
 
 func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
-
-	log.Debug().Str("request params", fmt.Sprint(r.URL.Query())).Msg("request from external agent")
-
-	r, err := a.HandleRequestsQueryParams(r)
+	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
 	}
 
-	maxResult := r.Context().Value(ContextKey("max_result"))
-	pageOffset := r.Context().Value(ContextKey("page_offset"))
-	isSpecificFarm := r.Context().Value(ContextKey("specific_farm"))
+	maxResult := getMaxResult(r.Context())
+	pageOffset := getOffset(r.Context())
+	isSpecificFarm := getSpecificFarm(r.Context())
 
 	queryString := fmt.Sprintf(`
 	{
@@ -104,77 +91,98 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	`, maxResult, pageOffset, isSpecificFarm)
 
-	_, err = queryProxy(queryString, w)
-
+	_, err = queryProxy(queryString, a.explorer, w)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
 	}
 }
 
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 
-	log.Debug().Str("request params", fmt.Sprint(r.URL.Query())).Msg("request from external agent")
-
 	nodeID := mux.Vars(r)["node_id"]
-	value, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
+	value, _ := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
 
+	// No value, fetch data from the node
+	if value == "" {
+		nodeInfo, err := a.fetchNodeData(r.Context(), nodeID)
+		if err != nil {
+			log.Error().Err(err).Msg("could not fetch node data")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+			return
+		}
+		// Save value in redis
+		// caching for 30 mins
+		marshalledInfo, err := json.Marshal(nodeInfo)
+		if err != nil {
+			log.Error().Err(err).Msg("could not marshal node info")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			return
+		}
+		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 30*60)
+		if err != nil {
+			log.Warn().Err(err).Msg("could not cache data in redis")
+		}
+		value = string(marshalledInfo)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write([]byte(value))
+}
+
+func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error) {
+	twinID, err := getNodeTwinID(nodeID, a.explorer)
 	if err != nil {
-		log.Warn().Str("Couldn't find entry to redis", string(err.Error())).Msg("")
+		return NodeInfo{}, errors.Wrap(err, "could not get node twin ID")
 
 	}
-	if value != "" {
-		w.Write([]byte(value))
-		return
-	}
-	TwinID, err := getNodeTwinID(nodeID)
+
+	nodeClient := client.NewNodeClient(twinID, a.rmb)
+	NodeCapacity, UsedCapacity, err := nodeClient.Counters(a.ctx)
 	if err != nil {
-
-		log.Error().Err(errors.Wrap(err, "Couldn't get node twin ID")).Msg("")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-		return
-
+		return NodeInfo{}, errors.Wrap(err, "could not get node capacity")
 	}
 
-	nodeClient := NewNodeClient(TwinID, a.rmb)
-	nodeCapacity, err := nodeClient.NodeStatistics(a.ctx)
+	dmi, err := nodeClient.SystemDMI(ctx)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-		return
+		return NodeInfo{}, errors.Wrap(err, "could not get node DMI info")
 	}
 
-	totalCapacity, err := json.Marshal(nodeCapacity)
+	hypervisor, err := nodeClient.SystemHypervisor(ctx)
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Couldn't get node statistics")).Msg("connection error")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-		return
+		return NodeInfo{}, errors.Wrap(err, "could not get node hypervisor info")
 	}
 
-	// caching for 30 mins
-	err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), totalCapacity, 30*60)
-	if err != nil {
-		log.Fatal().Err(errors.Wrap(err, "Couldn't cache to redis")).Msg("connection error")
-	}
+	capacity := capacityResult{}
+	capacity.Total = NodeCapacity
+	capacity.Used = UsedCapacity
 
-	w.Write(totalCapacity)
+	return NodeInfo{
+		Capacity:   capacity,
+		DMI:        dmi,
+		Hypervisor: hypervisor,
+	}, nil
 
 }
 
+func (a *App) runServer(hostAddress string) {
+	log.Info().Str("listening on", hostAddress).Str("explorer", a.explorer).Msg("Server started ...")
+}
+
 // Setup is the server and do initial configurations
-func Setup(router *mux.Router, debug bool, explorer string, redisServer string) {
-	log.Info().Msg("Preparing Redis Pool ...")
+func Setup(router *mux.Router, debug bool, explorer string, redisServer string, hostAddress string) {
+	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
 	redis := &redis.Pool{
 		MaxIdle:   10,
 		MaxActive: 10,
 		Dial: func() (redis.Conn, error) {
-			conn, err := redis.Dial("tcp", "localhost:6379")
+			conn, err := redis.Dial("tcp", redisServer)
 			if err != nil {
-				log.Error().Err(errors.Wrap(err, "ERROR: fail init redis")).Msg("")
+				log.Error().Err(err).Msg("fail init redis")
 			}
 			return conn, err
 		},
@@ -182,7 +190,7 @@ func Setup(router *mux.Router, debug bool, explorer string, redisServer string) 
 
 	rmbClient, err := rmb.Default()
 	if err != nil {
-		log.Error().Err(errors.Wrap(err, "Couldn't connect to rmb")).Msg("connection error")
+		log.Error().Err(err).Msg("couldn't connect to rmb")
 		return
 	}
 
@@ -193,7 +201,7 @@ func Setup(router *mux.Router, debug bool, explorer string, redisServer string) 
 		ctx:      context.Background(),
 		rmb:      rmbClient,
 	}
-	go a.runServer()
+	go a.runServer(hostAddress)
 	router.HandleFunc("/farms", a.listFarms)
 	router.HandleFunc("/nodes", a.listNodes)
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)
