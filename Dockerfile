@@ -37,4 +37,9 @@ COPY --from=builder /src/genkeys /usr/bin/genkeys
 
 RUN chmod +x ygg_entrypoint.sh
 
+ENV TWIN=7
+ENV SERVER_IP="0.0.0.0:8080"
+ENV EXPLORER_URL="https://explorer.devnet.grid.tf/graphql/"
+ENV REDIS_URL="localhost:6379"
+
 ENTRYPOINT [ "zinit", "init" ]

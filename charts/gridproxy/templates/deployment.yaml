@@ -48,6 +48,8 @@ spec:
             httpGet:
               path: /farms
               port: http
+            initialDelaySeconds: 15
+            periodSeconds: 3600
           readinessProbe:
             httpGet:
               path: /farms

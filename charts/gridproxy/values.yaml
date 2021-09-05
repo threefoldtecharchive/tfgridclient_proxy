@@ -13,7 +13,12 @@ image:
   env:          
     - name: "TWIN"
       value: "7"
-      # TODO: add explorer url envs
+    - name: "SERVER_IP"
+      value: "0.0.0.0:8080"
+    - name: "EXPLORER_URL"
+      value: "https://explorer.devnet.grid.tf/graphql/"
+    - name: "REDIS_URL"
+      value: "localhost:6379"
 
 imagePullSecrets: []
 nameOverride: ""
