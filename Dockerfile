@@ -34,6 +34,6 @@ EXPOSE 8080
 COPY --from=builder /src/yggdrasil /usr/bin/yggdrasil
 COPY --from=builder /src/yggdrasilctl /usr/bin/yggdrasilctl
 COPY --from=builder /src/genkeys /usr/bin/genkeys
-COPY yggdrasil.conf /etc/yggdrasil.conf
+COPY ygg_entrypoint.sh ygg_entrypoint
 
 ENTRYPOINT [ "zinit", "init" ]
