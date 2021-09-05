@@ -174,7 +174,7 @@ func (a *App) runServer(hostAddress string) {
 
 // Setup is the server and do initial configurations
 func Setup(router *mux.Router, debug bool, explorer string, redisServer string, hostAddress string) {
-	log.Info().Msg("Preparing Redis Pool ...")
+	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
 	redis := &redis.Pool{
 		MaxIdle:   10,
