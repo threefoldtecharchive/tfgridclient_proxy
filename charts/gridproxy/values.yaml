@@ -5,10 +5,15 @@
 replicaCount: 1
 
 image:
-  repository: waleedhammam/grid-proxy
-  pullPolicy: IfNotPresent
+  repository: waleedhammam/gridproxy
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
+
+  env:          
+    - name: "TWIN"
+      value: "7"
+      # TODO: add explorer url envs
 
 imagePullSecrets: []
 nameOverride: ""

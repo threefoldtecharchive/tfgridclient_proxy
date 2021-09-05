@@ -2,6 +2,9 @@
 
 set -ex
 
+mkdir -p /dev/net
+mknod /dev/net/tun c 10 200
+chmod 600 /dev/net/tun
 
 if [ ! -f "/etc/config.conf" ]; then
   echo "generate /etc/config.conf"
