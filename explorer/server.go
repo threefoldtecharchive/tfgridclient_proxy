@@ -44,7 +44,7 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	}
 	`, maxResult, pageOffset)
 
-	_, err = queryProxy(queryString, w)
+	_, err = queryProxy(queryString, a.explorer, w)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -91,7 +91,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	`, maxResult, pageOffset, isSpecificFarm)
 
-	_, err = queryProxy(queryString, w)
+	_, err = queryProxy(queryString, a.explorer, w)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
@@ -134,7 +134,7 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error) {
-	twinID, err := getNodeTwinID(nodeID)
+	twinID, err := getNodeTwinID(nodeID, a.explorer)
 	if err != nil {
 		return NodeInfo{}, errors.Wrap(err, "could not get node twin ID")
 
@@ -168,19 +168,19 @@ func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error
 
 }
 
-func (a *App) runServer() {
-	log.Info().Str("listening on", a.explorer).Msg("Server started ...")
+func (a *App) runServer(hostAddress string) {
+	log.Info().Str("listening on", hostAddress).Str("explorer", a.explorer).Msg("Server started ...")
 }
 
 // Setup is the server and do initial configurations
-func Setup(router *mux.Router, debug bool, explorer string, redisServer string) {
+func Setup(router *mux.Router, debug bool, explorer string, redisServer string, hostAddress string) {
 	log.Info().Msg("Preparing Redis Pool ...")
 
 	redis := &redis.Pool{
 		MaxIdle:   10,
 		MaxActive: 10,
 		Dial: func() (redis.Conn, error) {
-			conn, err := redis.Dial("tcp", "localhost:6379")
+			conn, err := redis.Dial("tcp", redisServer)
 			if err != nil {
 				log.Error().Err(err).Msg("fail init redis")
 			}
@@ -201,7 +201,7 @@ func Setup(router *mux.Router, debug bool, explorer string, redisServer string) 
 		ctx:      context.Background(),
 		rmb:      rmbClient,
 	}
-	go a.runServer()
+	go a.runServer(hostAddress)
 	router.HandleFunc("/farms", a.listFarms)
 	router.HandleFunc("/nodes", a.listNodes)
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)

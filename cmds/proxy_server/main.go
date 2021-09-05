@@ -23,7 +23,7 @@ type flags struct {
 
 func main() {
 	f := flags{}
-	flag.StringVar(&f.explorer, "explorer", explorer.URL, "explorer url")
+	flag.StringVar(&f.explorer, "explorer", explorer.DefaultExplorerUrl, "explorer url")
 	flag.StringVar(&f.debug, "log-level", "debug", "log level [debug|info|warn|error|fatal|panic]")
 	flag.StringVar(&f.redis, "redis", "127.0.0.1:6379", "redis url")
 	flag.StringVar(&f.address, "address", ":8080", "explorer running ip address")
@@ -47,14 +47,12 @@ func createServer(f flags) (*http.Server, error) {
 	log.Info().Msg("Creating server")
 	router := mux.NewRouter().StrictSlash(true)
 	debug := false
-	explorerFlags := f.explorer
-	redis := f.redis
 	if f.debug == "all" {
 		debug = true
 	}
 
 	// setup explorer
-	explorer.Setup(router, debug, explorerFlags, redis)
+	explorer.Setup(router, debug, f.explorer, f.redis, f.address)
 
 	return &http.Server{
 		Handler: router,

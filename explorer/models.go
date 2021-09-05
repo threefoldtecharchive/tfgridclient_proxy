@@ -9,8 +9,8 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
-// URL is the default explorer graphql url
-const URL string = "https://explorer.devnet.grid.tf/graphql/"
+// DefaultExplorerUrl is the default explorer graphql url
+const DefaultExplorerUrl string = "https://explorer.devnet.grid.tf/graphql/"
 
 // App is the main app objects
 type App struct {
