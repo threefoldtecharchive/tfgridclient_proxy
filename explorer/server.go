@@ -77,6 +77,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 			uptime           
 			created          
 			farmingPolicyId
+			updatedAt
 			cru
 			mru
 			sru
