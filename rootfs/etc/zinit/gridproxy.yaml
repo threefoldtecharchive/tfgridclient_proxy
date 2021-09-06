@@ -1,4 +1,3 @@
-# TODO: pass env for explorer url and so on
 exec: sh -c "/grid_proxy_server/server --address $SERVER_IP --redis $REDIS_URL --explorer $EXPLORER_URL"
 log: stdout
 after:

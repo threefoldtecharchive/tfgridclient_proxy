@@ -46,6 +46,7 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+# Change port here only if you want to use another one
 service:
   type: ClusterIP
   port: 8080
