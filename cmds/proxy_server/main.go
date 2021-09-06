@@ -24,7 +24,7 @@ type flags struct {
 func main() {
 	f := flags{}
 	flag.StringVar(&f.explorer, "explorer", explorer.DefaultExplorerURL, "explorer url")
-	flag.StringVar(&f.debug, "log-level", "debug", "log level [debug|info|warn|error|fatal|panic]")
+	flag.StringVar(&f.debug, "log-level", "info", "log level [debug|info|warn|error|fatal|panic]")
 	flag.StringVar(&f.redis, "redis", ":6379", "redis url")
 	flag.StringVar(&f.address, "address", ":8080", "explorer running ip address")
 	flag.Parse()
