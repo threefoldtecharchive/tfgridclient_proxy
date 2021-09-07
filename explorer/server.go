@@ -14,6 +14,10 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
+var (
+	ErrNodeNotFound = errors.New("node not found")
+)
+
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
@@ -114,13 +118,21 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	// No value, fetch data from the node
 	if value == "" {
 		nodeInfo, err := a.fetchNodeData(r.Context(), nodeID)
-		if err != nil {
+		if errors.Is(err, ErrNodeNotFound) {
+			// return not found 404
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(http.StatusText(http.StatusNotFound)))
+			return
+		} else if err != nil {
+			// return internal server error
 			log.Error().Err(err).Msg("could not fetch node data")
 			w.Header().Add("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 			return
 		}
+
 		// Save value in redis
 		// caching for 30 mins
 		marshalledInfo, err := json.Marshal(nodeInfo)
@@ -152,7 +164,7 @@ func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
 func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error) {
 	twinID, err := a.getNodeTwinID(nodeID)
 	if err != nil {
-		return NodeInfo{}, errors.Wrap(err, "could not get node twin ID")
+		return NodeInfo{}, ErrNodeNotFound
 
 	}
 
