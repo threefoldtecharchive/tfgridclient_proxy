@@ -2,4 +2,3 @@ exec: /grid_proxy_server/ygg_entrypoint.sh
 log: stdout
 after:
   - redis
-

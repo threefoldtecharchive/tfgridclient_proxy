@@ -31,7 +31,5 @@ jobs:
       with:
         golint-path: './...'
 
-#     - name: Test
-#       run: go test -v ./...
-
-    
+    - name: Test version
+      run: ./main -v
