@@ -2,6 +2,7 @@ package explorer
 
 import (
 	"github.com/gomodule/redigo/redis"
+	"github.com/patrickmn/go-cache"
 	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
@@ -15,6 +16,7 @@ type App struct {
 	explorer string
 	redis    *redis.Pool
 	rmb      rmb.Client
+	lruCache *cache.Cache
 }
 
 // OffsetKey is the type holds the request context

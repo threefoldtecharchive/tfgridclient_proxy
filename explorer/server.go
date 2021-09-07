@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/zos/client"
@@ -210,11 +212,13 @@ func Setup(router *mux.Router, explorer string, redisServer string, hostAddress 
 		log.Error().Err(err).Msg("couldn't connect to rmb")
 		return
 	}
+	c := cache.New(10*time.Minute, 15*time.Minute)
 
 	a := App{
 		explorer: explorer,
 		redis:    redis,
 		rmb:      rmbClient,
+		lruCache: c,
 	}
 	log.Info().Str("listening on", hostAddress).Str("explorer", a.explorer).Msg("Server started ...")
 	router.HandleFunc("/farms", a.listFarms)
