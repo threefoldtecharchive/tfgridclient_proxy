@@ -88,14 +88,14 @@ func (a *App) query(queryString string, result interface{}) error {
 	return nil
 }
 
-func (a *App) queryProxy(queryString string, w io.Writer) (written int64, err error) {
+func (a *App) queryProxy(queryString string, w http.ResponseWriter) (written int64, err error) {
 	response, err := a.baseQuery(queryString)
 	if err != nil {
 		return 0, err
 	}
 
 	defer response.Close()
-
+	w.Header().Add("Content-Type", "application/json")
 	return io.Copy(w, response)
 }
 
