@@ -15,7 +15,7 @@ Interact with TFgridDB using rest APIs
 
 - Start the msgbus with your twin ID
 - Then to run `go run cmds/proxy_server/main.go`
-- To build `go build cmds/proxy_server/main.go`
+- To build `GIT_COMMIT=$(git rev-list -1 HEAD) && go build -ldflags "-X main.GitCommit=$GIT_COMMIT" cmds/proxy_server/main.go`
 - Then visit `http://localhost:8080/<endpoint>`
 
 ## Endpoints
@@ -187,3 +187,10 @@ docker run --name ellol -e TWIN=7 -e SERVER_IP="0.0.0.0:8080" -e EXPLORER_URL="h
 ```
 
 - After it runs you should update your twin's with yggdrasail ip on [polkadot](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fexplorer.devnet.grid.tf%2Fws#/extrinsics)
+
+### Update helm package
+
+- Do `helm lint charts/gridproxy`
+- Regenerate the packages `helm package -u charts/gridproxy`
+- Regenerate index.yaml `helm repo index --url https://mattiaperi.github.io/helm-chart/ .`
+- Push your changes
