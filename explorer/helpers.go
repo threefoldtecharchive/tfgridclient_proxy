@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func getNodeTwinID(nodeID string, explorerURL string) (uint32, error) {
+func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
 	queryString := fmt.Sprintf(`
 	{
 		nodes(where:{nodeId_eq:%s}){
@@ -21,7 +21,7 @@ func getNodeTwinID(nodeID string, explorerURL string) (uint32, error) {
 	`, nodeID)
 
 	var res nodeResult
-	err := query(queryString, explorerURL, &res)
+	err := a.query(queryString, &res)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to query node %w", err)
@@ -34,7 +34,7 @@ func getNodeTwinID(nodeID string, explorerURL string) (uint32, error) {
 	return 0, fmt.Errorf("failed to find node ID")
 }
 
-func baseQuery(queryString string, explorerURL string) (io.ReadCloser, error) {
+func (a *App) baseQuery(queryString string) (io.ReadCloser, error) {
 	jsonData := map[string]string{
 		"query": queryString,
 	}
@@ -43,7 +43,7 @@ func baseQuery(queryString string, explorerURL string) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("invalid query string %w", err)
 	}
 
-	request, err := http.NewRequest("POST", explorerURL, bytes.NewBuffer(jsonValue))
+	request, err := http.NewRequest("POST", a.explorer, bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query explorer network %w", err)
 	}
@@ -64,8 +64,8 @@ func baseQuery(queryString string, explorerURL string) (io.ReadCloser, error) {
 	return response.Body, nil
 }
 
-func query(queryString string, explorerURL string, result interface{}) error {
-	response, err := baseQuery(queryString, explorerURL)
+func (a *App) query(queryString string, result interface{}) error {
+	response, err := a.baseQuery(queryString)
 	if err != nil {
 		return err
 	}
@@ -78,8 +78,8 @@ func query(queryString string, explorerURL string, result interface{}) error {
 	return nil
 }
 
-func queryProxy(queryString string, explorerURL string, w io.Writer) (written int64, err error) {
-	response, err := baseQuery(queryString, explorerURL)
+func (a *App) queryProxy(queryString string, w io.Writer) (written int64, err error) {
+	response, err := a.baseQuery(queryString)
 	if err != nil {
 		return 0, err
 	}

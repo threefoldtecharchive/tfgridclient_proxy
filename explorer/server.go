@@ -45,7 +45,7 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	}
 	`, maxResult, pageOffset)
 
-	_, err = queryProxy(queryString, a.explorer, w)
+	_, err = a.queryProxy(queryString, w)
 
 	if err != nil {
 		w.Header().Add("Content-Type", "application/json")
@@ -97,7 +97,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	`, maxResult, pageOffset, isSpecificFarm)
 
-	_, err = queryProxy(queryString, a.explorer, w)
+	_, err = a.queryProxy(queryString, w)
 	if err != nil {
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -150,7 +150,7 @@ func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error) {
-	twinID, err := getNodeTwinID(nodeID, a.explorer)
+	twinID, err := a.getNodeTwinID(nodeID)
 	if err != nil {
 		return NodeInfo{}, errors.Wrap(err, "could not get node twin ID")
 
