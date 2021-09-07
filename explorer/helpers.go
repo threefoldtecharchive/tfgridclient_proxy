@@ -9,9 +9,17 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/patrickmn/go-cache"
 )
 
 func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
+	// cache node twin id for 10 mins and purge after 15
+	c := cache.New(10*time.Minute, 15*time.Minute)
+	if twinID, found := c.Get(nodeID); found {
+		return twinID.(uint32), nil
+	}
+
 	queryString := fmt.Sprintf(`
 	{
 		nodes(where:{nodeId_eq:%s}){
@@ -29,7 +37,9 @@ func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
 
 	nodeStats := res.Data.NodeResult
 	if len(nodeStats) > 0 {
-		return nodeStats[0].TwinID, nil
+		twinID := nodeStats[0].TwinID
+		c.Set(nodeID, twinID, cache.DefaultExpiration)
+		return twinID, nil
 	}
 	return 0, fmt.Errorf("failed to find node ID")
 }
