@@ -21,7 +21,8 @@ jobs:
     - name: Build
       run: |
         export PATH=/home/runner/go/bin:$PATH
-        go build cmds/proxy_server/main.go
+        export GIT_COMMIT=$(git rev-list -1 HEAD) 
+        go build -ldflags "-X main.GitCommit=$GIT_COMMIT" cmds/proxy_server/main.go
       env:
         GO111MODULE: on
 

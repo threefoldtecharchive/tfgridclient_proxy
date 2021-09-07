@@ -14,6 +14,7 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
+// ErrNodeNotFound creates new error type to define node existance or server problem
 var (
 	ErrNodeNotFound = errors.New("node not found")
 )

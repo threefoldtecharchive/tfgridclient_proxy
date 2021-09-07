@@ -14,11 +14,15 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/explorer"
 )
 
+// GitCommit holds the commit version
+var GitCommit string
+
 type flags struct {
 	explorer string
 	debug    string
 	redis    string
 	address  string
+	version  bool
 }
 
 func main() {
@@ -27,7 +31,15 @@ func main() {
 	flag.StringVar(&f.debug, "log-level", "info", "log level [debug|info|warn|error|fatal|panic]")
 	flag.StringVar(&f.redis, "redis", ":6379", "redis url")
 	flag.StringVar(&f.address, "address", ":8080", "explorer running ip address")
+	flag.BoolVar(&f.version, "v", false, "shows the package version")
 	flag.Parse()
+
+	// shows version and exit
+	if f.version {
+		fmt.Printf("git rev: %s\n", GitCommit)
+		os.Exit(0)
+	}
+
 	setupLogging(f.debug)
 	s, err := createServer(f)
 	if err != nil {

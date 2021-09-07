@@ -19,7 +19,9 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o server cmds/proxy_server/main.go
+
+RUN GIT_COMMIT=$(git rev-list -1 HEAD) && \
+  go build -ldflags "-X main.GitCommit=$GIT_COMMIT" cmds/proxy_server/main.go -o server
 
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.1/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
