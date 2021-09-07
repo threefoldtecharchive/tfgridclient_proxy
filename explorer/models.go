@@ -14,7 +14,6 @@ const DefaultExplorerURL string = "https://explorer.devnet.grid.tf/graphql/"
 
 // App is the main app objects
 type App struct {
-	debug    bool
 	explorer string
 	redis    *redis.Pool
 	ctx      context.Context

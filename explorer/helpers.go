@@ -14,7 +14,7 @@ import (
 func getNodeTwinID(nodeID string, explorerURL string) (uint32, error) {
 	queryString := fmt.Sprintf(`
 	{
-		nodes(limit:10, where:{nodeId_eq:%s}){
+		nodes(where:{nodeId_eq:%s}){
 		  twinId
 		}
 	}
@@ -118,20 +118,14 @@ func calculateMaxResult(r *http.Request) (int, error) {
 func calculateOffset(maxResult int, r *http.Request) (int, error) {
 	page := r.URL.Query().Get("page")
 	if page == "" {
-		page = "0"
+		page = "1"
 	}
 
 	pageNumber, err := strconv.Atoi(page)
-	if err != nil {
+	if err != nil || pageNumber < 1 {
 		return 0, fmt.Errorf("invalid page number : %w", err)
 	}
-
-	offset := 0
-	if pageNumber > 1 {
-		offset = pageNumber * maxResult
-	}
-
-	return offset, nil
+	return (pageNumber - 1) * maxResult, nil
 }
 
 // HandleRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available

@@ -57,6 +57,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+		return
 	}
 
 	maxResult := getMaxResult(r.Context())
@@ -180,7 +181,7 @@ func (a *App) runServer(hostAddress string) {
 }
 
 // Setup is the server and do initial configurations
-func Setup(router *mux.Router, debug bool, explorer string, redisServer string, hostAddress string) {
+func Setup(router *mux.Router, explorer string, redisServer string, hostAddress string) {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
 	redis := &redis.Pool{
@@ -202,7 +203,6 @@ func Setup(router *mux.Router, debug bool, explorer string, redisServer string, 
 	}
 
 	a := App{
-		debug:    debug,
 		explorer: explorer,
 		redis:    redis,
 		ctx:      context.Background(),

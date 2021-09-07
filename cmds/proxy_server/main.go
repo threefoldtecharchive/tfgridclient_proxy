@@ -46,13 +46,9 @@ func main() {
 func createServer(f flags) (*http.Server, error) {
 	log.Info().Msg("Creating server")
 	router := mux.NewRouter().StrictSlash(true)
-	debug := false
-	if f.debug == "debug" {
-		debug = true
-	}
 
 	// setup explorer
-	explorer.Setup(router, debug, f.explorer, f.redis, f.address)
+	explorer.Setup(router, f.explorer, f.redis, f.address)
 
 	return &http.Server{
 		Handler: router,
