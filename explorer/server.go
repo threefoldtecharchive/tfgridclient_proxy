@@ -134,6 +134,12 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(value))
 }
 
+func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write([]byte("welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"))
+}
+
 func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error) {
 	twinID, err := getNodeTwinID(nodeID, a.explorer)
 	if err != nil {
@@ -206,5 +212,5 @@ func Setup(router *mux.Router, debug bool, explorer string, redisServer string, 
 	router.HandleFunc("/farms", a.listFarms)
 	router.HandleFunc("/nodes", a.listNodes)
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)
-	http.Handle("/", router)
+	router.HandleFunc("/", a.indexPage)
 }
