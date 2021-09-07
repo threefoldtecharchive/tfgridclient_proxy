@@ -1,0 +1,4 @@
+exec: sh -c "/usr/bin/server --address $SERVER_IP --redis $REDIS_URL --explorer $EXPLORER_URL"
+log: stdout
+after:
+  - msgbus

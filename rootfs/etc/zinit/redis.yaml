@@ -1,0 +1,2 @@
+exec: redis-server
+log: stdout
