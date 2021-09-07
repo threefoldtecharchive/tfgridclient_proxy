@@ -22,7 +22,6 @@ var (
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
-		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
 		return
@@ -53,7 +52,6 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	_, err = a.queryProxy(queryString, w)
 
 	if err != nil {
-		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 		return
@@ -63,7 +61,6 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
-		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
 		return
@@ -104,7 +101,6 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 
 	_, err = a.queryProxy(queryString, w)
 	if err != nil {
-		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 		return
@@ -121,14 +117,12 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		nodeInfo, err := a.fetchNodeData(r.Context(), nodeID)
 		if errors.Is(err, ErrNodeNotFound) {
 			// return not found 404
-			w.Header().Add("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte(http.StatusText(http.StatusNotFound)))
 			return
 		} else if err != nil {
 			// return internal server error
 			log.Error().Err(err).Msg("could not fetch node data")
-			w.Header().Add("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 			return
@@ -139,7 +133,6 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		marshalledInfo, err := json.Marshal(nodeInfo)
 		if err != nil {
 			log.Error().Err(err).Msg("could not marshal node info")
-			w.Header().Add("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 			return
@@ -158,7 +151,6 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Header().Add("Content-Type", "application/json")
 	w.Write([]byte("welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"))
 }
 
