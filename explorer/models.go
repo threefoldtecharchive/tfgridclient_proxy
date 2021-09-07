@@ -1,8 +1,6 @@
 package explorer
 
 import (
-	"context"
-
 	"github.com/gomodule/redigo/redis"
 	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
@@ -16,7 +14,6 @@ const DefaultExplorerURL string = "https://explorer.devnet.grid.tf/graphql/"
 type App struct {
 	explorer string
 	redis    *redis.Pool
-	ctx      context.Context
 	rmb      rmb.Client
 }
 

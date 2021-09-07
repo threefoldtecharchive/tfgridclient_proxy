@@ -47,8 +47,9 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	_, err = queryProxy(queryString, a.explorer, w)
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+		return
 	}
 }
 
@@ -95,8 +96,9 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 
 	_, err = queryProxy(queryString, a.explorer, w)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+		return
 	}
 }
 
@@ -149,7 +151,7 @@ func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error
 	}
 
 	nodeClient := client.NewNodeClient(twinID, a.rmb)
-	NodeCapacity, UsedCapacity, err := nodeClient.Counters(a.ctx)
+	NodeCapacity, UsedCapacity, err := nodeClient.Counters(ctx)
 	if err != nil {
 		return NodeInfo{}, errors.Wrap(err, "could not get node capacity")
 	}
@@ -174,10 +176,6 @@ func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error
 		Hypervisor: hypervisor,
 	}, nil
 
-}
-
-func (a *App) runServer(hostAddress string) {
-	log.Info().Str("listening on", hostAddress).Str("explorer", a.explorer).Msg("Server started ...")
 }
 
 // Setup is the server and do initial configurations
@@ -205,10 +203,9 @@ func Setup(router *mux.Router, explorer string, redisServer string, hostAddress 
 	a := App{
 		explorer: explorer,
 		redis:    redis,
-		ctx:      context.Background(),
 		rmb:      rmbClient,
 	}
-	go a.runServer(hostAddress)
+	log.Info().Str("listening on", hostAddress).Str("explorer", a.explorer).Msg("Server started ...")
 	router.HandleFunc("/farms", a.listFarms)
 	router.HandleFunc("/nodes", a.listNodes)
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)
