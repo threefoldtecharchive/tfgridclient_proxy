@@ -125,8 +125,8 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		} else if err != nil {
 			// return internal server error
 			log.Error().Err(err).Msg("could not fetch node data")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			w.WriteHeader(http.StatusBadGateway)
+			w.Write([]byte(http.StatusText(http.StatusBadGateway)))
 			return
 		}
 
