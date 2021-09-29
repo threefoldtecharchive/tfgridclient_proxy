@@ -1,0 +1,176 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/ping": {
+            "get": {
+                "description": "ping the server to check if it running",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ping"
+                ],
+                "summary": "ping the server",
+                "responses": {
+                    "200": {
+                        "description": "pong",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/twin/{twin_id}": {
+            "post": {
+                "description": "submit the message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RMB"
+                ],
+                "summary": "submit the message",
+                "parameters": [
+                    {
+                        "description": "rmb.Message",
+                        "name": "msg",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rmbproxy.Message"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "twin id",
+                        "name": "twin_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rmbproxy.MessageIdentifier"
+                        }
+                    }
+                }
+            }
+        },
+        "/twin/{twin_id}/{retqueue}": {
+            "get": {
+                "description": "Get the message result",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RMB"
+                ],
+                "summary": "Get the message result",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "twin id",
+                        "name": "twin_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "message retqueue",
+                        "name": "retqueue",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/rmbproxy.Message"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "rmbproxy.Message": {
+            "type": "object",
+            "properties": {
+                "cmd": {
+                    "type": "string",
+                    "example": "zos.statistics.get"
+                },
+                "dat": {
+                    "type": "string"
+                },
+                "dst": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "example": 2
+                    }
+                },
+                "err": {
+                    "type": "string"
+                },
+                "exp": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "now": {
+                    "type": "integer",
+                    "example": 1631078674
+                },
+                "ret": {
+                    "type": "string"
+                },
+                "shm": {
+                    "type": "string"
+                },
+                "src": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "try": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "uid": {
+                    "type": "string"
+                },
+                "ver": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "rmbproxy.MessageIdentifier": {
+            "type": "object",
+            "properties": {
+                "retqueue": {
+                    "type": "string",
+                    "example": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,117 @@
+definitions:
+  rmbproxy.Message:
+    properties:
+      cmd:
+        example: zos.statistics.get
+        type: string
+      dat:
+        type: string
+      dst:
+        items:
+          type: integer
+          example: 2
+        type: array
+      err:
+        type: string
+      exp:
+        example: 0
+        type: integer
+      now:
+        example: 1631078674
+        type: integer
+      ret:
+        type: string
+      shm:
+        type: string
+      src:
+        example: 1
+        type: integer
+      try:
+        example: 2
+        type: integer
+      uid:
+        type: string
+      ver:
+        example: 1
+        type: integer
+    type: object
+  rmbproxy.MessageIdentifier:
+    properties:
+      retqueue:
+        example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: ping the server to check if it running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: pong
+          schema:
+            type: string
+      summary: ping the server
+      tags:
+      - ping
+  /twin/{twin_id}:
+    post:
+      consumes:
+      - application/json
+      description: submit the message
+      parameters:
+      - description: rmb.Message
+        in: body
+        name: msg
+        required: true
+        schema:
+          $ref: '#/definitions/rmbproxy.Message'
+      - description: twin id
+        in: path
+        name: twin_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rmbproxy.MessageIdentifier'
+      summary: submit the message
+      tags:
+      - RMB
+  /twin/{twin_id}/{retqueue}:
+    get:
+      consumes:
+      - application/json
+      description: Get the message result
+      parameters:
+      - description: twin id
+        in: path
+        name: twin_id
+        required: true
+        type: integer
+      - description: message retqueue
+        in: path
+        name: retqueue
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/rmbproxy.Message'
+            type: array
+      summary: Get the message result
+      tags:
+      - RMB
+swagger: "2.0"

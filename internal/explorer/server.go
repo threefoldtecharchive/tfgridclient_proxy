@@ -192,7 +192,7 @@ func (a *App) fetchNodeData(ctx context.Context, nodeID string) (NodeInfo, error
 }
 
 // Setup is the server and do initial configurations
-func Setup(router *mux.Router, explorer string, redisServer string, hostAddress string) {
+func Setup(router *mux.Router, explorer string, redisServer string) {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
 	redis := &redis.Pool{
@@ -220,7 +220,6 @@ func Setup(router *mux.Router, explorer string, redisServer string, hostAddress 
 		rmb:      rmbClient,
 		lruCache: c,
 	}
-	log.Info().Str("listening on", hostAddress).Str("explorer", a.explorer).Msg("Server started ...")
 	router.HandleFunc("/farms", a.listFarms)
 	router.HandleFunc("/nodes", a.listNodes)
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)
