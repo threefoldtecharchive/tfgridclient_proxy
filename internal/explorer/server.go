@@ -39,6 +39,7 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 			version
 			farmId
 			pricingPolicyId
+			stellarAddress
 		}
 		publicIps{
 			id
