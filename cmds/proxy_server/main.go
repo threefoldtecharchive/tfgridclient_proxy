@@ -40,7 +40,7 @@ func main() {
 	f := flags{}
 	flag.StringVar(&f.explorer, "explorer", explorer.DefaultExplorerURL, "explorer url")
 	flag.StringVar(&f.debug, "log-level", "info", "log level [debug|info|warn|error|fatal|panic]")
-	flag.StringVar(&f.substrate, "substrate", "wss://tfchain.dev.threefold.io", "substrate url")
+	flag.StringVar(&f.substrate, "substrate", "wss://tfchain.dev.threefold.io/ws", "substrate url")
 	flag.StringVar(&f.address, "address", ":443", "explorer running ip address")
 	flag.StringVar(&f.domain, "domain", "", "domain on which the server will be served")
 	flag.StringVar(&f.TLSEmail, "email", "", "tmail address to generate certificate with")
