@@ -9,7 +9,7 @@ import (
 )
 
 // DefaultExplorerURL is the default explorer graphql url
-const DefaultExplorerURL string = "https://explorer.devnet.grid.tf/graphql/"
+const DefaultExplorerURL string = "https://tfchain.dev.threefold.io/graphql/"
 
 // App is the main app objects
 type App struct {
