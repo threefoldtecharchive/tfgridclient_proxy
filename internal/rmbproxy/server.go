@@ -21,6 +21,10 @@ func errorReply(w http.ResponseWriter, status int, message string) {
 	fmt.Fprintf(w, "{\"status\": \"error\", \"message\": \"%s\"}", message)
 }
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
 // NewTwinClient : create new TwinClient
 func (a *App) NewTwinClient(twinID int) (TwinClient, error) {
 	log.Debug().Int("twin", twinID).Msg("resolving twin")
@@ -47,6 +51,7 @@ func (a *App) NewTwinClient(twinID int) (TwinClient, error) {
 // @Success 200 {object} MessageIdentifier
 // @Router /twin/{twin_id} [post]
 func (a *App) sendMessage(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	twinIDString := mux.Vars(r)["twin_id"]
 
 	buffer := new(bytes.Buffer)
@@ -87,6 +92,7 @@ func (a *App) sendMessage(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} Message
 // @Router /twin/{twin_id}/{retqueue} [get]
 func (a *App) getResult(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	twinIDString := mux.Vars(r)["twin_id"]
 	retqueue := mux.Vars(r)["retqueue"]
 
@@ -125,6 +131,7 @@ func (a *App) getResult(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} string "pong"
 // @Router /ping [get]
 func (a *App) ping(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	ret := map[string]string{"ping": "pong"}
 
 	data, _ := json.Marshal(ret)
