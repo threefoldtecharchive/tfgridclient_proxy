@@ -21,6 +21,10 @@ func errorReply(w http.ResponseWriter, status int, message string) {
 	fmt.Fprintf(w, "{\"status\": \"error\", \"message\": \"%s\"}", message)
 }
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
 // NewTwinClient : create new TwinClient
 func (a *App) NewTwinClient(twinID int) (TwinClient, error) {
 	log.Debug().Int("twin", twinID).Msg("resolving twin")
@@ -47,8 +51,9 @@ func (a *App) NewTwinClient(twinID int) (TwinClient, error) {
 // @Success 200 {object} MessageIdentifier
 // @Router /twin/{twin_id} [post]
 func (a *App) sendMessage(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	twinIDString := mux.Vars(r)["twin_id"]
-
+	
 	buffer := new(bytes.Buffer)
 	buffer.ReadFrom(r.Body)
 
@@ -57,20 +62,20 @@ func (a *App) sendMessage(w http.ResponseWriter, r *http.Request) {
 		errorReply(w, http.StatusBadRequest, "Invalid twinId")
 		return
 	}
-
+	
 	c, err := a.NewTwinClient(twinID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create TwinClient")
 		errorReply(w, http.StatusInternalServerError, "failed to create TwinClient")
 		return
 	}
-
+	
 	data, err := c.SubmitMessage(*buffer)
 	if err != nil {
 		errorReply(w, http.StatusBadRequest, err.Error())
 		return
 	}
-
+	
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(data))
@@ -87,30 +92,31 @@ func (a *App) sendMessage(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} Message
 // @Router /twin/{twin_id}/{retqueue} [get]
 func (a *App) getResult(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	twinIDString := mux.Vars(r)["twin_id"]
 	retqueue := mux.Vars(r)["retqueue"]
-
+	
 	reqBody := MessageIdentifier{
 		Retqueue: retqueue,
 	}
-
+	
 	twinID, err := strconv.Atoi(twinIDString)
 	if err != nil {
 		errorReply(w, http.StatusBadRequest, "Invalid twinId")
 		return
 	}
-
+	
 	c, err := a.NewTwinClient(twinID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create mux server")
 	}
-
+	
 	data, err := c.GetResult(reqBody)
 	if err != nil {
 		errorReply(w, http.StatusBadRequest, err.Error())
 		return
 	}
-
+	
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(data))
@@ -125,10 +131,11 @@ func (a *App) getResult(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} string "pong"
 // @Router /ping [get]
 func (a *App) ping(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	ret := map[string]string{"ping": "pong"}
-
+	
 	data, _ := json.Marshal(ret)
-
+	
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(data))
