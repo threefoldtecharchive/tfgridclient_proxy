@@ -87,6 +87,7 @@ func app(s *http.Server, f flags) error {
 				log.Error().Err(err).Msg("server stopped unexpectedly")
 			}
 		}
+		return nil
 	}
 
 	config := rmbproxy.CertificateConfig{
