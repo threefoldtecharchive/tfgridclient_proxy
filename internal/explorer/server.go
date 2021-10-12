@@ -16,7 +16,7 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
-// ErrNodeNotFound creates new error type to define node existance or server problem
+// ErrNodeNotFound creates new error type to define node existence or server problem
 var (
 	ErrNodeNotFound = errors.New("node not found")
 )
@@ -72,10 +72,10 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	maxResult := getMaxResult(r.Context())
 	pageOffset := getOffset(r.Context())
 	isSpecificFarm := getSpecificFarm(r.Context())
-
+	isGateway := getIsGateway(r.Context())
 	queryString := fmt.Sprintf(`
 	{
-		nodes(limit:%d,offset:%d,%s){
+		nodes(limit:%d,offset:%d, where:{%s%s}){
 			version          
 			id
 			nodeId        
@@ -93,14 +93,15 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 			sru
 			hru
 		publicConfig{
+			domain
 			gw4
+			gw6
 			ipv4
 			ipv6
-			gw6
 		  }
 		}
 	}
-	`, maxResult, pageOffset, isSpecificFarm)
+	`, maxResult, pageOffset, isSpecificFarm, isGateway)
 
 	_, err = a.queryProxy(queryString, w)
 	if err != nil {
@@ -223,6 +224,8 @@ func Setup(router *mux.Router, explorer string, redisServer string) {
 	}
 	router.HandleFunc("/farms", a.listFarms)
 	router.HandleFunc("/nodes", a.listNodes)
+	router.HandleFunc("/gateways", a.listNodes)
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)
+	router.HandleFunc("/gateways/{node_id:[0-9]+}", a.getNode)
 	router.HandleFunc("/", a.indexPage)
 }

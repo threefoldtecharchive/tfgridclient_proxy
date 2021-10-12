@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/patrickmn/go-cache"
@@ -110,6 +111,10 @@ func getSpecificFarm(ctx context.Context) string {
 	return ctx.Value(specificFarmKey{}).(string)
 }
 
+func getIsGateway(ctx context.Context) string {
+	return ctx.Value(isGatewayKey{}).(string)
+}
+
 func calculateMaxResult(r *http.Request) (int, error) {
 	maxResultPerpage := r.URL.Query().Get("max_result")
 	if maxResultPerpage == "" {
@@ -139,11 +144,17 @@ func calculateOffset(maxResult int, r *http.Request) (int, error) {
 
 // HandleRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
 func (a *App) handleRequestsQueryParams(r *http.Request) (*http.Request, error) {
+	isGateway := ""
+	if strings.Contains(fmt.Sprint(r.URL), "gateways") {
+		isGateway = `,publicConfig: {domain_contains: "."}`
+	} else {
+		isGateway = ""
+	}
 
 	farmID := r.URL.Query().Get("farm_id")
 	isSpecificFarm := ""
 	if farmID != "" {
-		isSpecificFarm = fmt.Sprintf(",where:{farmId_eq:%s}", farmID)
+		isSpecificFarm = fmt.Sprintf(",farmId_eq:%s", farmID)
 	} else {
 		isSpecificFarm = ""
 	}
@@ -161,6 +172,6 @@ func (a *App) handleRequestsQueryParams(r *http.Request) (*http.Request, error) 
 	ctx = context.WithValue(ctx, specificFarmKey{}, isSpecificFarm)
 	ctx = context.WithValue(ctx, offsetKey{}, offset)
 	ctx = context.WithValue(ctx, maxResultKey{}, maxResult)
-
+	ctx = context.WithValue(ctx, isGatewayKey{}, isGateway)
 	return r.WithContext(ctx), nil
 }
