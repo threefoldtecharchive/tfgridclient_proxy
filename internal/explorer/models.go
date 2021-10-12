@@ -28,6 +28,9 @@ type specificFarmKey struct{}
 // MaxResultKey is the type holds the request context
 type maxResultKey struct{}
 
+// isGatewayKey is the type holds the request context
+type isGatewayKey struct{}
+
 // NodeTwinID is the node twin ID to unmarshal json in it
 type nodeTwinID struct {
 	TwinID uint32 `json:"twinId"`

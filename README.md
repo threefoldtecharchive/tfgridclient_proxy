@@ -149,7 +149,64 @@ Interact with TFgridDB using rest APIs
         .
   ```
 
-### `/nodes/<node-id>`
+### `/gateways`
+
+- Bring all gateways information and public configurations and domains
+
+    Example
+
+    ```json
+    // 20211012115620
+    // http://localhost:8080/gateways?max_result=1
+
+      {
+        "data": {
+          "nodes": [
+            {
+              "version": 19,
+              "id": "a5UM_zebCN-",
+              "nodeId": 1,
+              "farmId": 1,
+              "twinId": 4,
+              "country": "BE",
+              "gridVersion": 1,
+              "city": "Unknown",
+              "uptime": 594154,
+              "created": 1633094058,
+              "farmingPolicyId": 1,
+              "updatedAt": "2021-10-07T14:28:36.715Z",
+              "cru": "24",
+              "mru": "202802958336",
+              "sru": "512110190592",
+              "hru": "9001778946048",
+              "publicConfig": {
+                "domain": "gent01.devnet.grid.tf",
+                "gw4": "185.206.122.1",
+                "gw6": "<nil>",
+                "ipv4": "185.206.122.31/24",
+                "ipv6": "<nil>"
+              }
+            }
+          ]
+        }
+      }
+    ```
+
+- Query params
+
+  - farm_id:
+
+    select nodes from specific farm using farm id, example: `?farm_id=1`
+  
+  - page:
+
+    default view is for 50 nodes and paginated to make it faster and easier to parse, example: `?page=1`
+  
+  - max_result:
+
+    default max result for page, example: ``?max_result=50`
+
+### `/nodes/<node-id>` or `/gateways/<node-id>`
 
 - Bring the node active used and total resources
 
