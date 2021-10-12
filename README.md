@@ -15,6 +15,7 @@ Interact with TFgridDB using rest APIs
 
 - Start the msgbus with your twin ID
 - Then to run `go run cmds/proxy_server/main.go`
+- To run without certificate use `go run cmds/proxy_server/main.go -no-cert`
 - To build `GIT_COMMIT=$(git rev-list -1 HEAD) && go build -ldflags "-X main.GitCommit=$GIT_COMMIT" cmds/proxy_server/main.go`
 - Then visit `http://localhost:8080/<endpoint>`
 
