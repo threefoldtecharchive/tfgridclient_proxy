@@ -34,6 +34,7 @@ type flags struct {
 	CA           string
 	certCacheDir string
 	version      bool
+	nocert       bool
 }
 
 func main() {
@@ -48,6 +49,7 @@ func main() {
 	flag.StringVar(&f.redis, "redis", ":6379", "redis url")
 	flag.BoolVar(&f.version, "v", false, "shows the package version")
 	flag.StringVar(&f.certCacheDir, "cert-cache-dir", CertDefaultCacheDir, "path to store generated certs in")
+	flag.BoolVar(&f.nocert, "no-cert", false, "start the server without certificate")
 	flag.Parse()
 
 	// shows version and exit
@@ -75,6 +77,18 @@ func main() {
 }
 
 func app(s *http.Server, f flags) error {
+
+	if f.nocert {
+		log.Info().Str("listening on", f.address).Msg("Server started ...")
+		if err := s.ListenAndServe(); err != nil {
+			if err == http.ErrServerClosed {
+				log.Info().Msg("server stopped gracefully")
+			} else {
+				log.Error().Err(err).Msg("server stopped unexpectedly")
+			}
+		}
+		return nil
+	}
 
 	config := rmbproxy.CertificateConfig{
 		Domain:   f.domain,
