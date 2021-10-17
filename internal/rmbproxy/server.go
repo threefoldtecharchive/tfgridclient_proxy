@@ -108,11 +108,14 @@ func (a *App) getResult(w http.ResponseWriter, r *http.Request) {
 
 	c, err := a.NewTwinClient(twinID)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create mux server")
+		log.Error().Err(err).Msg("failed to create twin client")
+		errorReply(w, http.StatusInternalServerError, "failed to create twin client")
+		return
 	}
 
 	data, err := c.GetResult(reqBody)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to get result")
 		errorReply(w, http.StatusBadRequest, err.Error())
 		return
 	}
