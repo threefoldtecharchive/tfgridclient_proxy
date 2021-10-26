@@ -3,7 +3,7 @@ package rmbproxy
 import (
 	"bytes"
 
-	"github.com/threefoldtech/zos/pkg/substrate"
+	"github.com/threefoldtech/substrate-client"
 )
 
 // MessageIdentifier to get the specific result
