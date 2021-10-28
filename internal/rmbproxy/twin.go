@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/threefoldtech/zos/pkg/substrate"
+	"github.com/threefoldtech/substrate-client"
 )
 
 func submitURL(twinIP string) string {

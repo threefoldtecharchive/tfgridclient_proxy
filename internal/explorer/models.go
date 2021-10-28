@@ -9,7 +9,7 @@ import (
 )
 
 // DefaultExplorerURL is the default explorer graphql url
-const DefaultExplorerURL string = "https://tfchain.dev.threefold.io/graphql/"
+const DefaultExplorerURL string = "https://tfchain.dev.threefold.io/graphql/graphql"
 
 // App is the main app objects
 type App struct {
@@ -27,6 +27,9 @@ type specificFarmKey struct{}
 
 // MaxResultKey is the type holds the request context
 type maxResultKey struct{}
+
+// isGatewayKey is the type holds the request context
+type isGatewayKey struct{}
 
 // NodeTwinID is the node twin ID to unmarshal json in it
 type nodeTwinID struct {
