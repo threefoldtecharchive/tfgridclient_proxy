@@ -1,9 +1,203 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "grid proxy server has the main methods to list farms, nodes, node details in the grid.",
+        "title": "Grid Proxy Server API",
+        "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
     },
+    "host": "localhost:8080",
+    "basePath": "/",
     "paths": {
+        "/farms": {
+            "get": {
+                "description": "Get all farms on the grid from graphql, It has pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show farms on the grid",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max result per page",
+                        "name": "max_result",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/explorer.FarmResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/gateways": {
+            "get": {
+                "description": "Get all nodes on the grid from graphql, It has pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show nodes on the grid",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max result per page",
+                        "name": "max_result",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Get nodes for specific farm",
+                        "name": "farm_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/explorer.nodesResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/gateways/{node_id}": {
+            "get": {
+                "description": "Get all details for specific node hardware, capacity, DMI, hypervisor",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show the details for specific node",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Node ID",
+                        "name": "node_id",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/explorer.NodeInfo"
+                        }
+                    }
+                }
+            }
+        },
+        "/nodes": {
+            "get": {
+                "description": "Get all nodes on the grid from graphql, It has pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show nodes on the grid",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max result per page",
+                        "name": "max_result",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Get nodes for specific farm",
+                        "name": "farm_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/explorer.nodesResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/nodes/{node_id}": {
+            "get": {
+                "description": "Get all details for specific node hardware, capacity, DMI, hypervisor",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show the details for specific node",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Node ID",
+                        "name": "node_id",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/explorer.NodeInfo"
+                        }
+                    }
+                }
+            }
+        },
         "/ping": {
             "get": {
                 "description": "ping the server to check if it running",
@@ -112,6 +306,291 @@
         }
     },
     "definitions": {
+        "dmi.DMI": {
+            "type": "object",
+            "properties": {
+                "sections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dmi.Section"
+                    }
+                },
+                "tooling": {
+                    "$ref": "#/definitions/dmi.Tooling"
+                }
+            }
+        },
+        "dmi.PropertyData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "dmi.Section": {
+            "type": "object",
+            "properties": {
+                "handleline": {
+                    "type": "string"
+                },
+                "subsections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dmi.SubSection"
+                    }
+                },
+                "typenum": {
+                    "type": "integer"
+                },
+                "typestr": {
+                    "type": "string"
+                }
+            }
+        },
+        "dmi.SubSection": {
+            "type": "object",
+            "properties": {
+                "properties": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/dmi.PropertyData"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "dmi.Tooling": {
+            "type": "object",
+            "properties": {
+                "aggregator": {
+                    "type": "string"
+                },
+                "decoder": {
+                    "type": "string"
+                }
+            }
+        },
+        "explorer.FarmResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/explorer.farmData"
+                }
+            }
+        },
+        "explorer.NodeInfo": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "$ref": "#/definitions/explorer.capacityResult"
+                },
+                "dmi": {
+                    "$ref": "#/definitions/dmi.DMI"
+                },
+                "hypervisor": {
+                    "type": "string"
+                }
+            }
+        },
+        "explorer.capacityResult": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "$ref": "#/definitions/gridtypes.Capacity"
+                },
+                "used": {
+                    "$ref": "#/definitions/gridtypes.Capacity"
+                }
+            }
+        },
+        "explorer.farm": {
+            "type": "object",
+            "properties": {
+                "farmId": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pricingPolicyId": {
+                    "type": "integer"
+                },
+                "stellarAddress": {
+                    "type": "string"
+                },
+                "twinId": {
+                    "type": "integer"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "explorer.farmData": {
+            "type": "object",
+            "properties": {
+                "farms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/explorer.farm"
+                    }
+                },
+                "publicIps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/explorer.publicIP"
+                    }
+                }
+            }
+        },
+        "explorer.node": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "integer"
+                },
+                "cru": {
+                    "type": "string"
+                },
+                "farmId": {
+                    "type": "integer"
+                },
+                "farmingPolicyId": {
+                    "type": "integer"
+                },
+                "gridVersion": {
+                    "type": "integer"
+                },
+                "hru": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mru": {
+                    "type": "string"
+                },
+                "nodeId": {
+                    "type": "integer"
+                },
+                "publicConfig": {
+                    "$ref": "#/definitions/explorer.publicConfig"
+                },
+                "sru": {
+                    "type": "string"
+                },
+                "state": {
+                    "description": "added node state field for up or down",
+                    "type": "string"
+                },
+                "twinId": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "uptime": {
+                    "type": "integer"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "explorer.nodes": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/explorer.node"
+                    }
+                }
+            }
+        },
+        "explorer.nodesResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/explorer.nodes"
+                }
+            }
+        },
+        "explorer.publicConfig": {
+            "type": "object",
+            "properties": {
+                "domain": {
+                    "type": "string"
+                },
+                "gw4": {
+                    "type": "string"
+                },
+                "gw6": {
+                    "type": "string"
+                },
+                "ipv4": {
+                    "type": "string"
+                },
+                "ipv6": {
+                    "type": "string"
+                }
+            }
+        },
+        "explorer.publicIP": {
+            "type": "object",
+            "properties": {
+                "contractId": {
+                    "type": "integer"
+                },
+                "farmId": {
+                    "type": "string"
+                },
+                "gateway": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                }
+            }
+        },
+        "gridtypes.Capacity": {
+            "type": "object",
+            "properties": {
+                "cru": {
+                    "type": "integer"
+                },
+                "hru": {
+                    "type": "integer"
+                },
+                "ipv4u": {
+                    "type": "integer"
+                },
+                "mru": {
+                    "type": "integer"
+                },
+                "sru": {
+                    "type": "integer"
+                }
+            }
+        },
         "rmbproxy.Message": {
             "type": "object",
             "properties": {
@@ -125,8 +604,7 @@
                 "dst": {
                     "type": "array",
                     "items": {
-                        "type": "integer",
-                        "example": 2
+                        "type": "integer"
                     }
                 },
                 "err": {
