@@ -44,7 +44,7 @@ func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
 		a.lruCache.Set(nodeID, twinID, cache.DefaultExpiration)
 		return twinID, nil
 	}
-	return 0, fmt.Errorf("failed to find node ID")
+	return 0, ErrNodeNotFound
 }
 
 func (a *App) baseQuery(queryString string) (io.ReadCloser, error) {
