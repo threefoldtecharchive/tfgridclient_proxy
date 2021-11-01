@@ -184,7 +184,7 @@ func (a *App) handleRequestsQueryParams(r *http.Request) (*http.Request, error) 
 func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	twinID, err := a.getNodeTwinID(nodeID)
 	if err != nil {
-		return NodeInfo{}, ErrNodeNotFound
+		return NodeInfo{}, err
 
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*30))
