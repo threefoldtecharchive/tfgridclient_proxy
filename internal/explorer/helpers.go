@@ -12,6 +12,9 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
+	"github.com/threefoldtech/zos/client"
 )
 
 func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
@@ -41,7 +44,7 @@ func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
 		a.lruCache.Set(nodeID, twinID, cache.DefaultExpiration)
 		return twinID, nil
 	}
-	return 0, fmt.Errorf("failed to find node ID")
+	return 0, ErrNodeNotFound
 }
 
 func (a *App) baseQuery(queryString string) (io.ReadCloser, error) {
@@ -146,7 +149,7 @@ func calculateOffset(maxResult int, r *http.Request) (int, error) {
 func (a *App) handleRequestsQueryParams(r *http.Request) (*http.Request, error) {
 	isGateway := ""
 	if strings.Contains(fmt.Sprint(r.URL), "gateways") {
-		isGateway = `,publicConfig: {domain_contains: "."}`
+		isGateway = `,publicConfig: {ipv4_contains: "."}`
 	} else {
 		isGateway = ""
 	}
@@ -174,4 +177,149 @@ func (a *App) handleRequestsQueryParams(r *http.Request) (*http.Request, error) 
 	ctx = context.WithValue(ctx, maxResultKey{}, maxResult)
 	ctx = context.WithValue(ctx, isGatewayKey{}, isGateway)
 	return r.WithContext(ctx), nil
+}
+
+// fetchNodeData is a helper method that fetches nodes data over rmb
+// returns the node capacity, hypervisor and dmi
+func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
+	twinID, err := a.getNodeTwinID(nodeID)
+	if err != nil {
+		return NodeInfo{}, err
+
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*30))
+	defer cancel()
+	nodeClient := client.NewNodeClient(twinID, a.rmb)
+	NodeCapacity, UsedCapacity, err := nodeClient.Counters(ctx)
+	if err != nil {
+		return NodeInfo{}, errors.Wrap(err, "could not get node capacity")
+	}
+
+	dmi, err := nodeClient.SystemDMI(ctx)
+	if err != nil {
+		return NodeInfo{}, errors.Wrap(err, "could not get node DMI info")
+	}
+
+	hypervisor, err := nodeClient.SystemHypervisor(ctx)
+	if err != nil {
+		return NodeInfo{}, errors.Wrap(err, "could not get node hypervisor info")
+	}
+
+	capacity := capacityResult{}
+	capacity.Total = NodeCapacity
+	capacity.Used = UsedCapacity
+
+	return NodeInfo{
+		Capacity:   capacity,
+		DMI:        dmi,
+		Hypervisor: hypervisor,
+	}, nil
+
+}
+
+// getNodeData is a helper function that wraps fetch node data
+// it caches the results in redis to save time
+func (a *App) getNodeData(nodeID string) (string, error) {
+	value, _ := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
+
+	// No value, fetch data from the node
+	if value == "" {
+		nodeInfo, err := a.fetchNodeData(nodeID)
+		if errors.Is(err, ErrNodeNotFound) {
+			return "", ErrNodeNotFound
+		} else if err != nil {
+			return "", ErrBadGateway
+		}
+
+		// Save value in redis
+		// caching for 30 mins
+		marshalledInfo, err := json.Marshal(nodeInfo)
+		if err != nil {
+			log.Error().Err(err).Msg("could not marshal node info")
+			return "", errors.Wrap(err, "internal server error")
+		}
+
+		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 30*60)
+		if err != nil {
+			log.Warn().Err(err).Msg("could not cache data in redis")
+		}
+		value = string(marshalledInfo)
+	}
+	return value, nil
+}
+
+// getAllNodesIDs is a helper method to only list all nodes ids
+func (a *App) getAllNodesIDs() (nodeIDResult, error) {
+	queryString := `
+	{
+		nodes{
+			nodeId
+		}    
+	}
+	`
+	nodesIds := nodeIDResult{}
+	err := a.query(queryString, &nodesIds)
+	if err != nil {
+		return nodeIDResult{}, fmt.Errorf("failed to query nodes %w", err)
+	}
+	return nodesIds, nil
+}
+
+// cacheNodesInfo is a helper method that caches nodes data into redis
+// it runs at the begining of the application and every 30 mins
+func (a *App) cacheNodesInfo() {
+	nodeIds, err := a.getAllNodesIDs()
+	if err != nil {
+		log.Error().Err(err).Msg("failed to query nodes")
+	}
+
+	for i, nid := range nodeIds.Data.NodeResult {
+		log.Debug().Msg(fmt.Sprintf("%d:fetching node: %d", i+1, nid.NodeID))
+		_, err := a.getNodeData(fmt.Sprint(nid.NodeID))
+		if err != nil {
+			log.Error().Err(err).Msg(fmt.Sprintf("could not fetch node data %d", nid.NodeID))
+		}
+	}
+	log.Debug().Msg("Fetching nodes completed, next fetch will be in 30 minutes")
+}
+
+// getAllNodes is a helper method to list all nodes data and set it to the proper struct
+func (a *App) getAllNodes(maxResult int, pageOffset int, isSpecificFarm string, isGateway string) (nodesResponse, error) {
+
+	queryString := fmt.Sprintf(`
+	{
+		nodes(limit:%d,offset:%d, where:{%s%s}){
+			version          
+			id
+			nodeId        
+			farmId          
+			twinId          
+			country
+			gridVersion  
+			city         
+			uptime           
+			created          
+			farmingPolicyId
+			updatedAt
+			cru
+			mru
+			sru
+			hru
+		publicConfig{
+			domain
+			gw4
+			gw6
+			ipv4
+			ipv6
+		  }
+		}
+	}
+	`, maxResult, pageOffset, isSpecificFarm, isGateway)
+
+	nodes := nodesResponse{}
+	err := a.query(queryString, &nodes)
+	if err != nil {
+		return nodesResponse{}, fmt.Errorf("failed to query nodes %w", err)
+	}
+	return nodes, nil
 }
