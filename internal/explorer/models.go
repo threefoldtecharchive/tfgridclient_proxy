@@ -112,3 +112,30 @@ type nodeIDData struct {
 type nodeIDResult struct {
 	Data nodeIDData `json:"data"`
 }
+
+type farm struct {
+	Name            string `json:"name"`
+	FarmID          int    `json:"farmId"`
+	TwinID          int    `json:"twinId"`
+	Version         int    `json:"version"`
+	PricingPolicyID int    `json:"pricingPolicyId"`
+	StellarAddress  string `json:"stellarAddress"`
+}
+
+type publicIP struct {
+	ID         string `json:"id"`
+	IP         string `json:"ip"`
+	FarmID     string `json:"farmId"`
+	ContractID int    `json:"contractId"`
+	Gateway    string `json:"gateway"`
+}
+
+type farmData struct {
+	Farms     []farm     `json:"farms"`
+	PublicIps []publicIP `json:"publicIps"`
+}
+
+// FarmResult is to unmarshal json in it
+type FarmResult struct {
+	Data farmData `json:"data"`
+}

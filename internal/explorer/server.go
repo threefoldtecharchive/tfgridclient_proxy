@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
@@ -25,6 +26,16 @@ var (
 	ErrBadGateway = errors.New("bad gateway")
 )
 
+// listFarms godoc
+// @Summary Show farms on the grid
+// @Description Get all farms on the grid from graphql, It has pagination
+// @Tags GridProxy
+// @Accept  json
+// @Produce  json
+// @Param page query int false "Page number"
+// @Param max_result query int false "Max result per page"
+// @Success 200 {object} FarmResult
+// @Router /farms [get]
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
@@ -65,6 +76,18 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// listNodes godoc
+// @Summary Show nodes on the grid
+// @Description Get all nodes on the grid from graphql, It has pagination
+// @Tags GridProxy
+// @Accept  json
+// @Produce  json
+// @Param page query int false "Page number"
+// @Param max_result query int false "Max result per page"
+// @Param farm_id query int false "Get nodes for specific farm"
+// @Success 200 {object} nodesResponse
+// @Router /nodes [get]
+// @Router /gateways [get]
 func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
@@ -110,6 +133,16 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(result))
 }
 
+// getNode godoc
+// @Summary Show the details for specific node
+// @Description Get all details for specific node hardware, capacity, DMI, hypervisor
+// @Tags GridProxy
+// @Param node_id path int false "Node ID"
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} NodeInfo
+// @Router /nodes/{node_id} [get]
+// @Router /gateways/{node_id} [get]
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 
 	nodeID := mux.Vars(r)["node_id"]
@@ -140,6 +173,13 @@ func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
 }
 
 // Setup is the server and do initial configurations
+// @title Grid Proxy Server API
+// @version 1.0
+// @description grid proxy server has the main methods to list farms, nodes, node details in the grid.
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @host localhost:8080
+// @BasePath /
 func Setup(router *mux.Router, explorer string, redisServer string) {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
@@ -175,6 +215,7 @@ func Setup(router *mux.Router, explorer string, redisServer string) {
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)
 	router.HandleFunc("/gateways/{node_id:[0-9]+}", a.getNode)
 	router.HandleFunc("/", a.indexPage)
+	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 	// Run node caching every 30 minutes
 	go a.cacheNodesInfo()
 	job := cron.New()

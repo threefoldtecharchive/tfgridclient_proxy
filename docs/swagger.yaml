@@ -1,4 +1,190 @@
+basePath: /
 definitions:
+  dmi.DMI:
+    properties:
+      sections:
+        items:
+          $ref: '#/definitions/dmi.Section'
+        type: array
+      tooling:
+        $ref: '#/definitions/dmi.Tooling'
+    type: object
+  dmi.PropertyData:
+    properties:
+      items:
+        items:
+          type: string
+        type: array
+      value:
+        type: string
+    type: object
+  dmi.Section:
+    properties:
+      handleline:
+        type: string
+      subsections:
+        items:
+          $ref: '#/definitions/dmi.SubSection'
+        type: array
+      typenum:
+        type: integer
+      typestr:
+        type: string
+    type: object
+  dmi.SubSection:
+    properties:
+      properties:
+        additionalProperties:
+          $ref: '#/definitions/dmi.PropertyData'
+        type: object
+      title:
+        type: string
+    type: object
+  dmi.Tooling:
+    properties:
+      aggregator:
+        type: string
+      decoder:
+        type: string
+    type: object
+  explorer.FarmResult:
+    properties:
+      data:
+        $ref: '#/definitions/explorer.farmData'
+    type: object
+  explorer.NodeInfo:
+    properties:
+      capacity:
+        $ref: '#/definitions/explorer.capacityResult'
+      dmi:
+        $ref: '#/definitions/dmi.DMI'
+      hypervisor:
+        type: string
+    type: object
+  explorer.capacityResult:
+    properties:
+      total:
+        $ref: '#/definitions/gridtypes.Capacity'
+      used:
+        $ref: '#/definitions/gridtypes.Capacity'
+    type: object
+  explorer.farm:
+    properties:
+      farmId:
+        type: integer
+      name:
+        type: string
+      pricingPolicyId:
+        type: integer
+      stellarAddress:
+        type: string
+      twinId:
+        type: integer
+      version:
+        type: integer
+    type: object
+  explorer.farmData:
+    properties:
+      farms:
+        items:
+          $ref: '#/definitions/explorer.farm'
+        type: array
+      publicIps:
+        items:
+          $ref: '#/definitions/explorer.publicIP'
+        type: array
+    type: object
+  explorer.node:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      created:
+        type: integer
+      cru:
+        type: string
+      farmId:
+        type: integer
+      farmingPolicyId:
+        type: integer
+      gridVersion:
+        type: integer
+      hru:
+        type: string
+      id:
+        type: string
+      mru:
+        type: string
+      nodeId:
+        type: integer
+      publicConfig:
+        $ref: '#/definitions/explorer.publicConfig'
+      sru:
+        type: string
+      state:
+        description: added node state field for up or down
+        type: string
+      twinId:
+        type: integer
+      updatedAt:
+        type: string
+      uptime:
+        type: integer
+      version:
+        type: integer
+    type: object
+  explorer.nodes:
+    properties:
+      nodes:
+        items:
+          $ref: '#/definitions/explorer.node'
+        type: array
+    type: object
+  explorer.nodesResponse:
+    properties:
+      data:
+        $ref: '#/definitions/explorer.nodes'
+    type: object
+  explorer.publicConfig:
+    properties:
+      domain:
+        type: string
+      gw4:
+        type: string
+      gw6:
+        type: string
+      ipv4:
+        type: string
+      ipv6:
+        type: string
+    type: object
+  explorer.publicIP:
+    properties:
+      contractId:
+        type: integer
+      farmId:
+        type: string
+      gateway:
+        type: string
+      id:
+        type: string
+      ip:
+        type: string
+    type: object
+  gridtypes.Capacity:
+    properties:
+      cru:
+        type: integer
+      hru:
+        type: integer
+      ipv4u:
+        type: integer
+      mru:
+        type: integer
+      sru:
+        type: integer
+    type: object
   rmbproxy.Message:
     properties:
       cmd:
@@ -9,7 +195,6 @@ definitions:
       dst:
         items:
           type: integer
-          example: 2
         type: array
       err:
         type: string
@@ -41,9 +226,137 @@ definitions:
         example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
         type: string
     type: object
+host: localhost:8080
 info:
   contact: {}
+  description: grid proxy server has the main methods to list farms, nodes, node details
+    in the grid.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Grid Proxy Server API
+  version: "1.0"
 paths:
+  /farms:
+    get:
+      consumes:
+      - application/json
+      description: Get all farms on the grid from graphql, It has pagination
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Max result per page
+        in: query
+        name: max_result
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/explorer.FarmResult'
+      summary: Show farms on the grid
+      tags:
+      - GridProxy
+  /gateways:
+    get:
+      consumes:
+      - application/json
+      description: Get all nodes on the grid from graphql, It has pagination
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Max result per page
+        in: query
+        name: max_result
+        type: integer
+      - description: Get nodes for specific farm
+        in: query
+        name: farm_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/explorer.nodesResponse'
+      summary: Show nodes on the grid
+      tags:
+      - GridProxy
+  /gateways/{node_id}:
+    get:
+      consumes:
+      - application/json
+      description: Get all details for specific node hardware, capacity, DMI, hypervisor
+      parameters:
+      - description: Node ID
+        in: path
+        name: node_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/explorer.NodeInfo'
+      summary: Show the details for specific node
+      tags:
+      - GridProxy
+  /nodes:
+    get:
+      consumes:
+      - application/json
+      description: Get all nodes on the grid from graphql, It has pagination
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Max result per page
+        in: query
+        name: max_result
+        type: integer
+      - description: Get nodes for specific farm
+        in: query
+        name: farm_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/explorer.nodesResponse'
+      summary: Show nodes on the grid
+      tags:
+      - GridProxy
+  /nodes/{node_id}:
+    get:
+      consumes:
+      - application/json
+      description: Get all details for specific node hardware, capacity, DMI, hypervisor
+      parameters:
+      - description: Node ID
+        in: path
+        name: node_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/explorer.NodeInfo'
+      summary: Show the details for specific node
+      tags:
+      - GridProxy
   /ping:
     get:
       consumes:
