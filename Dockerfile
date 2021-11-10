@@ -45,7 +45,7 @@ RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.1/zinit -O 
 
 ENV TWIN=7
 ENV SERVER_IP="0.0.0.0:8080"
-ENV EXPLORER_URL="https://explorer.devnet.grid.tf/graphql/"
+ENV EXPLORER_URL="https://graphql.dev.grid.tf/graphql"
 ENV REDIS_URL="localhost:6379"
 
 EXPOSE 8080
