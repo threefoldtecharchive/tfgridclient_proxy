@@ -19,6 +19,21 @@ Interact with TFgridDB using rest APIs
 - To build `CGO_ENABLED=0 && GIT_COMMIT=$(git describe --tags --abbrev=0) && go build -ldflags '-X main.GitCommit=$GIT_COMMIT -extldflags "-static"'  cmds/proxy_server/main.go`
 - Then visit `http://localhost:8080/<endpoint>`
 
+## Production Run
+
+- Start the msgbus with your twin ID [download and more info](https://github.com/threefoldtech/go-rmb)
+- Download the latest binary [here](https://github.com/threefoldtech/tfgridclient_proxy/releases)
+
+```bash
+./server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory  --substrate wss://tfchain.dev.threefold.io/ws --explorer https://graphql.dev.grid.tf/graphql
+```
+
+- domain: the host domain which will generate ssl certificate to.
+- email: the mail used to run generate the ssl certificate.
+- ca: certificate authority server url
+- substrate: substrate websocket link.
+- explorer: explorer url which will get queries from.
+
 ## Endpoints
 
 ### `/farms`
