@@ -149,7 +149,7 @@ func calculateOffset(maxResult int, r *http.Request) (int, error) {
 func (a *App) handleRequestsQueryParams(r *http.Request) (*http.Request, error) {
 	isGateway := ""
 	if strings.Contains(fmt.Sprint(r.URL), "gateways") {
-		isGateway = `,publicConfig: {domain_contains: "."}`
+		isGateway = `,publicConfig_json: {domain_contains:"."}`
 	} else {
 		isGateway = ""
 	}
