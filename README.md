@@ -241,7 +241,7 @@ To build & run dockerfile
 
 ```bash
 docker build -t threefoldtech/gridproxy .
-docker run --name ellol -e TWIN=7 -e SERVER_IP="0.0.0.0:8080" -e EXPLORER_URL="https://explorer.devnet.grid.tf/graphql/" -e REDIS_URL="localhost:6379" --cap-add=NET_ADMIN threefoldtech/gridproxy
+docker run --name ellol -e TWIN=7 -e SERVER_IP="0.0.0.0:8080" -e EXPLORER_URL="https://graphql.dev.grid.tf/graphql" -e REDIS_URL="localhost:6379" --cap-add=NET_ADMIN threefoldtech/gridproxy
 ```
 
 - After it runs you should update your twin's with yggdrasail ip on [polkadot](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fexplorer.devnet.grid.tf%2Fws#/extrinsics)
