@@ -187,7 +187,7 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 		return NodeInfo{}, err
 
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*30))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*20))
 	defer cancel()
 	nodeClient := client.NewNodeClient(twinID, a.rmb)
 	NodeCapacity, UsedCapacity, err := nodeClient.Counters(ctx)
@@ -219,11 +219,11 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 
 // getNodeData is a helper function that wraps fetch node data
 // it caches the results in redis to save time
-func (a *App) getNodeData(nodeID string) (string, error) {
+func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 	value, _ := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
 
 	// No value, fetch data from the node
-	if value == "" {
+	if value == "" || force {
 		nodeInfo, err := a.fetchNodeData(nodeID)
 		if errors.Is(err, ErrNodeNotFound) {
 			return "", ErrNodeNotFound
@@ -232,14 +232,14 @@ func (a *App) getNodeData(nodeID string) (string, error) {
 		}
 
 		// Save value in redis
-		// caching for 30 mins
+		// caching for 40 mins
 		marshalledInfo, err := json.Marshal(nodeInfo)
 		if err != nil {
 			log.Error().Err(err).Msg("could not marshal node info")
 			return "", errors.Wrap(err, "internal server error")
 		}
 
-		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 30*60)
+		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 40*60)
 		if err != nil {
 			log.Warn().Err(err).Msg("could not cache data in redis")
 		}
@@ -275,12 +275,12 @@ func (a *App) cacheNodesInfo() {
 
 	for i, nid := range nodeIds.Data.NodeResult {
 		log.Debug().Msg(fmt.Sprintf("%d:fetching node: %d", i+1, nid.NodeID))
-		_, err := a.getNodeData(fmt.Sprint(nid.NodeID))
+		_, err := a.getNodeData(fmt.Sprint(nid.NodeID), true)
 		if err != nil {
 			log.Error().Err(err).Msg(fmt.Sprintf("could not fetch node data %d", nid.NodeID))
 		}
 	}
-	log.Debug().Msg("Fetching nodes completed, next fetch will be in 30 minutes")
+	log.Debug().Msg("Fetching nodes completed, next fetch will be in 15 minutes")
 }
 
 // getAllNodes is a helper method to list all nodes data and set it to the proper struct

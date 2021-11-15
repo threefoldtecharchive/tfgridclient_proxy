@@ -146,7 +146,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 
 	nodeID := mux.Vars(r)["node_id"]
-	nodeData, err := a.getNodeData(nodeID)
+	nodeData, err := a.getNodeData(nodeID, false)
 	if errors.Is(err, ErrNodeNotFound) {
 		// return not found 404
 		w.WriteHeader(http.StatusNotFound)
@@ -219,6 +219,6 @@ func Setup(router *mux.Router, explorer string, redisServer string) {
 	// Run node caching every 30 minutes
 	go a.cacheNodesInfo()
 	job := cron.New()
-	job.AddFunc("@every 30m", a.cacheNodesInfo)
+	job.AddFunc("@every 15m", a.cacheNodesInfo)
 	job.Start()
 }
