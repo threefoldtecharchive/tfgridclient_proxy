@@ -226,11 +226,19 @@ func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 	if value == "" || force {
 		nodeInfo, err := a.fetchNodeData(nodeID)
 		if errors.Is(err, ErrNodeNotFound) {
+			// delete redis key
+			err = a.DeleteRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
+			if err != nil {
+				log.Warn().Err(err).Msg("could not delete key in redis")
+			}
 			return "", ErrNodeNotFound
 		} else if err != nil {
+			err = a.DeleteRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
+			if err != nil {
+				log.Warn().Err(err).Msg("could not delete key in redis")
+			}
 			return "", ErrBadGateway
 		}
-
 		// Save value in redis
 		// caching for 40 mins
 		marshalledInfo, err := json.Marshal(nodeInfo)
