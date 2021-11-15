@@ -31,3 +31,16 @@ func (a *App) GetRedisKey(key string) (string, error) {
 
 	return s, nil
 }
+
+// DeleteRedisKey to delete a key from redis
+func (a *App) DeleteRedisKey(key string) error {
+	conn := a.redis.Get()
+	defer conn.Close()
+
+	_, err := redis.Int64(conn.Do("DEL", key))
+	if err != nil {
+		return fmt.Errorf("failed to delete key %s : %w", key, err)
+	}
+
+	return nil
+}
