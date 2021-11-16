@@ -55,14 +55,12 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 			farmId
 			pricingPolicyId
 			stellarAddress
-		}
-		publicIps{
-			id
-			ip
-			farmId
-			contractId
-			gateway
-			
+			publicIPs{
+				id
+				ip
+				contractId
+				gateway
+			}
 		}
 	}
 	`, maxResult, pageOffset)
