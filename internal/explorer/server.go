@@ -26,6 +26,10 @@ var (
 	ErrBadGateway = errors.New("bad gateway")
 )
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
 // listFarms godoc
 // @Summary Show farms on the grid
 // @Description Get all farms on the grid from graphql, It has pagination
@@ -37,6 +41,7 @@ var (
 // @Success 200 {object} FarmResult
 // @Router /farms [get]
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -89,6 +94,7 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 // @Router /nodes [get]
 // @Router /gateways [get]
 func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -144,6 +150,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 // @Router /nodes/{node_id} [get]
 // @Router /gateways/{node_id} [get]
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 
 	nodeID := mux.Vars(r)["node_id"]
 	nodeData, err := a.getNodeData(nodeID)
