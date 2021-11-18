@@ -21,18 +21,55 @@ Interact with TFgridDB using rest APIs
 
 ## Production Run
 
-- Start the msgbus with your twin ID [download and more info](https://github.com/threefoldtech/go-rmb)
+- Start the msgbus systemd service with a machine twinId linked to its yggdrasil IP or public ip if there, [download and more info](https://github.com/threefoldtech/go-rmb)
 - Download the latest binary [here](https://github.com/threefoldtech/tfgridclient_proxy/releases)
-
+- add the execution permission to the binary and move it to the bin directory
+  ```bash
+  chmod +x ./gridproxy-server
+  mv ./gridproxy-server /usr/local/bin/gridproxy-server
+  ```
+- Add a new systemd service
 ```bash
-./server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory  --substrate wss://tfchain.dev.threefold.io/ws --explorer https://graphql.dev.grid.tf/graphql
+# create msgbus service
+cat << EOF > /etc/systemd/system/gridproxy-server.service
+[Unit]
+Description=grid proxy server
+After=network.target
+After=msgbus.service
+
+[Service]
+ExecStart=gridproxy-server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory  --substrate wss://tfchain.dev.grid.tf/ws --explorer https://graphql.dev.grid.tf/graphql
+Type=simple
+Restart=always
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
+Alias=gridproxy.service
+EOF
 ```
 
-- domain: the host domain which will generate ssl certificate to.
-- email: the mail used to run generate the ssl certificate.
-- ca: certificate authority server url
-- substrate: substrate websocket link.
-- explorer: explorer url which will get queries from.
+- enable the service
+  ```
+   systemctl enable gridproxy.service
+  ```
+- start the service
+  ```
+  systemctl start gridproxy.service
+  ```
+
+- check the status
+
+  ```
+  systemctl status gridproxy.service
+  ```
+- The command options:
+  - domain: the host domain which will generate ssl certificate to.
+  - email: the mail used to run generate the ssl certificate.
+  - ca: certificate authority server url
+  - substrate: substrate websocket link.
+  - explorer: explorer url which will get queries from.
 
 ## Endpoints
 
