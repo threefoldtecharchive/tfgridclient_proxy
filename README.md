@@ -38,7 +38,7 @@ After=network.target
 After=msgbus.service
 
 [Service]
-ExecStart=gridproxy-server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory  --substrate wss://tfchain.dev.grid.tf/ws --explorer https://graphql.dev.grid.tf/graphql
+ExecStart=gridproxy-server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory --substrate wss://tfchain.dev.grid.tf/ws --explorer https://graphql.dev.grid.tf/graphql
 Type=simple
 Restart=always
 User=root
@@ -70,6 +70,16 @@ EOF
   - ca: certificate authority server url
   - substrate: substrate websocket link.
   - explorer: explorer url which will get queries from.
+
+## To upgrade the machine
+- just replace the binary with the new one and apply
+```
+systemctl restart gridproxy-server.service
+```
+- it you have changes in the `/etc/systemd/system/gridproxy-server.service` you have to run this command first
+```
+systemctl daemon-reload
+```
 
 ## Endpoints
 
