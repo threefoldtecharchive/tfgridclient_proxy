@@ -139,3 +139,19 @@ type farmData struct {
 type FarmResult struct {
 	Data farmData `json:"data"`
 }
+
+type CountersReturnValue struct {
+	NodeCapacity gridtypes.Capacity `json:"nodeCapacity"`
+	UsedCapacity gridtypes.Capacity `json:"usedCapacity"`
+	Err          error              `json:"err"`
+}
+
+type SystemDMIReturnValue struct {
+	DMI dmi.DMI `json:"dmi"`
+	Err error   `json:"err"`
+}
+
+type SystemHypervisorReturnValue struct {
+	Hypervisor string `json:"hypervisor"`
+	Err        error  `json:"err"`
+}

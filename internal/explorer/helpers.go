@@ -179,6 +179,34 @@ func (a *App) handleRequestsQueryParams(r *http.Request) (*http.Request, error) 
 	return r.WithContext(ctx), nil
 }
 
+func (a *App) getNodeCapacity(ctx context.Context, nodeClient *client.NodeClient, c chan CountersReturnValue) {
+	cap, used, err := nodeClient.Counters(ctx)
+	capacity := CountersReturnValue{
+		NodeCapacity: cap,
+		UsedCapacity: used,
+		Err:          err,
+	}
+	c <- capacity
+}
+
+func (a *App) getSystemDMI(ctx context.Context, nodeClient *client.NodeClient, c chan SystemDMIReturnValue) {
+	dmi, err := nodeClient.SystemDMI(ctx)
+	systemDMI := SystemDMIReturnValue{
+		DMI: dmi,
+		Err: err,
+	}
+	c <- systemDMI
+}
+
+func (a *App) getSystemHypervisor(ctx context.Context, nodeClient *client.NodeClient, c chan SystemHypervisorReturnValue) {
+	hypervisor, err := nodeClient.SystemHypervisor(ctx)
+	systemHypervisor := SystemHypervisorReturnValue{
+		Hypervisor: hypervisor,
+		Err:        err,
+	}
+	c <- systemHypervisor
+}
+
 // fetchNodeData is a helper method that fetches nodes data over rmb
 // returns the node capacity, hypervisor and dmi
 func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
@@ -187,32 +215,39 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 		return NodeInfo{}, err
 
 	}
+	fmt.Println("fetchNodeData", nodeID, twinID)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*20))
 	defer cancel()
+
 	nodeClient := client.NewNodeClient(twinID, a.rmb)
-	NodeCapacity, UsedCapacity, err := nodeClient.Counters(ctx)
-	if err != nil {
-		return NodeInfo{}, errors.Wrap(err, "could not get node capacity")
-	}
+	nodeCapacity := make(chan CountersReturnValue)
 
-	dmi, err := nodeClient.SystemDMI(ctx)
-	if err != nil {
-		return NodeInfo{}, errors.Wrap(err, "could not get node DMI info")
-	}
+	go a.getNodeCapacity(ctx, nodeClient, nodeCapacity)
 
-	hypervisor, err := nodeClient.SystemHypervisor(ctx)
-	if err != nil {
-		return NodeInfo{}, errors.Wrap(err, "could not get node hypervisor info")
+	systemDMI := make(chan SystemDMIReturnValue)
+	go a.getSystemDMI(ctx, nodeClient, systemDMI)
+
+	systemHypervisor := make(chan SystemHypervisorReturnValue)
+	go a.getSystemHypervisor(ctx, nodeClient, systemHypervisor)
+
+	p := <-nodeCapacity
+	d := <-systemDMI
+	h := <-systemHypervisor
+
+	if p.Err != nil || d.Err != nil || h.Err != nil {
+		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", err)
 	}
 
 	capacity := capacityResult{}
-	capacity.Total = NodeCapacity
-	capacity.Used = UsedCapacity
-
+	capacity.Total = p.NodeCapacity
+	capacity.Used = p.UsedCapacity
+	fmt.Printf("capacity %+v\n", capacity)
+	fmt.Printf("dmi done\n")
+	fmt.Printf("hypervisor done\n")
 	return NodeInfo{
 		Capacity:   capacity,
-		DMI:        dmi,
-		Hypervisor: hypervisor,
+		DMI:        d.DMI,
+		Hypervisor: h.Hypervisor,
 	}, nil
 
 }
@@ -282,11 +317,13 @@ func (a *App) cacheNodesInfo() {
 	}
 
 	for i, nid := range nodeIds.Data.NodeResult {
-		log.Debug().Msg(fmt.Sprintf("%d:fetching node: %d", i+1, nid.NodeID))
-		_, err := a.getNodeData(fmt.Sprint(nid.NodeID), true)
-		if err != nil {
-			log.Error().Err(err).Msg(fmt.Sprintf("could not fetch node data %d", nid.NodeID))
-		}
+		go func(i int, nid nodeID) {
+			log.Debug().Msg(fmt.Sprintf("%d:fetching node: %d", i+1, nid.NodeID))
+			_, err := a.getNodeData(fmt.Sprint(nid.NodeID), true)
+			if err != nil {
+				log.Error().Err(err).Msg(fmt.Sprintf("could not fetch node data %d", nid.NodeID))
+			}
+		}(i, nid)
 	}
 	log.Debug().Msg("Fetching nodes completed, next fetch will be in 15 minutes")
 }
