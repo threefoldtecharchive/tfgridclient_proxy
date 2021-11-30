@@ -233,8 +233,14 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	d := <-systemDMI
 	h := <-systemHypervisor
 
-	if p.Err != nil || d.Err != nil || h.Err != nil {
-		return NodeInfo{}, fmt.Errorf("error fetching node data")
+	if p.Err != nil {
+		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", p.Err)
+	}
+	if d.Err != nil {
+		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", d.Err)
+	}
+	if h.Err != nil {
+		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", h.Err)
 	}
 
 	capacity := capacityResult{}
