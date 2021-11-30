@@ -179,9 +179,9 @@ func (a *App) handleRequestsQueryParams(r *http.Request) (*http.Request, error) 
 	return r.WithContext(ctx), nil
 }
 
-func (a *App) getNodeCapacity(ctx context.Context, nodeClient *client.NodeClient, c chan CountersReturnValue) {
+func (a *App) getNodeCapacity(ctx context.Context, nodeClient *client.NodeClient, c chan countersReturnValue) {
 	cap, used, err := nodeClient.Counters(ctx)
-	capacity := CountersReturnValue{
+	capacity := countersReturnValue{
 		NodeCapacity: cap,
 		UsedCapacity: used,
 		Err:          err,
@@ -189,18 +189,18 @@ func (a *App) getNodeCapacity(ctx context.Context, nodeClient *client.NodeClient
 	c <- capacity
 }
 
-func (a *App) getSystemDMI(ctx context.Context, nodeClient *client.NodeClient, c chan SystemDMIReturnValue) {
+func (a *App) getSystemDMI(ctx context.Context, nodeClient *client.NodeClient, c chan systemDMIReturnValue) {
 	dmi, err := nodeClient.SystemDMI(ctx)
-	systemDMI := SystemDMIReturnValue{
+	systemDMI := systemDMIReturnValue{
 		DMI: dmi,
 		Err: err,
 	}
 	c <- systemDMI
 }
 
-func (a *App) getSystemHypervisor(ctx context.Context, nodeClient *client.NodeClient, c chan SystemHypervisorReturnValue) {
+func (a *App) getSystemHypervisor(ctx context.Context, nodeClient *client.NodeClient, c chan systemHypervisorReturnValue) {
 	hypervisor, err := nodeClient.SystemHypervisor(ctx)
-	systemHypervisor := SystemHypervisorReturnValue{
+	systemHypervisor := systemHypervisorReturnValue{
 		Hypervisor: hypervisor,
 		Err:        err,
 	}
@@ -219,14 +219,14 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	defer cancel()
 
 	nodeClient := client.NewNodeClient(twinID, a.rmb)
-	nodeCapacity := make(chan CountersReturnValue)
+	nodeCapacity := make(chan countersReturnValue)
 
 	go a.getNodeCapacity(ctx, nodeClient, nodeCapacity)
 
-	systemDMI := make(chan SystemDMIReturnValue)
+	systemDMI := make(chan systemDMIReturnValue)
 	go a.getSystemDMI(ctx, nodeClient, systemDMI)
 
-	systemHypervisor := make(chan SystemHypervisorReturnValue)
+	systemHypervisor := make(chan systemHypervisorReturnValue)
 	go a.getSystemHypervisor(ctx, nodeClient, systemHypervisor)
 
 	p := <-nodeCapacity

@@ -140,18 +140,18 @@ type FarmResult struct {
 	Data farmData `json:"data"`
 }
 
-type CountersReturnValue struct {
+type countersReturnValue struct {
 	NodeCapacity gridtypes.Capacity `json:"nodeCapacity"`
 	UsedCapacity gridtypes.Capacity `json:"usedCapacity"`
 	Err          error              `json:"err"`
 }
 
-type SystemDMIReturnValue struct {
+type systemDMIReturnValue struct {
 	DMI dmi.DMI `json:"dmi"`
 	Err error   `json:"err"`
 }
 
-type SystemHypervisorReturnValue struct {
+type systemHypervisorReturnValue struct {
 	Hypervisor string `json:"hypervisor"`
 	Err        error  `json:"err"`
 }
