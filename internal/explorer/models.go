@@ -86,7 +86,7 @@ type node struct {
 	Sru             string       `json:"sru"`
 	Hru             string       `json:"hru"`
 	PublicConfig    publicConfig `json:"publicConfig"`
-	State           string       `json:"state"` // added node state field for up or down
+	Status          string       `json:"status"` // added node status field for up or down
 }
 
 // Nodes is struct for the whole nodes view
@@ -138,4 +138,20 @@ type farmData struct {
 // FarmResult is to unmarshal json in it
 type FarmResult struct {
 	Data farmData `json:"data"`
+}
+
+type countersReturnValue struct {
+	NodeCapacity gridtypes.Capacity
+	UsedCapacity gridtypes.Capacity
+	Err          error
+}
+
+type systemDMIReturnValue struct {
+	DMI dmi.DMI
+	Err error
+}
+
+type systemHypervisorReturnValue struct {
+	Hypervisor string
+	Err        error
 }

@@ -297,6 +297,21 @@ systemctl daemon-reload
     }
     ```
 
+### `/nodes/<node-id>/status` or `/gateways/<node-id>/status`
+
+- Bring the node status up or down
+
+    Example
+
+    ```json
+    // 20211130123101
+    // http://localhost:8080/nodes/7/status
+
+    {
+      "status": "up"
+    }
+    ```
+
 ### Dockerfile
 
 To build & run dockerfile
