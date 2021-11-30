@@ -7,7 +7,7 @@ Interact with TFgridDB using rest APIs
 ## Prerequisites
 
 1. A msgbusd instance must be running on the node. This client uses RMB (message bus) to send messages to nodes, and get the responses.
-2. A valid TwinID created using ed25519.
+2. A valid TwinID.
 3. yggdrasil service running with a valid ip assigned to the twin on polkadot.
 4. Golang compiler > 1.13 to run the grid proxy server.
 
