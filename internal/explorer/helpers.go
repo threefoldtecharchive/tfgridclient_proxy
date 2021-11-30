@@ -215,7 +215,6 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 		return NodeInfo{}, err
 
 	}
-	fmt.Println("fetchNodeData", nodeID, twinID)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*20))
 	defer cancel()
 
@@ -241,9 +240,7 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	capacity := capacityResult{}
 	capacity.Total = p.NodeCapacity
 	capacity.Used = p.UsedCapacity
-	fmt.Printf("capacity %+v\n", capacity)
-	fmt.Printf("dmi done\n")
-	fmt.Printf("hypervisor done\n")
+
 	return NodeInfo{
 		Capacity:   capacity,
 		DMI:        d.DMI,
@@ -322,6 +319,8 @@ func (a *App) cacheNodesInfo() {
 			_, err := a.getNodeData(fmt.Sprint(nid.NodeID), true)
 			if err != nil {
 				log.Error().Err(err).Msg(fmt.Sprintf("could not fetch node data %d", nid.NodeID))
+			} else {
+				log.Debug().Msg(fmt.Sprintf("node %d is fetched successfully", nid.NodeID))
 			}
 		}(i, nid)
 	}
