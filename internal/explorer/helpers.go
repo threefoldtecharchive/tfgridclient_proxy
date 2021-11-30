@@ -234,7 +234,7 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	h := <-systemHypervisor
 
 	if p.Err != nil || d.Err != nil || h.Err != nil {
-		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", err)
+		return NodeInfo{}, fmt.Errorf("error fetching node data")
 	}
 
 	capacity := capacityResult{}

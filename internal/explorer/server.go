@@ -178,9 +178,8 @@ func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
 	nodeID := mux.Vars(r)["node_id"]
 	_, err := a.getNodeData(nodeID, false)
 	if err != nil {
-		// return internal server error
 		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("{\"status\": \"down\"}"))
 	} else {
 		w.Header().Add("Content-Type", "application/json")
