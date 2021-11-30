@@ -86,7 +86,7 @@ type node struct {
 	Sru             string       `json:"sru"`
 	Hru             string       `json:"hru"`
 	PublicConfig    publicConfig `json:"publicConfig"`
-	State           string       `json:"state"` // added node state field for up or down
+	Status          string       `json:"status"` // added node status field for up or down
 }
 
 // Nodes is struct for the whole nodes view

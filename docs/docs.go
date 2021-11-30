@@ -508,8 +508,8 @@ var doc = `{
                 "sru": {
                     "type": "string"
                 },
-                "state": {
-                    "description": "added node state field for up or down",
+                "status": {
+                    "description": "added node status field for up or down",
                     "type": "string"
                 },
                 "twinId": {

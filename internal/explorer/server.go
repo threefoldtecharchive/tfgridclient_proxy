@@ -117,10 +117,10 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	for _, node := range nodes.Nodes.Data {
 		isStored, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%d", node.NodeID))
 		if err != nil {
-			node.State = "down"
+			node.Status = "down"
 		}
 		if isStored != "" {
-			node.State = "up"
+			node.Status = "up"
 		}
 		nodeList = append(nodeList, node)
 	}
@@ -172,6 +172,23 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(nodeData))
 }
 
+func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
+	nodeID := mux.Vars(r)["node_id"]
+	_, err := a.getNodeData(nodeID, false)
+	if err != nil {
+		// return internal server error
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("{\"status\": \"down\"}"))
+	} else {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{\"status\": \"up\"}"))
+	}
+}
+
 func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"))
@@ -219,6 +236,8 @@ func Setup(router *mux.Router, explorer string, redisServer string) {
 	router.HandleFunc("/gateways", a.listNodes)
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)
 	router.HandleFunc("/gateways/{node_id:[0-9]+}", a.getNode)
+	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", a.getNodeStatus)
+	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", a.getNodeStatus)
 	router.HandleFunc("/", a.indexPage)
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 	// Run node caching every 30 minutes
