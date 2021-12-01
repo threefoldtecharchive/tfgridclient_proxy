@@ -215,8 +215,7 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 		return NodeInfo{}, err
 
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*30))
-	defer cancel()
+	ctx := context.Background()
 
 	nodeClient := client.NewNodeClient(twinID, a.rmb)
 	nodeCapacity := make(chan countersReturnValue)
