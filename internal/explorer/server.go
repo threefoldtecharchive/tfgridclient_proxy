@@ -216,7 +216,7 @@ func Setup(router *mux.Router, explorer string, redisServer string) {
 		},
 	}
 
-	rmbClient, err := rmb.Default()
+	rmbClient, err := rmb.NewClient("tcp://127.0.0.1:6379", 100)
 	if err != nil {
 		log.Error().Err(err).Msg("couldn't connect to rmb")
 		return
