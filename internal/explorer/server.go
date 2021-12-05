@@ -205,8 +205,8 @@ func Setup(router *mux.Router, explorer string, redisServer string) {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
 	redis := &redis.Pool{
-		MaxIdle:   10,
-		MaxActive: 10,
+		MaxIdle:   20,
+		MaxActive: 100,
 		Dial: func() (redis.Conn, error) {
 			conn, err := redis.Dial("tcp", redisServer)
 			if err != nil {
@@ -216,12 +216,12 @@ func Setup(router *mux.Router, explorer string, redisServer string) {
 		},
 	}
 
-	rmbClient, err := rmb.NewClient("tcp://127.0.0.1:6379", 100)
+	rmbClient, err := rmb.NewClient("tcp://127.0.0.1:6379", 500)
 	if err != nil {
 		log.Error().Err(err).Msg("couldn't connect to rmb")
 		return
 	}
-	c := cache.New(10*time.Minute, 15*time.Minute)
+	c := cache.New(2*time.Minute, 3*time.Minute)
 
 	a := App{
 		explorer: explorer,
@@ -239,9 +239,9 @@ func Setup(router *mux.Router, explorer string, redisServer string) {
 	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", a.getNodeStatus)
 	router.HandleFunc("/", a.indexPage)
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
-	// Run node caching every 30 minutes
+	// Run node caching every 2 minutes
 	go a.cacheNodesInfo()
 	job := cron.New()
-	job.AddFunc("@every 15m", a.cacheNodesInfo)
+	job.AddFunc("@every 2m", a.cacheNodesInfo)
 	job.Start()
 }

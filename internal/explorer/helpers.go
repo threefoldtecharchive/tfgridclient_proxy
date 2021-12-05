@@ -311,7 +311,7 @@ func (a *App) getAllNodesIDs() (nodeIDResult, error) {
 }
 
 // cacheNodesInfo is a helper method that caches nodes data into redis
-// it runs at the begining of the application and every 30 mins
+// it runs at the begining of the application and every 2 mins
 func (a *App) cacheNodesInfo() {
 	nodeIds, err := a.getAllNodesIDs()
 	if err != nil {
