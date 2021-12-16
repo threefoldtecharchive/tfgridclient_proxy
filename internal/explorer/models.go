@@ -13,10 +13,11 @@ const DefaultExplorerURL string = "https://graphql.dev.grid.tf/graphql"
 
 // App is the main app objects
 type App struct {
-	explorer string
-	redis    *redis.Pool
-	rmb      rmb.Client
-	lruCache *cache.Cache
+	explorer       string
+	redis          *redis.Pool
+	rmb            rmb.Client
+	lruCache       *cache.Cache
+	releaseVersion string
 }
 
 // OffsetKey is the type holds the request context
