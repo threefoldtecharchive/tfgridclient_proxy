@@ -193,6 +193,12 @@ func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"))
 }
 
+func (a *App) version(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf("{\"version\": \"%s\"}", a.releaseVersion)))
+}
+
 // Setup is the server and do initial configurations
 // @title Grid Proxy Server API
 // @version 1.0
@@ -201,7 +207,7 @@ func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8080
 // @BasePath /
-func Setup(router *mux.Router, explorer string, redisServer string) {
+func Setup(router *mux.Router, explorer string, redisServer string, gitCommit string) {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
 	redis := &redis.Pool{
@@ -224,10 +230,11 @@ func Setup(router *mux.Router, explorer string, redisServer string) {
 	c := cache.New(2*time.Minute, 3*time.Minute)
 
 	a := App{
-		explorer: explorer,
-		redis:    redis,
-		rmb:      rmbClient,
-		lruCache: c,
+		explorer:       explorer,
+		redis:          redis,
+		rmb:            rmbClient,
+		lruCache:       c,
+		releaseVersion: gitCommit,
 	}
 
 	router.HandleFunc("/farms", a.listFarms)
@@ -238,6 +245,7 @@ func Setup(router *mux.Router, explorer string, redisServer string) {
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", a.getNodeStatus)
 	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", a.getNodeStatus)
 	router.HandleFunc("/", a.indexPage)
+	router.HandleFunc("/version", a.version)
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 	// Run node caching every 2 minutes
 	go a.cacheNodesInfo()
