@@ -207,6 +207,15 @@ func (a *App) getSystemHypervisor(ctx context.Context, nodeClient *client.NodeCl
 	c <- systemHypervisor
 }
 
+func (a *App) getSystemVersion(ctx context.Context, nodeClient *client.NodeClient, c chan systemVersionReturnValue) {
+	version, err := nodeClient.SystemVersion(ctx)
+	systemVersion := systemVersionReturnValue{
+		ZosVersion: version,
+		Err:        err,
+	}
+	c <- systemVersion
+}
+
 // fetchNodeData is a helper method that fetches nodes data over rmb
 // returns the node capacity, hypervisor and dmi
 func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
@@ -228,9 +237,13 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	systemHypervisor := make(chan systemHypervisorReturnValue)
 	go a.getSystemHypervisor(ctx, nodeClient, systemHypervisor)
 
+	systemVersion := make(chan systemVersionReturnValue)
+	go a.getSystemVersion(ctx, nodeClient, systemVersion)
+
 	p := <-nodeCapacity
 	d := <-systemDMI
 	h := <-systemHypervisor
+	v := <-systemVersion
 
 	if p.Err != nil {
 		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", p.Err)
@@ -241,6 +254,9 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	if h.Err != nil {
 		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", h.Err)
 	}
+	if v.Err != nil {
+		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", v.Err)
+	}
 
 	capacity := capacityResult{}
 	capacity.Total = p.NodeCapacity
@@ -250,6 +266,7 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 		Capacity:   capacity,
 		DMI:        d.DMI,
 		Hypervisor: h.Hypervisor,
+		ZosVersion: v.ZosVersion.ZOS,
 	}, nil
 
 }

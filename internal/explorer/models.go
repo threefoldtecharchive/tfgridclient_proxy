@@ -3,6 +3,7 @@ package explorer
 import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/patrickmn/go-cache"
+	"github.com/threefoldtech/zos/client"
 	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
@@ -58,6 +59,7 @@ type NodeInfo struct {
 	Capacity   capacityResult `json:"capacity"`
 	DMI        dmi.DMI        `json:"dmi"`
 	Hypervisor string         `json:"hypervisor"`
+	ZosVersion string         `json:"zosVersion"`
 }
 
 type publicConfig struct {
@@ -154,5 +156,10 @@ type systemDMIReturnValue struct {
 
 type systemHypervisorReturnValue struct {
 	Hypervisor string
+	Err        error
+}
+
+type systemVersionReturnValue struct {
+	ZosVersion client.Version
 	Err        error
 }
