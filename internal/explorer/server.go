@@ -189,11 +189,13 @@ func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"))
 }
 
 func (a *App) version(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf("{\"version\": \"%s\"}", a.releaseVersion)))
