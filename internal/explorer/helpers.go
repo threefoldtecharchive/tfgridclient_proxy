@@ -371,6 +371,7 @@ func (a *App) getAllNodes(maxResult int, pageOffset int, isSpecificFarm string, 
 			mru
 			sru
 			hru
+			certificationType
 		publicConfig{
 			domain
 			gw4
