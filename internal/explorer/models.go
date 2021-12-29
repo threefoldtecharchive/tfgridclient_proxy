@@ -72,24 +72,25 @@ type publicConfig struct {
 
 // Node is a struct holding the data for a node for the nodes view
 type node struct {
-	Version         int          `json:"version"`
-	ID              string       `json:"id"`
-	NodeID          int          `json:"nodeId"`
-	FarmID          int          `json:"farmId"`
-	TwinID          int          `json:"twinId"`
-	Country         string       `json:"country"`
-	GridVersion     int          `json:"gridVersion"`
-	City            string       `json:"city"`
-	Uptime          int64        `json:"uptime"`
-	Created         int64        `json:"created"`
-	FarmingPolicyID int          `json:"farmingPolicyId"`
-	UpdatedAt       string       `json:"updatedAt"`
-	Cru             string       `json:"cru"`
-	Mru             string       `json:"mru"`
-	Sru             string       `json:"sru"`
-	Hru             string       `json:"hru"`
-	PublicConfig    publicConfig `json:"publicConfig"`
-	Status          string       `json:"status"` // added node status field for up or down
+	Version           int          `json:"version"`
+	ID                string       `json:"id"`
+	NodeID            int          `json:"nodeId"`
+	FarmID            int          `json:"farmId"`
+	TwinID            int          `json:"twinId"`
+	Country           string       `json:"country"`
+	GridVersion       int          `json:"gridVersion"`
+	City              string       `json:"city"`
+	Uptime            int64        `json:"uptime"`
+	Created           int64        `json:"created"`
+	FarmingPolicyID   int          `json:"farmingPolicyId"`
+	UpdatedAt         string       `json:"updatedAt"`
+	Cru               string       `json:"cru"`
+	Mru               string       `json:"mru"`
+	Sru               string       `json:"sru"`
+	Hru               string       `json:"hru"`
+	PublicConfig      publicConfig `json:"publicConfig"`
+	Status            string       `json:"status"` // added node status field for up or down
+	CertificationType string       `json:"certificationType"`
 }
 
 // Nodes is struct for the whole nodes view
