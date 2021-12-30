@@ -314,7 +314,7 @@ func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 func (a *App) getAllNodesIDs() (nodeIDResult, error) {
 	queryString := `
 	{
-		nodes{
+		nodes(limit:99999999){
 			nodeId
 		}    
 	}
