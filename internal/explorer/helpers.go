@@ -17,6 +17,8 @@ import (
 	"github.com/threefoldtech/zos/client"
 )
 
+const maxGoRoutnes = 20 // limit go routines so we have 20 node per time
+
 func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
 	// cache node twin id for 10 mins and purge after 15
 	if twinID, found := a.lruCache.Get(nodeID); found {
@@ -70,7 +72,7 @@ func (a *App) baseQuery(queryString string) (io.ReadCloser, error) {
 	if response.StatusCode != 200 {
 		var errResult interface{}
 		if err := json.NewDecoder(response.Body).Decode(errResult); err != nil {
-			return nil, fmt.Errorf("request failed: %w", errResult)
+			return nil, fmt.Errorf("request failed: %s", errResult)
 		}
 		return nil, fmt.Errorf("failed to query explorer network")
 	}
@@ -287,6 +289,7 @@ func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 			}
 			return "", ErrNodeNotFound
 		} else if err != nil {
+			// cache for 10 mins if no response then mark it as down
 			err = a.DeleteRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
 			if err != nil {
 				log.Warn().Err(err).Msg("could not delete key in redis")
@@ -294,14 +297,14 @@ func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 			return "", ErrBadGateway
 		}
 		// Save value in redis
-		// caching for 40 mins
+		// caching for 10 mins
 		marshalledInfo, err := json.Marshal(nodeInfo)
 		if err != nil {
 			log.Error().Err(err).Msg("could not marshal node info")
 			return "", errors.Wrap(err, "internal server error")
 		}
 
-		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 40*60)
+		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 10*60)
 		if err != nil {
 			log.Warn().Err(err).Msg("could not cache data in redis")
 		}
@@ -335,7 +338,9 @@ func (a *App) cacheNodesInfo() {
 		log.Error().Err(err).Msg("failed to query nodes")
 	}
 
+	channelLimit := make(chan int, maxGoRoutnes)
 	for i, nid := range nodeIds.Data.NodeResult {
+		channelLimit <- 1
 		go func(i int, nid nodeID) {
 			log.Debug().Msg(fmt.Sprintf("%d:fetching node: %d", i+1, nid.NodeID))
 			_, err := a.getNodeData(fmt.Sprint(nid.NodeID), true)
@@ -344,6 +349,7 @@ func (a *App) cacheNodesInfo() {
 			} else {
 				log.Debug().Msg(fmt.Sprintf("node %d is fetched successfully", nid.NodeID))
 			}
+			<-channelLimit
 		}(i, nid)
 	}
 	log.Debug().Msg("Fetching nodes completed, next fetch will be in 15 minutes")

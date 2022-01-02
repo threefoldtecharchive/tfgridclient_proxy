@@ -122,6 +122,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 		if isStored != "" {
 			node.Status = "up"
 		}
+
 		nodeList = append(nodeList, node)
 	}
 
