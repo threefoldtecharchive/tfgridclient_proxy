@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -238,7 +239,6 @@ func Setup(router *mux.Router, explorer string, redisServer string, gitCommit st
 		lruCache:       c,
 		releaseVersion: gitCommit,
 	}
-
 	router.HandleFunc("/farms", a.listFarms)
 	router.HandleFunc("/nodes", a.listNodes)
 	router.HandleFunc("/gateways", a.listNodes)
@@ -249,6 +249,9 @@ func Setup(router *mux.Router, explorer string, redisServer string, gitCommit st
 	router.HandleFunc("/", a.indexPage)
 	router.HandleFunc("/version", a.version)
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
+	router.Handle("/metrics", promhttp.Handler())
+	router.Use(prometheusMiddleware)
+
 	// Run node caching every 2 minutes
 	go a.cacheNodesInfo()
 	job := cron.New()
