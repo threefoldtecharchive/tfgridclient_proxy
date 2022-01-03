@@ -176,17 +176,29 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
+	response := NodeStatus{Status: "loading"}
+
 	nodeID := mux.Vars(r)["node_id"]
-	_, err := a.getNodeData(nodeID, false)
+	value, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
 	if err != nil {
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{\"status\": \"down\"}"))
+		response.Status = "loading"
 	} else {
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{\"status\": \"up\"}"))
+		redisData := NodeInfo{}
+		json.Unmarshal([]byte(value), &redisData)
+		response.Status = redisData.Status
 	}
+
+	res, err := json.Marshal(response)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to marshal json response")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
+
 }
 
 func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {

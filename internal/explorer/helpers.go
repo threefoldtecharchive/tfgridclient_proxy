@@ -269,6 +269,7 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 		DMI:        d.DMI,
 		Hypervisor: h.Hypervisor,
 		ZosVersion: v.ZosVersion.ZOS,
+		Status:     "up",
 	}, nil
 
 }
@@ -294,7 +295,7 @@ func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 			json.Unmarshal([]byte(value), &redisData)
 
 			// up or loading make it likely down for 10 minutes
-			if redisData.Status == "up" || redisData.Status == "" {
+			if redisData.Status == "up" {
 				// mark the node likely down if we can't reach this node in 10 mins it's down
 				nodeInfo.Status = "likely down"
 				marshalledInfo, err := json.Marshal(nodeInfo)
@@ -311,7 +312,7 @@ func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 			}
 
 			// down will be still down
-			if redisData.Status == "down" {
+			if redisData.Status == "down" || redisData.Status == "" {
 				if err != nil {
 					log.Warn().Err(err).Msg(fmt.Sprintf("node: %s will be marked as down", nodeID))
 				}
@@ -321,12 +322,13 @@ func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 					log.Error().Err(err).Msg("could not marshal node info")
 					return "", errors.Wrap(err, "internal server error")
 				}
-				err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 10*60)
+				err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 30*60)
 				if err != nil {
 					log.Warn().Err(err).Msg("could not cache data in redis")
 				}
 				return "", ErrBadGateway
 			}
+
 			log.Warn().Err(err).Msg(fmt.Sprintf("node %s is likely down", nodeID))
 			return "", ErrBadGateway
 		}

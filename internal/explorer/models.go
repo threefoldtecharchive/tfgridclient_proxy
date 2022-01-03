@@ -63,6 +63,11 @@ type NodeInfo struct {
 	Status     string         `json:"status"`
 }
 
+// NodeStatus is used for status endpoint to decode json in
+type NodeStatus struct {
+	Status string `json:"status"`
+}
+
 type publicConfig struct {
 	Domain string `json:"domain"`
 	Gw4    string `json:"gw4"`
