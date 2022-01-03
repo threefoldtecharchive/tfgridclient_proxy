@@ -60,6 +60,7 @@ type NodeInfo struct {
 	DMI        dmi.DMI        `json:"dmi"`
 	Hypervisor string         `json:"hypervisor"`
 	ZosVersion string         `json:"zosVersion"`
+	Status     string         `json:"status"`
 }
 
 type publicConfig struct {

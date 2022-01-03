@@ -117,15 +117,15 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	for _, node := range nodes.Nodes.Data {
 		isStored, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%d", node.NodeID))
 		if err != nil {
-			node.Status = "down"
+			node.Status = "loading"
+			nodeList = append(nodeList, node)
+		} else {
+			redisData := NodeInfo{}
+			json.Unmarshal([]byte(isStored), &redisData)
+			node.Status = redisData.Status
+			nodeList = append(nodeList, node)
 		}
-		if isStored != "" {
-			node.Status = "up"
-		}
-
-		nodeList = append(nodeList, node)
 	}
-
 	result, err := json.Marshal(nodeList)
 	if err != nil {
 		log.Error().Err(err).Msg("fail to list nodes")

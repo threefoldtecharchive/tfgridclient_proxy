@@ -289,22 +289,57 @@ func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 			}
 			return "", ErrNodeNotFound
 		} else if err != nil {
-			// cache for 10 mins if no response then mark it as down
-			err = a.DeleteRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
-			if err != nil {
-				log.Warn().Err(err).Msg("could not delete key in redis")
+
+			redisData := NodeInfo{}
+			json.Unmarshal([]byte(value), &redisData)
+
+			// up or loading make it likely down for 10 minutes
+			if redisData.Status == "up" || redisData.Status == "" {
+				// mark the node likely down if we can't reach this node in 10 mins it's down
+				nodeInfo.Status = "likely down"
+				marshalledInfo, err := json.Marshal(nodeInfo)
+				if err != nil {
+					log.Error().Err(err).Msg("could not marshal node info")
+					return "", errors.Wrap(err, "internal server error")
+				}
+				err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 10*60)
+				if err != nil {
+					log.Warn().Err(err).Msg("could not cache data in redis")
+				}
+
+				return "", ErrBadGateway
 			}
+
+			// down will be still down
+			if redisData.Status == "down" {
+				if err != nil {
+					log.Warn().Err(err).Msg(fmt.Sprintf("node: %s will be marked as down", nodeID))
+				}
+				nodeInfo.Status = "down"
+				marshalledInfo, err := json.Marshal(nodeInfo)
+				if err != nil {
+					log.Error().Err(err).Msg("could not marshal node info")
+					return "", errors.Wrap(err, "internal server error")
+				}
+				err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 10*60)
+				if err != nil {
+					log.Warn().Err(err).Msg("could not cache data in redis")
+				}
+				return "", ErrBadGateway
+			}
+			log.Warn().Err(err).Msg(fmt.Sprintf("node %s is likely down", nodeID))
 			return "", ErrBadGateway
 		}
 		// Save value in redis
-		// caching for 10 mins
+		// caching for 30 mins
+		nodeInfo.Status = "up"
 		marshalledInfo, err := json.Marshal(nodeInfo)
 		if err != nil {
 			log.Error().Err(err).Msg("could not marshal node info")
 			return "", errors.Wrap(err, "internal server error")
 		}
 
-		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 10*60)
+		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 30*60)
 		if err != nil {
 			log.Warn().Err(err).Msg("could not cache data in redis")
 		}
