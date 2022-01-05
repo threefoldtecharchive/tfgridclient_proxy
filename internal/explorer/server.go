@@ -181,12 +181,14 @@ func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
 	nodeID := mux.Vars(r)["node_id"]
 	value, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
 	if err != nil {
-		response.Status = "loading"
-	} else {
-		redisData := NodeInfo{}
-		json.Unmarshal([]byte(value), &redisData)
-		response.Status = redisData.Status
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(http.StatusText(http.StatusNotFound)))
+		return
 	}
+
+	redisData := NodeInfo{}
+	json.Unmarshal([]byte(value), &redisData)
+	response.Status = redisData.Status
 
 	res, err := json.Marshal(response)
 	if err != nil {
