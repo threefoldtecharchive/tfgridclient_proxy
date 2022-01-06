@@ -229,7 +229,7 @@ func (a *App) getSystemVersion(ctx context.Context, nodeClient *client.NodeClien
 	c <- systemVersion
 }
 
-func (a *App) getNodeHypervisor(nodeID string, nodeClient *client.NodeClient, ctx context.Context) (string, error) {
+func (a *App) getNodeHypervisor(ctx context.Context, nodeID string, nodeClient *client.NodeClient) (string, error) {
 	nodeKey := fmt.Sprintf("node_%s_hypervisor", nodeID)
 	if nodeHyperVisor, found := a.lruCache.Get(nodeKey); found {
 		return nodeHyperVisor.(string), nil
@@ -248,7 +248,7 @@ func (a *App) getNodeHypervisor(nodeID string, nodeClient *client.NodeClient, ct
 	return h.Hypervisor, nil
 }
 
-func (a *App) getNodeDMI(nodeID string, nodeClient *client.NodeClient, ctx context.Context) (dmi.DMI, error) {
+func (a *App) getNodeDMI(ctx context.Context, nodeID string, nodeClient *client.NodeClient) (dmi.DMI, error) {
 	nodeKey := fmt.Sprintf("node_%s_dmi", nodeID)
 	if nodeDMI, found := a.lruCache.Get(nodeKey); found {
 		return nodeDMI.(dmi.DMI), nil
@@ -290,12 +290,12 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	v := <-systemVersion
 	close(systemVersion)
 
-	h, err := a.getNodeHypervisor(nodeID, nodeClient, ctx)
+	h, err := a.getNodeHypervisor(ctx, nodeID, nodeClient)
 	if err != nil {
 		return NodeInfo{}, fmt.Errorf("error fetching hypervisor data : %w", err)
 	}
 
-	d, err := a.getNodeDMI(nodeID, nodeClient, ctx)
+	d, err := a.getNodeDMI(ctx, nodeID, nodeClient)
 	if err != nil {
 		return NodeInfo{}, fmt.Errorf("error fetching node dmi data : %w", err)
 	}
