@@ -19,6 +19,14 @@ import (
 
 const maxGoRoutnes = 20 // limit go routines so we have 20 node per time
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func (a *App) getNodeKey(nodeID string) string {
+	return fmt.Sprintf("GRID3NODE:%s", nodeID)
+}
+
 func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
 	// cache node twin id for 10 mins and purge after 15
 	if twinID, found := a.lruCache.Get(nodeID); found {
@@ -41,12 +49,13 @@ func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
 	}
 
 	nodeStats := res.Data.NodeResult
-	if len(nodeStats) > 0 {
-		twinID := nodeStats[0].TwinID
-		a.lruCache.Set(nodeID, twinID, cache.DefaultExpiration)
-		return twinID, nil
+	if len(nodeStats) < 1 {
+		return 0, ErrNodeNotFound
 	}
-	return 0, ErrNodeNotFound
+
+	twinID := nodeStats[0].TwinID
+	a.lruCache.Set(nodeID, twinID, cache.DefaultExpiration)
+	return twinID, nil
 }
 
 func (a *App) baseQuery(queryString string) (io.ReadCloser, error) {
@@ -69,14 +78,16 @@ func (a *App) baseQuery(queryString string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query explorer network %w", err)
 	}
-	if response.StatusCode != 200 {
-		var errResult interface{}
-		if err := json.NewDecoder(response.Body).Decode(errResult); err != nil {
-			return nil, fmt.Errorf("request failed: %s", errResult)
-		}
-		return nil, fmt.Errorf("failed to query explorer network")
+
+	if response.StatusCode == 200 {
+		return response.Body, nil
 	}
-	return response.Body, nil
+
+	var errResult interface{}
+	if err := json.NewDecoder(response.Body).Decode(errResult); err != nil {
+		return nil, fmt.Errorf("failed to decode error from page: %w", err)
+	}
+	return nil, fmt.Errorf("failed to query explorer network: %v", errResult)
 }
 
 func (a *App) query(queryString string, result interface{}) error {
@@ -224,7 +235,6 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	twinID, err := a.getNodeTwinID(nodeID)
 	if err != nil {
 		return NodeInfo{}, err
-
 	}
 	ctx := context.Background()
 
@@ -243,9 +253,13 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	go a.getSystemVersion(ctx, nodeClient, systemVersion)
 
 	p := <-nodeCapacity
+	close(nodeCapacity)
 	d := <-systemDMI
+	close(systemDMI)
 	h := <-systemHypervisor
+	close(systemHypervisor)
 	v := <-systemVersion
+	close(systemVersion)
 
 	if p.Err != nil {
 		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", p.Err)
@@ -269,85 +283,65 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 		DMI:        d.DMI,
 		Hypervisor: h.Hypervisor,
 		ZosVersion: v.ZosVersion.ZOS,
-		Status:     "up",
 	}, nil
+}
 
+func (a *App) checkLikelyDown(data string, nodeID string, originalError error) (string, error) {
+
+	redisData := NodeInfo{}
+	err := redisData.Deserialize([]byte(data))
+	if err != nil {
+		return "", ErrLikelyDown
+	}
+
+	// mark the node likely down if we can't reach this node in 10 mins it's down
+	err = a.SetRedisKey(a.getNodeKey(nodeID), []byte("likely down"), 10*60)
+	if err != nil {
+		log.Warn().Err(err).Msg("could not cache data in redis")
+	}
+	return "", ErrLikelyDown
 }
 
 // getNodeData is a helper function that wraps fetch node data
 // it caches the results in redis to save time
 func (a *App) getNodeData(nodeID string, force bool) (string, error) {
-	value, _ := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
+	value, _ := a.GetRedisKey(a.getNodeKey(nodeID))
 
-	// No value, fetch data from the node
-	if value == "" || force {
-		nodeInfo, err := a.fetchNodeData(nodeID)
-		if errors.Is(err, ErrNodeNotFound) {
-			// delete redis key
-			err = a.DeleteRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
-			if err != nil {
-				log.Warn().Err(err).Msg("could not delete key in redis")
-			}
-			return "", ErrNodeNotFound
-		} else if err != nil {
-
-			redisData := NodeInfo{}
-			json.Unmarshal([]byte(value), &redisData)
-
-			// up or loading make it likely down for 10 minutes
-			if redisData.Status == "up" {
-				// mark the node likely down if we can't reach this node in 10 mins it's down
-				nodeInfo.Status = "likely down"
-				marshalledInfo, err := json.Marshal(nodeInfo)
-				if err != nil {
-					log.Error().Err(err).Msg("could not marshal node info")
-					return "", errors.Wrap(err, "internal server error")
-				}
-				err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 10*60)
-				if err != nil {
-					log.Warn().Err(err).Msg("could not cache data in redis")
-				}
-
-				return "", ErrBadGateway
-			}
-
-			// down will be still down
-			if redisData.Status == "down" || redisData.Status == "" {
-				if err != nil {
-					log.Warn().Err(err).Msg(fmt.Sprintf("node: %s will be marked as down", nodeID))
-				}
-				nodeInfo.Status = "down"
-				marshalledInfo, err := json.Marshal(nodeInfo)
-				if err != nil {
-					log.Error().Err(err).Msg("could not marshal node info")
-					return "", errors.Wrap(err, "internal server error")
-				}
-				err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 30*60)
-				if err != nil {
-					log.Warn().Err(err).Msg("could not cache data in redis")
-				}
-				return "", ErrBadGateway
-			}
-
-			log.Warn().Err(err).Msg(fmt.Sprintf("node %s is likely down", nodeID))
-			return "", ErrBadGateway
-		}
-		// Save value in redis
-		// caching for 30 mins
-		nodeInfo.Status = "up"
-		marshalledInfo, err := json.Marshal(nodeInfo)
-		if err != nil {
-			log.Error().Err(err).Msg("could not marshal node info")
-			return "", errors.Wrap(err, "internal server error")
-		}
-
-		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 30*60)
-		if err != nil {
-			log.Warn().Err(err).Msg("could not cache data in redis")
-		}
-		value = string(marshalledInfo)
+	// value exists just return it
+	if value != "" && !force {
+		return value, nil
 	}
-	return value, nil
+
+	nodeInfo, fetchingNodesError := a.fetchNodeData(nodeID)
+	if errors.Is(fetchingNodesError, ErrNodeNotFound) {
+		// delete redis key
+		err := a.DeleteRedisKey(a.getNodeKey(nodeID))
+		if err != nil {
+			log.Warn().Err(err).Msg("could not delete key in redis")
+		}
+		return "", ErrNodeNotFound
+	} else if fetchingNodesError != nil && value != "" {
+		return a.checkLikelyDown(value, nodeID, fetchingNodesError)
+	} else if fetchingNodesError != nil {
+		// if node is down delete the key and return bad gateway
+		err := a.DeleteRedisKey(a.getNodeKey(nodeID))
+		if err != nil {
+			log.Warn().Err(err).Msg("could not delete key in redis")
+		}
+		return "", errors.Wrapf(ErrBadGateway, fetchingNodesError.Error())
+	}
+	// Save value in redis
+	// caching for 30 mins
+	serializedNodeInfo, err := nodeInfo.Serialize()
+	if err != nil {
+		return "", err
+	}
+
+	err = a.SetRedisKey(a.getNodeKey(nodeID), serializedNodeInfo, 30*60)
+	if err != nil {
+		log.Warn().Err(err).Msg("could not cache data in redis")
+	}
+	return string(serializedNodeInfo), nil
 }
 
 // getAllNodesIDs is a helper method to only list all nodes ids

@@ -16,20 +16,6 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
-// ErrNodeNotFound creates new error type to define node existence or server problem
-var (
-	ErrNodeNotFound = errors.New("node not found")
-)
-
-// ErrBadGateway creates new error type to define node existence or server problem
-var (
-	ErrBadGateway = errors.New("bad gateway")
-)
-
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
 // listFarms godoc
 // @Summary Show farms on the grid
 // @Description Get all farms on the grid from graphql, It has pagination
@@ -115,16 +101,17 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	var nodeList []node
 	for _, node := range nodes.Nodes.Data {
-		isStored, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%d", node.NodeID))
+		isStored, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(node.NodeID)))
 		if err != nil {
-			node.Status = "loading"
-			nodeList = append(nodeList, node)
-		} else {
-			redisData := NodeInfo{}
-			json.Unmarshal([]byte(isStored), &redisData)
-			node.Status = redisData.Status
-			nodeList = append(nodeList, node)
+			node.Status = "down"
 		}
+		if isStored == "likely down" {
+			node.Status = "likely down"
+		}
+		if isStored != "" && isStored != "likely down" {
+			node.Status = "up"
+		}
+		nodeList = append(nodeList, node)
 	}
 	result, err := json.Marshal(nodeList)
 	if err != nil {
@@ -176,31 +163,33 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
-	response := NodeStatus{Status: "loading"}
-
+	response := NodeStatus{}
 	nodeID := mux.Vars(r)["node_id"]
-	value, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
+
+	isStored, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(nodeID)))
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(http.StatusText(http.StatusNotFound)))
+		response.Status = "down"
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		res, _ := response.Serialize()
+		w.Write(res)
 		return
 	}
-
-	redisData := NodeInfo{}
-	json.Unmarshal([]byte(value), &redisData)
-	response.Status = redisData.Status
-
-	res, err := json.Marshal(response)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to marshal json response")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+	if isStored == "likely down" {
+		response.Status = "likely down"
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		res, _ := response.Serialize()
+		w.Write(res)
+	}
+	if isStored != "" {
+		response.Status = "up"
+		res, _ := response.Serialize()
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(res)
 		return
 	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(res)
-
 }
 
 func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {

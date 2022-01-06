@@ -1,8 +1,11 @@
 package explorer
 
 import (
+	"encoding/json"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/patrickmn/go-cache"
+	"github.com/pkg/errors"
 	"github.com/threefoldtech/zos/client"
 	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
@@ -11,6 +14,21 @@ import (
 
 // DefaultExplorerURL is the default explorer graphql url
 const DefaultExplorerURL string = "https://graphql.dev.grid.tf/graphql"
+
+// ErrNodeNotFound creates new error type to define node existence or server problem
+var (
+	ErrNodeNotFound = errors.New("node not found")
+)
+
+// ErrBadGateway creates new error type to define node existence or server problem
+var (
+	ErrBadGateway = errors.New("bad gateway")
+)
+
+// ErrBadGateway creates new error type to define node existence or server problem
+var (
+	ErrLikelyDown = errors.New("node is likely down")
+)
 
 // App is the main app objects
 type App struct {
@@ -60,12 +78,47 @@ type NodeInfo struct {
 	DMI        dmi.DMI        `json:"dmi"`
 	Hypervisor string         `json:"hypervisor"`
 	ZosVersion string         `json:"zosVersion"`
-	Status     string         `json:"status"`
+}
+
+// Serialize is the serializer for node info struct
+func (n *NodeInfo) Serialize() (json.RawMessage, error) {
+	bytes, err := json.Marshal(n)
+	if err != nil {
+		return json.RawMessage{}, errors.Wrap(err, "failed to marshal json data")
+	}
+	return json.RawMessage(bytes), nil
+}
+
+// Deserialize is the deserializer for node info struct
+func (n *NodeInfo) Deserialize(data []byte) error {
+	err := json.Unmarshal(data, n)
+	if err != nil {
+		return errors.Wrap(err, "failed to unmarshal json data")
+	}
+	return nil
 }
 
 // NodeStatus is used for status endpoint to decode json in
 type NodeStatus struct {
 	Status string `json:"status"`
+}
+
+// Serialize is the serializer for node status struct
+func (n *NodeStatus) Serialize() (json.RawMessage, error) {
+	bytes, err := json.Marshal(n)
+	if err != nil {
+		return json.RawMessage{}, errors.Wrap(err, "failed to marshal json data")
+	}
+	return json.RawMessage(bytes), nil
+}
+
+// Deserialize is the deserializer for node status struct
+func (n *NodeStatus) Deserialize(data []byte) error {
+	err := json.Unmarshal(data, n)
+	if err != nil {
+		return errors.Wrap(err, "failed to unmarshal json data")
+	}
+	return nil
 }
 
 type publicConfig struct {
