@@ -183,7 +183,7 @@ func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
 		res, _ := response.Serialize()
 		w.Write(res)
 	}
-	if isStored != "" {
+	if isStored != "" && isStored != "likely down" {
 		response.Status = "up"
 		res, _ := response.Serialize()
 		w.Header().Add("Content-Type", "application/json")

@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/zos/client"
+	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 )
 
 const maxGoRoutnes = 20 // limit go routines so we have 20 node per time
@@ -95,8 +96,8 @@ func (a *App) query(queryString string, result interface{}) error {
 	if err != nil {
 		return err
 	}
-
 	defer response.Close()
+
 	if err := json.NewDecoder(response).Decode(result); err != nil {
 		return err
 	}
@@ -109,7 +110,6 @@ func (a *App) queryProxy(queryString string, w http.ResponseWriter) (written int
 	if err != nil {
 		return 0, err
 	}
-
 	defer response.Close()
 	w.Header().Add("Content-Type", "application/json")
 	return io.Copy(w, response)
@@ -229,6 +229,45 @@ func (a *App) getSystemVersion(ctx context.Context, nodeClient *client.NodeClien
 	c <- systemVersion
 }
 
+func (a *App) getNodeHypervisor(nodeID string, nodeClient *client.NodeClient, ctx context.Context) (string, error) {
+	nodeKey := fmt.Sprintf("node_%s_hypervisor", nodeID)
+	if nodeHyperVisor, found := a.lruCache.Get(nodeKey); found {
+		return nodeHyperVisor.(string), nil
+	}
+
+	systemHypervisor := make(chan systemHypervisorReturnValue)
+	go a.getSystemHypervisor(ctx, nodeClient, systemHypervisor)
+
+	h := <-systemHypervisor
+	close(systemHypervisor)
+	if h.Err != nil {
+		return "", nil
+	}
+
+	a.lruCache.Set(nodeKey, h.Hypervisor, cache.NoExpiration)
+	return h.Hypervisor, nil
+}
+
+func (a *App) getNodeDMI(nodeID string, nodeClient *client.NodeClient, ctx context.Context) (dmi.DMI, error) {
+	nodeKey := fmt.Sprintf("node_%s_dmi", nodeID)
+	if nodeDMI, found := a.lruCache.Get(nodeKey); found {
+		return nodeDMI.(dmi.DMI), nil
+	}
+
+	systemDMI := make(chan systemDMIReturnValue)
+	go a.getSystemDMI(ctx, nodeClient, systemDMI)
+
+	d := <-systemDMI
+	close(systemDMI)
+
+	if d.Err != nil {
+		return dmi.DMI{}, d.Err
+	}
+
+	a.lruCache.Set(nodeKey, d.DMI, cache.NoExpiration)
+	return d.DMI, nil
+}
+
 // fetchNodeData is a helper method that fetches nodes data over rmb
 // returns the node capacity, hypervisor and dmi
 func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
@@ -243,33 +282,28 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 
 	go a.getNodeCapacity(ctx, nodeClient, nodeCapacity)
 
-	systemDMI := make(chan systemDMIReturnValue)
-	go a.getSystemDMI(ctx, nodeClient, systemDMI)
-
-	systemHypervisor := make(chan systemHypervisorReturnValue)
-	go a.getSystemHypervisor(ctx, nodeClient, systemHypervisor)
-
 	systemVersion := make(chan systemVersionReturnValue)
 	go a.getSystemVersion(ctx, nodeClient, systemVersion)
 
 	p := <-nodeCapacity
 	close(nodeCapacity)
-	d := <-systemDMI
-	close(systemDMI)
-	h := <-systemHypervisor
-	close(systemHypervisor)
 	v := <-systemVersion
 	close(systemVersion)
+
+	h, err := a.getNodeHypervisor(nodeID, nodeClient, ctx)
+	if err != nil {
+		return NodeInfo{}, fmt.Errorf("error fetching hypervisor data : %w", err)
+	}
+
+	d, err := a.getNodeDMI(nodeID, nodeClient, ctx)
+	if err != nil {
+		return NodeInfo{}, fmt.Errorf("error fetching node dmi data : %w", err)
+	}
 
 	if p.Err != nil {
 		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", p.Err)
 	}
-	if d.Err != nil {
-		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", d.Err)
-	}
-	if h.Err != nil {
-		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", h.Err)
-	}
+
 	if v.Err != nil {
 		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", v.Err)
 	}
@@ -280,8 +314,8 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 
 	return NodeInfo{
 		Capacity:   capacity,
-		DMI:        d.DMI,
-		Hypervisor: h.Hypervisor,
+		DMI:        d,
+		Hypervisor: h,
 		ZosVersion: v.ZosVersion.ZOS,
 	}, nil
 }
