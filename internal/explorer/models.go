@@ -84,7 +84,7 @@ type NodeInfo struct {
 func (n *NodeInfo) Serialize() (json.RawMessage, error) {
 	bytes, err := json.Marshal(n)
 	if err != nil {
-		return json.RawMessage{}, errors.Wrap(err, "failed to marshal json data")
+		return json.RawMessage{}, errors.Wrap(err, "failed to serialize json data for node info struct")
 	}
 	return json.RawMessage(bytes), nil
 }
@@ -93,7 +93,7 @@ func (n *NodeInfo) Serialize() (json.RawMessage, error) {
 func (n *NodeInfo) Deserialize(data []byte) error {
 	err := json.Unmarshal(data, n)
 	if err != nil {
-		return errors.Wrap(err, "failed to unmarshal json data")
+		return errors.Wrap(err, "failed to deserialize json data for node info struct")
 	}
 	return nil
 }
@@ -107,7 +107,7 @@ type NodeStatus struct {
 func (n *NodeStatus) Serialize() (json.RawMessage, error) {
 	bytes, err := json.Marshal(n)
 	if err != nil {
-		return json.RawMessage{}, errors.Wrap(err, "failed to marshal json data")
+		return json.RawMessage{}, errors.Wrap(err, "failed to serialize json data for node status struct")
 	}
 	return json.RawMessage(bytes), nil
 }
@@ -116,7 +116,7 @@ func (n *NodeStatus) Serialize() (json.RawMessage, error) {
 func (n *NodeStatus) Deserialize(data []byte) error {
 	err := json.Unmarshal(data, n)
 	if err != nil {
-		return errors.Wrap(err, "failed to unmarshal json data")
+		return errors.Wrap(err, "failed to deserialize json data for node status struct")
 	}
 	return nil
 }

@@ -59,9 +59,9 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	_, err = a.queryProxy(queryString, w)
 
 	if err != nil {
+		log.Error().Err(err).Msg("failed to query farm")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
-		return
 	}
 }
 
@@ -151,6 +151,7 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err != nil {
 		// return internal server error
+		log.Error().Err(err).Msg("failed to get node information")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 		return

@@ -291,7 +291,7 @@ func (a *App) checkLikelyDown(data string, nodeID string, originalError error) (
 	redisData := NodeInfo{}
 	err := redisData.Deserialize([]byte(data))
 	if err != nil {
-		return "", ErrLikelyDown
+		return "", err
 	}
 
 	// mark the node likely down if we can't reach this node in 10 mins it's down
