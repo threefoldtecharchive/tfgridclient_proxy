@@ -1,4 +1,4 @@
-exec: sh -c "/usr/bin/msgbus --twin $TWIN --log-level info"
+exec: sh -c "/usr/bin/msgbus --twin $TWIN --substrate $SUBSTRATE_URL --log-level info"
 log: stdout
 after:
   - ygg
