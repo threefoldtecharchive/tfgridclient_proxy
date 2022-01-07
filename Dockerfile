@@ -48,7 +48,7 @@ ENV TWIN=65
 ENV SERVER_IP="0.0.0.0:8080"
 ENV EXPLORER_URL="https://graphql.grid.tf/graphql"
 ENV REDIS_URL="localhost:6379"
-ENV SUBSTRATE_URL="wss://main-tfchainnodepublic-substrate-node"
+ENV SUBSTRATE_URL="ws://main-tfchainnodepublic-substrate-node"
 
 EXPOSE 8080
 ENTRYPOINT [ "zinit", "init" ]
