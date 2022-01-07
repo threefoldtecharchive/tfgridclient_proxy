@@ -43,10 +43,11 @@ COPY rootfs /
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.1/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
-ENV TWIN=7
+ENV TWIN=65
 ENV SERVER_IP="0.0.0.0:8080"
-ENV EXPLORER_URL="https://graphql.dev.grid.tf/graphql"
+ENV EXPLORER_URL="https://graphql.grid.tf/graphql"
 ENV REDIS_URL="localhost:6379"
+ENV SUBSTRATE_URL="wss://main-tfchainnodepublic-substrate-node"
 
 EXPOSE 8080
 ENTRYPOINT [ "zinit", "init" ]
