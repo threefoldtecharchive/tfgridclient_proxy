@@ -1,4 +1,4 @@
-exec: sh -c "/usr/bin/server --address $SERVER_IP --redis $REDIS_URL --explorer $EXPLORER_URL"
+exec: sh -c "/usr/bin/server --address $SERVER_IP --redis $REDIS_URL --explorer $EXPLORER_URL --no-cert"
 log: stdout
 after:
   - msgbus
