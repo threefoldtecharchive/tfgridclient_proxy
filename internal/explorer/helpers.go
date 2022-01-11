@@ -18,7 +18,7 @@ import (
 	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 )
 
-const maxGoRoutnes = 20 // limit go routines so we have 20 node per time
+const maxGoRoutnes = 30 // limit go routines so we have 30 node per time
 
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
@@ -192,60 +192,20 @@ func (a *App) handleRequestsQueryParams(r *http.Request) (*http.Request, error) 
 	return r.WithContext(ctx), nil
 }
 
-func (a *App) getNodeCapacity(ctx context.Context, nodeClient *client.NodeClient, c chan countersReturnValue) {
-	cap, used, err := nodeClient.Counters(ctx)
-	capacity := countersReturnValue{
-		NodeCapacity: cap,
-		UsedCapacity: used,
-		Err:          err,
-	}
-	c <- capacity
-}
-
-func (a *App) getSystemDMI(ctx context.Context, nodeClient *client.NodeClient, c chan systemDMIReturnValue) {
-	dmi, err := nodeClient.SystemDMI(ctx)
-	systemDMI := systemDMIReturnValue{
-		DMI: dmi,
-		Err: err,
-	}
-	c <- systemDMI
-}
-
-func (a *App) getSystemHypervisor(ctx context.Context, nodeClient *client.NodeClient, c chan systemHypervisorReturnValue) {
-	hypervisor, err := nodeClient.SystemHypervisor(ctx)
-	systemHypervisor := systemHypervisorReturnValue{
-		Hypervisor: hypervisor,
-		Err:        err,
-	}
-	c <- systemHypervisor
-}
-
-func (a *App) getSystemVersion(ctx context.Context, nodeClient *client.NodeClient, c chan systemVersionReturnValue) {
-	version, err := nodeClient.SystemVersion(ctx)
-	systemVersion := systemVersionReturnValue{
-		ZosVersion: version,
-		Err:        err,
-	}
-	c <- systemVersion
-}
-
 func (a *App) getNodeHypervisor(ctx context.Context, nodeID string, nodeClient *client.NodeClient) (string, error) {
 	nodeKey := fmt.Sprintf("node_%s_hypervisor", nodeID)
 	if nodeHyperVisor, found := a.lruCache.Get(nodeKey); found {
 		return nodeHyperVisor.(string), nil
 	}
 
-	systemHypervisor := make(chan systemHypervisorReturnValue)
-	defer close(systemHypervisor)
+	hypervisor, err := nodeClient.SystemHypervisor(ctx)
 
-	go a.getSystemHypervisor(ctx, nodeClient, systemHypervisor)
-	h := <-systemHypervisor
-	if h.Err != nil {
-		return "", nil
+	if err != nil {
+		return "", err
 	}
 
-	a.lruCache.Set(nodeKey, h.Hypervisor, cache.NoExpiration)
-	return h.Hypervisor, nil
+	a.lruCache.Set(nodeKey, hypervisor, cache.NoExpiration)
+	return hypervisor, nil
 }
 
 func (a *App) getNodeDMI(ctx context.Context, nodeID string, nodeClient *client.NodeClient) (dmi.DMI, error) {
@@ -254,19 +214,13 @@ func (a *App) getNodeDMI(ctx context.Context, nodeID string, nodeClient *client.
 		return nodeDMI.(dmi.DMI), nil
 	}
 
-	systemDMI := make(chan systemDMIReturnValue)
-	defer close(systemDMI)
-
-	go a.getSystemDMI(ctx, nodeClient, systemDMI)
-
-	d := <-systemDMI
-
-	if d.Err != nil {
-		return dmi.DMI{}, d.Err
+	dmiData, err := nodeClient.SystemDMI(ctx)
+	if err != nil {
+		return dmi.DMI{}, err
 	}
 
-	a.lruCache.Set(nodeKey, d.DMI, cache.NoExpiration)
-	return d.DMI, nil
+	a.lruCache.Set(nodeKey, dmiData, cache.NoExpiration)
+	return dmiData, nil
 }
 
 // fetchNodeData is a helper method that fetches nodes data over rmb
@@ -279,46 +233,39 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	ctx := context.Background()
 
 	nodeClient := client.NewNodeClient(twinID, a.rmb)
-	nodeCapacity := make(chan countersReturnValue)
-	defer close(nodeCapacity)
 
-	go a.getNodeCapacity(ctx, nodeClient, nodeCapacity)
-
-	systemVersion := make(chan systemVersionReturnValue)
-	defer close(systemVersion)
-
-	go a.getSystemVersion(ctx, nodeClient, systemVersion)
-
-	p := <-nodeCapacity
-	v := <-systemVersion
-
-	h, err := a.getNodeHypervisor(ctx, nodeID, nodeClient)
+	// get node capacity
+	total, used, err := nodeClient.Counters(ctx)
 	if err != nil {
-		return NodeInfo{}, fmt.Errorf("error fetching hypervisor data : %w", err)
+		return NodeInfo{}, errors.Wrapf(err, "error fetching node statistics")
 	}
-
-	d, err := a.getNodeDMI(ctx, nodeID, nodeClient)
-	if err != nil {
-		return NodeInfo{}, fmt.Errorf("error fetching node dmi data : %w", err)
-	}
-
-	if p.Err != nil {
-		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", p.Err)
-	}
-
-	if v.Err != nil {
-		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", v.Err)
-	}
-
 	capacity := capacityResult{}
-	capacity.Total = p.NodeCapacity
-	capacity.Used = p.UsedCapacity
+	capacity.Total = total
+	capacity.Used = used
+
+	// get node version
+	version, err := nodeClient.SystemVersion(ctx)
+	if err != nil {
+		return NodeInfo{}, errors.Wrapf(err, "error fetching node version")
+	}
+
+	// get node hypervisor
+	hypervisor, err := a.getNodeHypervisor(ctx, nodeID, nodeClient)
+	if err != nil {
+		return NodeInfo{}, errors.Wrapf(err, "error fetching hypervisor")
+	}
+
+	// get node dmi
+	dmiData, err := a.getNodeDMI(ctx, nodeID, nodeClient)
+	if err != nil {
+		return NodeInfo{}, errors.Wrapf(err, "error fetching node dmi")
+	}
 
 	return NodeInfo{
 		Capacity:   capacity,
-		DMI:        d,
-		Hypervisor: h,
-		ZosVersion: v.ZosVersion.ZOS,
+		DMI:        dmiData,
+		Hypervisor: hypervisor,
+		ZosVersion: version.ZOS,
 	}, nil
 }
 
