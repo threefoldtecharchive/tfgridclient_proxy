@@ -16,20 +16,6 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
-// ErrNodeNotFound creates new error type to define node existence or server problem
-var (
-	ErrNodeNotFound = errors.New("node not found")
-)
-
-// ErrBadGateway creates new error type to define node existence or server problem
-var (
-	ErrBadGateway = errors.New("bad gateway")
-)
-
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
 // listFarms godoc
 // @Summary Show farms on the grid
 // @Description Get all farms on the grid from graphql, It has pagination
@@ -73,9 +59,9 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	_, err = a.queryProxy(queryString, w)
 
 	if err != nil {
+		log.Error().Err(err).Msg("failed to query farm")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
-		return
 	}
 }
 
@@ -115,16 +101,18 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	var nodeList []node
 	for _, node := range nodes.Nodes.Data {
-		isStored, err := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%d", node.NodeID))
+		isStored, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(node.NodeID)))
 		if err != nil {
 			node.Status = "down"
 		}
-		if isStored != "" {
+		if isStored == "likely down" {
+			node.Status = "likely down"
+		}
+		if isStored != "" && isStored != "likely down" {
 			node.Status = "up"
 		}
 		nodeList = append(nodeList, node)
 	}
-
 	result, err := json.Marshal(nodeList)
 	if err != nil {
 		log.Error().Err(err).Msg("fail to list nodes")
@@ -163,6 +151,7 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err != nil {
 		// return internal server error
+		log.Error().Err(err).Msg("failed to get node information")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 		return
@@ -175,16 +164,32 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
+	response := NodeStatus{}
 	nodeID := mux.Vars(r)["node_id"]
-	_, err := a.getNodeData(nodeID, false)
+
+	isStored, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(nodeID)))
 	if err != nil {
+		response.Status = "down"
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{\"status\": \"down\"}"))
-	} else {
+		res, _ := response.Serialize()
+		w.Write(res)
+		return
+	}
+	if isStored == "likely down" {
+		response.Status = "likely down"
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{\"status\": \"up\"}"))
+		res, _ := response.Serialize()
+		w.Write(res)
+	}
+	if isStored != "" && isStored != "likely down" {
+		response.Status = "up"
+		res, _ := response.Serialize()
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(res)
+		return
 	}
 }
 

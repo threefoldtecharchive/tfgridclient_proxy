@@ -15,7 +15,18 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/zos/client"
+	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 )
+
+const maxGoRoutnes = 20 // limit go routines so we have 20 node per time
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func (a *App) getNodeKey(nodeID string) string {
+	return fmt.Sprintf("GRID3NODE:%s", nodeID)
+}
 
 func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
 	// cache node twin id for 10 mins and purge after 15
@@ -39,12 +50,13 @@ func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
 	}
 
 	nodeStats := res.Data.NodeResult
-	if len(nodeStats) > 0 {
-		twinID := nodeStats[0].TwinID
-		a.lruCache.Set(nodeID, twinID, cache.DefaultExpiration)
-		return twinID, nil
+	if len(nodeStats) < 1 {
+		return 0, ErrNodeNotFound
 	}
-	return 0, ErrNodeNotFound
+
+	twinID := nodeStats[0].TwinID
+	a.lruCache.Set(nodeID, twinID, cache.DefaultExpiration)
+	return twinID, nil
 }
 
 func (a *App) baseQuery(queryString string) (io.ReadCloser, error) {
@@ -67,14 +79,16 @@ func (a *App) baseQuery(queryString string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query explorer network %w", err)
 	}
-	if response.StatusCode != 200 {
-		var errResult interface{}
-		if err := json.NewDecoder(response.Body).Decode(errResult); err != nil {
-			return nil, fmt.Errorf("request failed: %w", errResult)
-		}
-		return nil, fmt.Errorf("failed to query explorer network")
+
+	if response.StatusCode == 200 {
+		return response.Body, nil
 	}
-	return response.Body, nil
+
+	var errResult interface{}
+	if err := json.NewDecoder(response.Body).Decode(errResult); err != nil {
+		return nil, fmt.Errorf("failed to decode error from page: %w", err)
+	}
+	return nil, fmt.Errorf("failed to query explorer network: %v", errResult)
 }
 
 func (a *App) query(queryString string, result interface{}) error {
@@ -82,8 +96,8 @@ func (a *App) query(queryString string, result interface{}) error {
 	if err != nil {
 		return err
 	}
-
 	defer response.Close()
+
 	if err := json.NewDecoder(response).Decode(result); err != nil {
 		return err
 	}
@@ -96,7 +110,6 @@ func (a *App) queryProxy(queryString string, w http.ResponseWriter) (written int
 	if err != nil {
 		return 0, err
 	}
-
 	defer response.Close()
 	w.Header().Add("Content-Type", "application/json")
 	return io.Copy(w, response)
@@ -216,44 +229,83 @@ func (a *App) getSystemVersion(ctx context.Context, nodeClient *client.NodeClien
 	c <- systemVersion
 }
 
+func (a *App) getNodeHypervisor(ctx context.Context, nodeID string, nodeClient *client.NodeClient) (string, error) {
+	nodeKey := fmt.Sprintf("node_%s_hypervisor", nodeID)
+	if nodeHyperVisor, found := a.lruCache.Get(nodeKey); found {
+		return nodeHyperVisor.(string), nil
+	}
+
+	systemHypervisor := make(chan systemHypervisorReturnValue)
+	defer close(systemHypervisor)
+
+	go a.getSystemHypervisor(ctx, nodeClient, systemHypervisor)
+	h := <-systemHypervisor
+	if h.Err != nil {
+		return "", nil
+	}
+
+	a.lruCache.Set(nodeKey, h.Hypervisor, cache.NoExpiration)
+	return h.Hypervisor, nil
+}
+
+func (a *App) getNodeDMI(ctx context.Context, nodeID string, nodeClient *client.NodeClient) (dmi.DMI, error) {
+	nodeKey := fmt.Sprintf("node_%s_dmi", nodeID)
+	if nodeDMI, found := a.lruCache.Get(nodeKey); found {
+		return nodeDMI.(dmi.DMI), nil
+	}
+
+	systemDMI := make(chan systemDMIReturnValue)
+	defer close(systemDMI)
+
+	go a.getSystemDMI(ctx, nodeClient, systemDMI)
+
+	d := <-systemDMI
+
+	if d.Err != nil {
+		return dmi.DMI{}, d.Err
+	}
+
+	a.lruCache.Set(nodeKey, d.DMI, cache.NoExpiration)
+	return d.DMI, nil
+}
+
 // fetchNodeData is a helper method that fetches nodes data over rmb
 // returns the node capacity, hypervisor and dmi
 func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	twinID, err := a.getNodeTwinID(nodeID)
 	if err != nil {
 		return NodeInfo{}, err
-
 	}
 	ctx := context.Background()
 
 	nodeClient := client.NewNodeClient(twinID, a.rmb)
 	nodeCapacity := make(chan countersReturnValue)
+	defer close(nodeCapacity)
 
 	go a.getNodeCapacity(ctx, nodeClient, nodeCapacity)
 
-	systemDMI := make(chan systemDMIReturnValue)
-	go a.getSystemDMI(ctx, nodeClient, systemDMI)
-
-	systemHypervisor := make(chan systemHypervisorReturnValue)
-	go a.getSystemHypervisor(ctx, nodeClient, systemHypervisor)
-
 	systemVersion := make(chan systemVersionReturnValue)
+	defer close(systemVersion)
+
 	go a.getSystemVersion(ctx, nodeClient, systemVersion)
 
 	p := <-nodeCapacity
-	d := <-systemDMI
-	h := <-systemHypervisor
 	v := <-systemVersion
+
+	h, err := a.getNodeHypervisor(ctx, nodeID, nodeClient)
+	if err != nil {
+		return NodeInfo{}, fmt.Errorf("error fetching hypervisor data : %w", err)
+	}
+
+	d, err := a.getNodeDMI(ctx, nodeID, nodeClient)
+	if err != nil {
+		return NodeInfo{}, fmt.Errorf("error fetching node dmi data : %w", err)
+	}
 
 	if p.Err != nil {
 		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", p.Err)
 	}
-	if d.Err != nil {
-		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", d.Err)
-	}
-	if h.Err != nil {
-		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", h.Err)
-	}
+
 	if v.Err != nil {
 		return NodeInfo{}, fmt.Errorf("error fetching node data : %w", v.Err)
 	}
@@ -264,50 +316,68 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 
 	return NodeInfo{
 		Capacity:   capacity,
-		DMI:        d.DMI,
-		Hypervisor: h.Hypervisor,
+		DMI:        d,
+		Hypervisor: h,
 		ZosVersion: v.ZosVersion.ZOS,
 	}, nil
+}
 
+func (a *App) checkLikelyDown(data string, nodeID string, originalError error) (string, error) {
+
+	redisData := NodeInfo{}
+	err := redisData.Deserialize([]byte(data))
+	if err != nil {
+		return "", err
+	}
+
+	// mark the node likely down if we can't reach this node in 10 mins it's down
+	err = a.SetRedisKey(a.getNodeKey(nodeID), []byte("likely down"), 10*60)
+	if err != nil {
+		log.Warn().Err(err).Msg("could not cache data in redis")
+	}
+	return "", ErrLikelyDown
 }
 
 // getNodeData is a helper function that wraps fetch node data
 // it caches the results in redis to save time
 func (a *App) getNodeData(nodeID string, force bool) (string, error) {
-	value, _ := a.GetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
+	value, _ := a.GetRedisKey(a.getNodeKey(nodeID))
 
-	// No value, fetch data from the node
-	if value == "" || force {
-		nodeInfo, err := a.fetchNodeData(nodeID)
-		if errors.Is(err, ErrNodeNotFound) {
-			// delete redis key
-			err = a.DeleteRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
-			if err != nil {
-				log.Warn().Err(err).Msg("could not delete key in redis")
-			}
-			return "", ErrNodeNotFound
-		} else if err != nil {
-			err = a.DeleteRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID))
-			if err != nil {
-				log.Warn().Err(err).Msg("could not delete key in redis")
-			}
-			return "", ErrBadGateway
-		}
-		// Save value in redis
-		// caching for 40 mins
-		marshalledInfo, err := json.Marshal(nodeInfo)
-		if err != nil {
-			log.Error().Err(err).Msg("could not marshal node info")
-			return "", errors.Wrap(err, "internal server error")
-		}
-
-		err = a.SetRedisKey(fmt.Sprintf("GRID3NODE:%s", nodeID), marshalledInfo, 40*60)
-		if err != nil {
-			log.Warn().Err(err).Msg("could not cache data in redis")
-		}
-		value = string(marshalledInfo)
+	// value exists just return it
+	if value != "" && !force {
+		return value, nil
 	}
-	return value, nil
+
+	nodeInfo, fetchingNodesError := a.fetchNodeData(nodeID)
+	if errors.Is(fetchingNodesError, ErrNodeNotFound) {
+		// delete redis key
+		err := a.DeleteRedisKey(a.getNodeKey(nodeID))
+		if err != nil {
+			log.Warn().Err(err).Msg("could not delete key in redis")
+		}
+		return "", ErrNodeNotFound
+	} else if fetchingNodesError != nil && value != "" {
+		return a.checkLikelyDown(value, nodeID, fetchingNodesError)
+	} else if fetchingNodesError != nil {
+		// if node is down delete the key and return bad gateway
+		err := a.DeleteRedisKey(a.getNodeKey(nodeID))
+		if err != nil {
+			log.Warn().Err(err).Msg("could not delete key in redis")
+		}
+		return "", errors.Wrapf(ErrBadGateway, fetchingNodesError.Error())
+	}
+	// Save value in redis
+	// caching for 30 mins
+	serializedNodeInfo, err := nodeInfo.Serialize()
+	if err != nil {
+		return "", err
+	}
+
+	err = a.SetRedisKey(a.getNodeKey(nodeID), serializedNodeInfo, 30*60)
+	if err != nil {
+		log.Warn().Err(err).Msg("could not cache data in redis")
+	}
+	return string(serializedNodeInfo), nil
 }
 
 // getAllNodesIDs is a helper method to only list all nodes ids
@@ -335,7 +405,9 @@ func (a *App) cacheNodesInfo() {
 		log.Error().Err(err).Msg("failed to query nodes")
 	}
 
+	channelLimit := make(chan int, maxGoRoutnes)
 	for i, nid := range nodeIds.Data.NodeResult {
+		channelLimit <- 1
 		go func(i int, nid nodeID) {
 			log.Debug().Msg(fmt.Sprintf("%d:fetching node: %d", i+1, nid.NodeID))
 			_, err := a.getNodeData(fmt.Sprint(nid.NodeID), true)
@@ -344,6 +416,7 @@ func (a *App) cacheNodesInfo() {
 			} else {
 				log.Debug().Msg(fmt.Sprintf("node %d is fetched successfully", nid.NodeID))
 			}
+			<-channelLimit
 		}(i, nid)
 	}
 	log.Debug().Msg("Fetching nodes completed, next fetch will be in 15 minutes")
