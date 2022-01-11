@@ -236,10 +236,10 @@ func (a *App) getNodeHypervisor(ctx context.Context, nodeID string, nodeClient *
 	}
 
 	systemHypervisor := make(chan systemHypervisorReturnValue)
-	go a.getSystemHypervisor(ctx, nodeClient, systemHypervisor)
+	defer close(systemHypervisor)
 
+	go a.getSystemHypervisor(ctx, nodeClient, systemHypervisor)
 	h := <-systemHypervisor
-	close(systemHypervisor)
 	if h.Err != nil {
 		return "", nil
 	}
@@ -255,10 +255,11 @@ func (a *App) getNodeDMI(ctx context.Context, nodeID string, nodeClient *client.
 	}
 
 	systemDMI := make(chan systemDMIReturnValue)
+	defer close(systemDMI)
+
 	go a.getSystemDMI(ctx, nodeClient, systemDMI)
 
 	d := <-systemDMI
-	close(systemDMI)
 
 	if d.Err != nil {
 		return dmi.DMI{}, d.Err
@@ -279,16 +280,17 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 
 	nodeClient := client.NewNodeClient(twinID, a.rmb)
 	nodeCapacity := make(chan countersReturnValue)
+	defer close(nodeCapacity)
 
 	go a.getNodeCapacity(ctx, nodeClient, nodeCapacity)
 
 	systemVersion := make(chan systemVersionReturnValue)
+	defer close(systemVersion)
+
 	go a.getSystemVersion(ctx, nodeClient, systemVersion)
 
 	p := <-nodeCapacity
-	close(nodeCapacity)
 	v := <-systemVersion
-	close(systemVersion)
 
 	h, err := a.getNodeHypervisor(ctx, nodeID, nodeClient)
 	if err != nil {
