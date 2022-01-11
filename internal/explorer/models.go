@@ -6,7 +6,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
-	"github.com/threefoldtech/zos/client"
 	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
@@ -201,25 +200,4 @@ type farmData struct {
 // FarmResult is to unmarshal json in it
 type FarmResult struct {
 	Data farmData `json:"data"`
-}
-
-type countersReturnValue struct {
-	NodeCapacity gridtypes.Capacity
-	UsedCapacity gridtypes.Capacity
-	Err          error
-}
-
-type systemDMIReturnValue struct {
-	DMI dmi.DMI
-	Err error
-}
-
-type systemHypervisorReturnValue struct {
-	Hypervisor string
-	Err        error
-}
-
-type systemVersionReturnValue struct {
-	ZosVersion client.Version
-	Err        error
 }
