@@ -44,7 +44,7 @@ COPY rootfs /
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.5/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
-ENV TWIN=60
+ENV TWIN=296
 ENV SERVER_PORT=":8080"
 ENV EXPLORER="https://graphql.dev.grid.tf/graphql"
 ENV SUBSTRATE="wss://tfchain.dev.grid.tf/ws"
