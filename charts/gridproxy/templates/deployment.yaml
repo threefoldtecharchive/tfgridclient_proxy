@@ -58,6 +58,10 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
+      volumes:
+        - name: gridproxy
+          persistentVolumeClaim:
+            claimName: "{{ include "gridproxy.fullname" . }}-gridproxy-claim"
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -101,3 +101,8 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# volume for yggdrasail configurations
+volume:
+  size: 5 # MB
+  hostPath: /yggdrasil/

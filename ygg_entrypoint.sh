@@ -2,12 +2,13 @@
 
 set -ex
 
-if [ ! -f "/etc/config.conf" ]; then
-  echo "generate /etc/config.conf"
-  yggdrasil --genconf > "/etc/config.conf"
+
+if [ ! -f "/yggdrasil/yggdrasil.conf" ]; then
+  echo "generate /yggdrasil/yggdrasil.conf"
+  yggdrasil --genconf > "/yggdrasil/yggdrasil.conf"
 fi
 
-sed -i "/Peers: \[\]/c\  Peers: \n  [\n    tls:\/\/54.37.137.221:11129\n  ]" /etc/config.conf
+sed -i "/Peers: \[\]/c\  Peers: \n  [\n    tls:\/\/54.37.137.221:11129\n  ]" /yggdrasil/yggdrasil.conf
 
-yggdrasil --useconf < /etc/config.conf
+yggdrasil --useconf < /yggdrasil/yggdrasil.conf
 exit $?

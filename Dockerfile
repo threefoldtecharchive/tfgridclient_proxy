@@ -52,6 +52,6 @@ ENV REDIS="localhost:6379"
 # ENV DOMAIN="gridproxy.3botmain.grid.tf"
 # ENV EMAIL="gridproxy@gmail.com"
 # ENV CA="https://acme-v02.api.letsencrypt.org/directory"
-
+VOLUME /yggdrasil
 EXPOSE 8080
 ENTRYPOINT [ "zinit", "init" ]
