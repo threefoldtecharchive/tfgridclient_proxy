@@ -12,13 +12,21 @@ image:
 
   env:          
     - name: "TWIN"
-      value: "7"
-    - name: "SERVER_IP"
-      value: "0.0.0.0:8080"
-    - name: "EXPLORER_URL"
+      value: "60"
+    - name: "SERVER_PORT"
+      value: ":8080"
+    - name: "EXPLORER"
       value: "https://explorer.devnet.grid.tf/graphql/"
-    - name: "REDIS_URL"
+    - name: "SUBSTRATE"
+      value: "wss://tfchain.dev.grid.tf/ws"
+    - name: "REDIS"
       value: "localhost:6379"
+    # - name: "DOMAIN"
+    #   value: "gridproxy.3botmain.grid.tf"
+    # - email: "EMAIL"
+    #   value: "gridproxy@gmail.com"
+    # - name: "CA"
+    #   value: "https://acme-v02.api.letsencrypt.org/directory"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -74,11 +82,11 @@ resources:
   #   cpu: 100m
   #   memory: 128Mi
   limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
     cpu: 1000m
     memory: 1024Mi
-  requests:
-    cpu: 900m
-    memory: 1000Mi
 
 
 autoscaling:
