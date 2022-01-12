@@ -9,7 +9,7 @@ RUN git clone https://github.com/yggdrasil-network/yggdrasil-go.git .
 RUN ./build && go build -o /src/genkeys cmd/genkeys/main.go
 
 
-FROM golang:1.16-alpine as gobuilder
+FROM golang:1.18-alpine as gobuilder
 
 WORKDIR /grid_proxy_server
 
@@ -17,8 +17,9 @@ RUN apk add git
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN GIT_COMMIT=$(git rev-list -1 HEAD) && \
-  go build -ldflags "-X main.GitCommit=$GIT_COMMIT" cmds/proxy_server/main.go
+RUN CGO_ENABLED=0 && \
+    GIT_COMMIT=$(git describe --tags --abbrev=0) && \
+    go build -ldflags "-X main.GitCommit=$GIT_COMMIT -extldflags '-static'"  cmds/proxy_server/main.go
   
 RUN git clone https://github.com/threefoldtech/rmb-go.git
 RUN cd rmb-go && go build cmds/msgbus/main.go
@@ -40,13 +41,17 @@ COPY --from=gobuilder /grid_proxy_server/main /usr/bin/server
 
 COPY rootfs /
 
-RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.1/zinit -O /sbin/zinit \
+RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.5/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
-ENV TWIN=7
-ENV SERVER_IP="0.0.0.0:8080"
-ENV EXPLORER_URL="https://graphql.dev.grid.tf/graphql"
+ENV TWIN=60
+ENV SERVER_PORT=":443"
+ENV EXPLORER="https://graphql.dev.grid.tf/graphql"
 ENV REDIS_URL="localhost:6379"
+ENV DOMAIN="gridproxy.3botmain.grid.tf"
+ENV EMAIL="gridproxy@gmail.com"
+ENV CA="https://acme-v02.api.letsencrypt.org/directory"
+ENV SUBSTRATE="wss://tfchain.dev.grid.tf/ws"
 
-EXPOSE 8080
+EXPOSE 443
 ENTRYPOINT [ "zinit", "init" ]
