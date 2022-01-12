@@ -9,7 +9,7 @@ RUN git clone https://github.com/yggdrasil-network/yggdrasil-go.git .
 RUN ./build && go build -o /src/genkeys cmd/genkeys/main.go
 
 
-FROM golang:1.18-alpine as gobuilder
+FROM golang:1.17-alpine as gobuilder
 
 WORKDIR /grid_proxy_server
 
