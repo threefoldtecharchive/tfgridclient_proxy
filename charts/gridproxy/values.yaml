@@ -8,7 +8,7 @@ image:
   repository: threefoldtech/gridproxy
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "test"
 
   env:          
     - name: "TWIN"
@@ -16,7 +16,7 @@ image:
     - name: "SERVER_PORT"
       value: ":8080"
     - name: "EXPLORER"
-      value: "https://explorer.devnet.grid.tf/graphql/"
+      value: "https://graphql.dev.grid.tf/graphql"
     - name: "SUBSTRATE"
       value: "wss://tfchain.dev.grid.tf/ws"
     - name: "REDIS"

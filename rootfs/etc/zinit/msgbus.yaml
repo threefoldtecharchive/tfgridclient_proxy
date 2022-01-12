@@ -1,4 +1,4 @@
-exec: sh -c "/usr/bin/msgbus --twin $TWIN --substrate $SUBSTRATE"
+exec: sh -c "/usr/bin/msgbusd --twin $TWIN --substrate $SUBSTRATE --redis $REDIS"
 log: stdout
 after:
   - ygg
