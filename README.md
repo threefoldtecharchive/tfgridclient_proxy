@@ -314,14 +314,14 @@ systemctl daemon-reload
 
 ### Dockerfile
 
+- get public and private key for a yggdrasil configuration
+
 To build & run dockerfile
 
 ```bash
 docker build -t threefoldtech/gridproxy .
-docker run --name gridproxy -e TWIN=60 -e SERVER_PORT=":8080" -e EXPLORER="https://graphql.dev.grid.tf/graphql" -e SUBSTRATE="wss://tfchain.dev.grid.tf/ws" -e REDIS="localhost:6379" --cap-add=NET_ADMIN threefoldtech/gridproxy
+docker run --name gridproxy -e TWIN=296 -e EXPLORER="https://graphql.dev.grid.tf/graphql" -e SUBSTRATE="wss://tfchain.dev.grid.tf/ws" -e PUBLIC_KEY="5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e PRIVATE_KEY="ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" --cap-add=NET_ADMIN threefoldtech/gridproxy
 ```
-
-- After it runs you should update your twin's with yggdrasail ip on [polkadot](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Ftfchain.dev.grid.tf%2Fws#/extrinsics)
 
 ### Update helm package
 

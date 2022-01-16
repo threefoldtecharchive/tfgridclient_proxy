@@ -49,9 +49,11 @@ ENV SERVER_PORT=":8080"
 ENV EXPLORER="https://graphql.dev.grid.tf/graphql"
 ENV SUBSTRATE="wss://tfchain.dev.grid.tf/ws"
 ENV REDIS="localhost:6379"
+# sample for yggdrasil private&public keys
+ENV PUBLIC_KEY="5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" 
+ENV PRIVATE_KEY="ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8"
 # ENV DOMAIN="gridproxy.3botmain.grid.tf"
 # ENV EMAIL="gridproxy@gmail.com"
 # ENV CA="https://acme-v02.api.letsencrypt.org/directory"
-VOLUME /yggdrasil
 EXPOSE 8080
 ENTRYPOINT [ "zinit", "init" ]

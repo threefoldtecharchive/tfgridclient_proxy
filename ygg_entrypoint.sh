@@ -2,12 +2,13 @@
 
 set -ex
 
-if [ ! -f "/yggdrasil/yggdrasil.conf" ]; then
-  echo "generating new configurations at /yggdrasil/yggdrasil.conf"
-  mkdir -p /yggdrasil/
-  yggdrasil --genconf > "/yggdrasil/yggdrasil.conf"
-  sed -i "/Peers: \[\]/c\  Peers: \n  [\n    tls:\/\/54.37.137.221:11129\n  ]" /yggdrasil/yggdrasil.conf
+if [ ! -f "/etc/yggdrasil.conf" ]; then
+  echo "generating new configurations at /etc/yggdrasil.conf"
+  yggdrasil --genconf > "/etc/yggdrasil.conf"
+  sed -i "/Peers: \[\]/c\  Peers: \n  [\n    tls:\/\/54.37.137.221:11129\n  ]" /etc/yggdrasil.conf
+  sed -i "/^  PublicKey: */c\  PublicKey: $PUBLIC_KEY" /etc/yggdrasil.conf
+  sed -i "/PrivateKey: */c\  PrivateKey: $PRIVATE_KEY" /etc/yggdrasil.conf
 fi
 
-yggdrasil --useconf < /yggdrasil/yggdrasil.conf
+yggdrasil --useconf < /etc/yggdrasil.conf
 exit $?
