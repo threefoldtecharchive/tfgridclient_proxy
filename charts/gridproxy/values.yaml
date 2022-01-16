@@ -8,29 +8,25 @@ image:
   repository: threefoldtech/gridproxy
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "test"
+  tag: "1.0.0"
 
   env:          
     - name: "TWIN"
-      value: "296"
+      value: ""
     - name: "SERVER_PORT"
-      value: ":8080"
+      value: ""
     - name: "EXPLORER"
-      value: "https://graphql.dev.grid.tf/graphql"
+      value: ""
     - name: "SUBSTRATE"
-      value: "wss://tfchain.dev.grid.tf/ws"
+      value: ""
     - name: "REDIS"
-      value: "localhost:6379"
-    # - name: "DOMAIN"
-    #   value: "gridproxy.3botmain.grid.tf"
-    # - email: "EMAIL"
-    #   value: "gridproxy@gmail.com"
-    # - name: "CA"
-    #   value: "https://acme-v02.api.letsencrypt.org/directory"
+      value: ""
     - name: "PUBLIC_KEY"
-      value: "5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" 
+      value: "" 
     - name: "PRIVATE_KEY"
-      value: "ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8"
+      value: ""
+    - name: "PEERS"
+      value: ""
 
 imagePullSecrets: []
 nameOverride: ""
@@ -61,18 +57,15 @@ securityContext: {}
 # Change port here only if you want to use another one
 service:
   type: ClusterIP
-  port: 8080
+  port: 443
 
 ingress:
   enabled: true
   annotations:
-    kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/ssl-passthrough: "true"
-    traefik.ingress.kubernetes.io/router.tls.certresolver: gridca
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-production
 
   host: my-host.com
-
-  tls: []
 
 resources: 
   # We usually recommend not to specify default resources and to leave this as a conscious

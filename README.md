@@ -16,7 +16,13 @@ Interact with TFgridDB using rest APIs
 - Start the msgbus with your twin ID
 - Then to run `go run cmds/proxy_server/main.go`
 - To run without certificate use `go run cmds/proxy_server/main.go -no-cert`
-- To build `CGO_ENABLED=0 && GIT_COMMIT=$(git describe --tags --abbrev=0) && go build -ldflags "-X main.GitCommit=$GIT_COMMIT -extldflags '-static'"  cmds/proxy_server/main.go`
+- To build:
+
+  ```bash
+  GIT_COMMIT=$(git describe --tags --abbrev=0) && \
+  cd cmds/proxy_server && CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s -X main.GitCommit=$GIT_COMMIT -extldflags '-static'"  -o server
+  ```
+
 - Then visit `http://localhost:8080/<endpoint>`
 
 ## Production Run
@@ -322,6 +328,10 @@ To build & run dockerfile
 docker build -t threefoldtech/gridproxy .
 docker run --name gridproxy -e TWIN=296 -e EXPLORER="https://graphql.dev.grid.tf/graphql" -e SUBSTRATE="wss://tfchain.dev.grid.tf/ws" -e PUBLIC_KEY="5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e PRIVATE_KEY="ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" --cap-add=NET_ADMIN threefoldtech/gridproxy
 ```
+
+- PUBLIC_KEY: yggdrasil public key
+- PRIVATE_KEY: yggdrasil private key
+- PEERS: yggdrasil peers
 
 ### Update helm package
 
