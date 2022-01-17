@@ -8,17 +8,25 @@ image:
   repository: threefoldtech/gridproxy
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "1.0.0"
 
   env:          
     - name: "TWIN"
-      value: "7"
-    - name: "SERVER_IP"
-      value: "0.0.0.0:8080"
-    - name: "EXPLORER_URL"
-      value: "https://explorer.devnet.grid.tf/graphql/"
-    - name: "REDIS_URL"
-      value: "localhost:6379"
+      value: ""
+    - name: "SERVER_PORT"
+      value: ""
+    - name: "EXPLORER"
+      value: ""
+    - name: "SUBSTRATE"
+      value: ""
+    - name: "REDIS"
+      value: ""
+    - name: "PUBLIC_KEY"
+      value: "" 
+    - name: "PRIVATE_KEY"
+      value: ""
+    - name: "PEERS"
+      value: ""
 
 imagePullSecrets: []
 nameOverride: ""
@@ -49,18 +57,15 @@ securityContext: {}
 # Change port here only if you want to use another one
 service:
   type: ClusterIP
-  port: 8080
+  port: 443
 
 ingress:
   enabled: true
   annotations:
-    kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/ssl-passthrough: "true"
-    traefik.ingress.kubernetes.io/router.tls.certresolver: gridca
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-production
 
   host: my-host.com
-
-  tls: []
 
 resources: 
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -74,11 +79,11 @@ resources:
   #   cpu: 100m
   #   memory: 128Mi
   limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
     cpu: 1000m
     memory: 1024Mi
-  requests:
-    cpu: 900m
-    memory: 1000Mi
 
 
 autoscaling:

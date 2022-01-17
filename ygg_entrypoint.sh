@@ -2,16 +2,13 @@
 
 set -ex
 
-mkdir -p /dev/net
-mknod /dev/net/tun c 10 200
-chmod 600 /dev/net/tun
-
-if [ ! -f "/etc/config.conf" ]; then
-  echo "generate /etc/config.conf"
-  yggdrasil --genconf > "/etc/config.conf"
+if [ ! -f "/etc/yggdrasil.conf" ]; then
+  echo "generating new configurations at /etc/yggdrasil.conf"
+  yggdrasil --genconf > "/etc/yggdrasil.conf"
+  sed -i "/Peers: \[\]/c\  Peers: \n  [\n    tls:\/\/54.37.137.221:11129\n $PEERS  ]" /etc/yggdrasil.conf
+  sed -i "/^  PublicKey: */c\  PublicKey: $PUBLIC_KEY" /etc/yggdrasil.conf
+  sed -i "/PrivateKey: */c\  PrivateKey: $PRIVATE_KEY" /etc/yggdrasil.conf
 fi
 
-sed -i "/Peers: \[\]/c\  Peers: \n  [\n    tls:\/\/54.37.137.221:11129\n  ]" /etc/config.conf
-
-yggdrasil --useconf < /etc/config.conf
+yggdrasil --useconf < /etc/yggdrasil.conf
 exit $?

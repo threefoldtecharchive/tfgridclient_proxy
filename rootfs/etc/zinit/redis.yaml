@@ -1,2 +1,2 @@
-exec: redis-server
+exec: redis-server --daemonize yes
 log: stdout

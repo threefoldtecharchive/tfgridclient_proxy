@@ -32,10 +32,8 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
-            capabilities:
-              add:
-                - NET_ADMIN          
-          env:          
+            privileged: true      
+          env:
           {{- range $key, $val := .Values.env }}
             - name: {{ $key }}
               value: {{ $val | quote }}
@@ -53,7 +51,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: http
+              port: http    
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

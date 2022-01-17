@@ -350,16 +350,18 @@ func (a *App) cacheNodesInfo() {
 	nodeIds, err := a.getAllNodesIDs()
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query nodes")
+		return
 	}
 
 	channelLimit := make(chan int, maxGoRoutnes)
+	defer close(channelLimit)
 	for i, nid := range nodeIds.Data.NodeResult {
 		channelLimit <- 1
 		go func(i int, nid nodeID) {
 			log.Debug().Msg(fmt.Sprintf("%d:fetching node: %d", i+1, nid.NodeID))
 			_, err := a.getNodeData(fmt.Sprint(nid.NodeID), true)
 			if err != nil {
-				log.Error().Err(err).Msg(fmt.Sprintf("could not fetch node data %d", nid.NodeID))
+				log.Warn().Err(err).Msg(fmt.Sprintf("could not fetch node data %d", nid.NodeID))
 			} else {
 				log.Debug().Msg(fmt.Sprintf("node %d is fetched successfully", nid.NodeID))
 			}
