@@ -178,9 +178,9 @@ systemctl daemon-reload
 
     default view is for 50 nodes and paginated to make it faster and easier to parse, example: `?page=1`
   
-  - max_result:
+  - size:
 
-    default max result for page, example: ``?max_result=50`
+    default max result for page, example: ``?size=50`
 
 - Example full query
 
@@ -226,7 +226,7 @@ systemctl daemon-reload
 
     ```json
     // 20211012115620
-    // http://localhost:8080/gateways?max_result=1
+    // http://localhost:8080/gateways?size=1
 
       {
         "data": {
@@ -271,9 +271,9 @@ systemctl daemon-reload
 
     default view is for 50 nodes and paginated to make it faster and easier to parse, example: `?page=1`
   
-  - max_result:
+  - size:
 
-    default max result for page, example: ``?max_result=50`
+    default max result for page, example: ``?size=50`
 
 ### `/nodes/<node-id>` or `/gateways/<node-id>`
 

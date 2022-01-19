@@ -132,7 +132,7 @@ func getIsGateway(ctx context.Context) string {
 }
 
 func calculateMaxResult(r *http.Request) (int, error) {
-	maxResultPerpage := r.URL.Query().Get("max_result")
+	maxResultPerpage := r.URL.Query().Get("size")
 	if maxResultPerpage == "" {
 		maxResultPerpage = "50"
 	}

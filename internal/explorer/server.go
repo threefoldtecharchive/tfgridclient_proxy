@@ -23,7 +23,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param page query int false "Page number"
-// @Param max_result query int false "Max result per page"
+// @Param size query int false "Max result per page"
 // @Success 200 {object} FarmResult
 // @Router /farms [get]
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +72,7 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param page query int false "Page number"
-// @Param max_result query int false "Max result per page"
+// @Param size query int false "Max result per page"
 // @Param farm_id query int false "Get nodes for specific farm"
 // @Success 200 {object} nodesResponse
 // @Router /nodes [get]
