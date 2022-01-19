@@ -56,13 +56,24 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	}
 	`, maxResult, pageOffset)
 
-	_, err = a.queryProxy(queryString, w)
+	farms := FarmResult{}
+	err = a.query(queryString, &farms)
 
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query farm")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 	}
+
+	result, err := json.Marshal(farms.Data.Farms)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to marshal farm")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(result))
 }
 
 // listNodes godoc

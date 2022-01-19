@@ -182,6 +182,7 @@ type farm struct {
 	Version         int    `json:"version"`
 	PricingPolicyID int    `json:"pricingPolicyId"`
 	StellarAddress  string `json:"stellarAddress"`
+	PublicIps []publicIP `json:"publicIps"`
 }
 
 type publicIP struct {
@@ -194,7 +195,6 @@ type publicIP struct {
 
 type farmData struct {
 	Farms     []farm     `json:"farms"`
-	PublicIps []publicIP `json:"publicIps"`
 }
 
 // FarmResult is to unmarshal json in it
