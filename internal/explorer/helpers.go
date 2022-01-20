@@ -28,6 +28,10 @@ func (a *App) getNodeKey(nodeID string) string {
 	return fmt.Sprintf("GRID3NODE:%s", nodeID)
 }
 
+func (a *App) getNodeCapacityKey(nodeID string) string {
+	return fmt.Sprintf("GRID3NODECAPACITY:%s", nodeID)
+}
+
 func (a *App) getNodeTwinID(nodeID string) (uint32, error) {
 	// cache node twin id for 10 mins and purge after 15
 	if twinID, found := a.lruCache.Get(nodeID); found {
@@ -226,23 +230,19 @@ func (a *App) getNodeDMI(ctx context.Context, nodeID string, nodeClient *client.
 // fetchNodeData is a helper method that fetches nodes data over rmb
 // returns the node capacity, hypervisor and dmi
 func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
+	ctx := context.Background()
+	
 	twinID, err := a.getNodeTwinID(nodeID)
 	if err != nil {
 		return NodeInfo{}, err
 	}
-	ctx := context.Background()
+	
+	capacity, err := a.getNodeCapacity(ctx, nodeID, false)
+	if err != nil {
+		return NodeInfo{}, err
+	}
 
 	nodeClient := client.NewNodeClient(twinID, a.rmb)
-
-	// get node capacity
-	total, used, err := nodeClient.Counters(ctx)
-	if err != nil {
-		return NodeInfo{}, errors.Wrapf(err, "error fetching node statistics")
-	}
-	capacity := capacityResult{}
-	capacity.Total = total
-	capacity.Used = used
-
 	// get node version
 	version, err := nodeClient.SystemVersion(ctx)
 	if err != nil {
@@ -325,6 +325,48 @@ func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 		log.Warn().Err(err).Msg("could not cache data in redis")
 	}
 	return string(serializedNodeInfo), nil
+}
+
+// getNodeCapacity is a helper function that wraps fetch node capacity
+// it caches the results in redis to save time
+func (a *App) getNodeCapacity(ctx context.Context, nodeID string, force bool) (capacityResult, error) {
+	value, _ := a.GetRedisKey(a.getNodeCapacityKey(nodeID))
+	nodeCapacityResult := capacityResult{}
+
+	// value exists just return it
+	if value != "" && !force {
+		_ = json.Unmarshal([]byte(value), &nodeCapacityResult)
+		return nodeCapacityResult, nil
+	}
+
+	twinID, err := a.getNodeTwinID(nodeID)
+	if err != nil {
+		return capacityResult{}, err
+	}
+
+	nodeClient := client.NewNodeClient(twinID, a.rmb)
+
+	// get node capacity
+	total, used, err := nodeClient.Counters(ctx)
+	if err != nil {
+		return nodeCapacityResult, errors.Wrapf(err, "error fetching node statistics")
+	}
+	nodeCapacityResult.Total = total
+	nodeCapacityResult.Used = used
+
+	// Save value in redis
+	// caching for 30 mins
+	serializedNodeInfo, err := json.Marshal(nodeCapacityResult)
+	if err != nil {
+		log.Warn().Err(err).Msg("could not cache data in redis")
+		return nodeCapacityResult, nil
+	}
+
+	err = a.SetRedisKey(a.getNodeCapacityKey(nodeID), serializedNodeInfo, 10*60)
+	if err != nil {
+		log.Warn().Err(err).Msg("could not cache data in redis")
+	}
+	return nodeCapacityResult, nil
 }
 
 // getAllNodesIDs is a helper method to only list all nodes ids
