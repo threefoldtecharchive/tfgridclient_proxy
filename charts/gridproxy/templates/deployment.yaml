@@ -25,6 +25,10 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "gridproxy.serviceAccountName" . }}
+      securityContext:
+        sysctls:
+        - name: net.ipv6.conf.default.disable_ipv6
+          value: "0"
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -32,7 +36,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
-            privileged: true      
+            privileged: true
           env:
           {{- range $key, $val := .Values.env }}
             - name: {{ $key }}
