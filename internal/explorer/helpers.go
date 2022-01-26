@@ -231,7 +231,7 @@ func (a *App) getNodeDMI(ctx context.Context, nodeID string, nodeClient *client.
 // fetchNodeData is a helper method that fetches nodes data over rmb
 // returns the node capacity, hypervisor and dmi
 func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2 * time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*3)
 	defer cancel()
 	
 	twinID, err := a.getNodeTwinID(nodeID)
