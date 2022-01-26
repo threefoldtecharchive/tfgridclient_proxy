@@ -7,13 +7,13 @@ Interact with TFgridDB using rest APIs
 ## Prerequisites
 
 1. A msgbusd instance must be running on the node. This client uses RMB (message bus) to send messages to nodes, and get the responses.
-2. A valid TwinID.
-3. yggdrasil service running with a valid ip assigned to the twin on polkadot.
+2. A valid MNEMONICS.
+3. yggdrasil service running with a valid ip assigned to the MNEMONICS on polkadot.
 4. Golang compiler > 1.13 to run the grid proxy server.
 
 ## Build and run
 
-- Start the msgbus with your twin ID
+- Start the msgbus with your MNEMONICS ID
 - Then to run `go run cmds/proxy_server/main.go`
 - To run without certificate use `go run cmds/proxy_server/main.go -no-cert`
 - To build:
@@ -27,7 +27,7 @@ Interact with TFgridDB using rest APIs
 
 ## Production Run
 
-- Start the msgbus systemd service with a machine twinId linked to its yggdrasil IP or public ip if there, [download and more info](https://github.com/threefoldtech/go-rmb)
+- Start the msgbus systemd service with a machine MNEMONICS linked to its yggdrasil IP or public ip if there, [download and more info](https://github.com/threefoldtech/go-rmb)
 - Download the latest binary [here](https://github.com/threefoldtech/tfgridclient_proxy/releases)
 - add the execution permission to the binary and move it to the bin directory
   ```bash
@@ -326,7 +326,7 @@ To build & run dockerfile
 
 ```bash
 docker build -t threefoldtech/gridproxy .
-docker run --name gridproxy -e TWIN=296 -e EXPLORER="https://graphql.dev.grid.tf/graphql" -e SUBSTRATE="wss://tfchain.dev.grid.tf/ws" -e PUBLIC_KEY="5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e PRIVATE_KEY="ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" --cap-add=NET_ADMIN threefoldtech/gridproxy
+docker run --name gridproxy -e MNEMONICS="" -e EXPLORER="https://graphql.dev.grid.tf/graphql" -e SUBSTRATE="wss://tfchain.dev.grid.tf/ws" -e PUBLIC_KEY="5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e PRIVATE_KEY="ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" --cap-add=NET_ADMIN threefoldtech/gridproxy
 ```
 
 - PUBLIC_KEY: yggdrasil public key

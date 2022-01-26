@@ -18,7 +18,7 @@ COPY --from=builder /src/yggdrasilctl /usr/bin/yggdrasilctl
 COPY --from=builder /src/genkeys /usr/bin/genkeys
 
 
-RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.1.7/msgbusd.zip && \
+RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.1.8/msgbusd.zip && \
     unzip msgbusd.zip &&\
     mv msgbusd /usr/bin/msgbusd
 
@@ -33,7 +33,7 @@ COPY ygg_entrypoint.sh /etc/ygg_entrypoint.sh
 RUN chmod +x /etc/ygg_entrypoint.sh
 COPY rootfs /
 
-ENV TWIN=296
+ENV MNEMONICS=""
 ENV SERVER_PORT=":443"
 ENV EXPLORER="https://graphql.dev.grid.tf/graphql"
 ENV SUBSTRATE="wss://tfchain.dev.grid.tf/ws"
