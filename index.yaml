@@ -2,13 +2,23 @@ apiVersion: v1
 entries:
   gridproxy:
   - apiVersion: v2
-    appVersion: 1.16.0
-    created: "2021-09-07T17:51:49.024378105+02:00"
+    appVersion: 1.1.0
+    created: "2022-01-26T13:45:33.444974787+02:00"
     description: A Helm chart for grid proxy server
-    digest: 2c08c0b387dca264dff519d272e95b18be5dc02970b467c921136c75d22804ca
+    digest: f5c42a04331fdec24a7de8a6b650ebdb03e1f37c03d9f755c12aa752b8f04977
     name: gridproxy
     type: application
     urls:
-    - https://mattiaperi.github.io/helm-chart/gridproxy-0.1.0.tgz
+    - https://threefoldtech.github.io/tfgridclient_proxy/gridproxy-1.1.0.tgz
+    version: 1.1.0
+  - apiVersion: v2
+    appVersion: 1.1.0
+    created: "2022-01-26T13:45:33.443499503+02:00"
+    description: A Helm chart for grid proxy server
+    digest: 1d3175bae71955440d3b3880d74c831b003cce4ce068798ba081c6df5f56fcb2
+    name: gridproxy
+    type: application
+    urls:
+    - https://threefoldtech.github.io/tfgridclient_proxy/gridproxy-0.1.0.tgz
     version: 0.1.0
-generated: "2021-09-07T17:51:49.023356633+02:00"
+generated: "2022-01-26T13:45:33.442722428+02:00"

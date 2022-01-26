@@ -337,5 +337,5 @@ docker run --name gridproxy -e TWIN=296 -e EXPLORER="https://graphql.dev.grid.tf
 
 - Do `helm lint charts/gridproxy`
 - Regenerate the packages `helm package -u charts/gridproxy`
-- Regenerate index.yaml `helm repo index --url https://mattiaperi.github.io/helm-chart/ .`
+- Regenerate index.yaml `helm repo index --url https://threefoldtech.github.io/tfgridclient_proxy/ .`
 - Push your changes
