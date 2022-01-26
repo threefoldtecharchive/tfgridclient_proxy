@@ -18,7 +18,7 @@ COPY --from=builder /src/yggdrasilctl /usr/bin/yggdrasilctl
 COPY --from=builder /src/genkeys /usr/bin/genkeys
 
 
-RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.1.8/msgbusd.zip && \
+RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.1.9/msgbusd.zip && \
     unzip msgbusd.zip &&\
     mv msgbusd /usr/bin/msgbusd
 
