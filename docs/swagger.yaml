@@ -249,7 +249,7 @@ paths:
         type: integer
       - description: Max result per page
         in: query
-        name: max_result
+        name: size
         type: integer
       produces:
       - application/json
@@ -273,7 +273,7 @@ paths:
         type: integer
       - description: Max result per page
         in: query
-        name: max_result
+        name: size
         type: integer
       - description: Get nodes for specific farm
         in: query
@@ -321,7 +321,7 @@ paths:
         type: integer
       - description: Max result per page
         in: query
-        name: max_result
+        name: size
         type: integer
       - description: Get nodes for specific farm
         in: query

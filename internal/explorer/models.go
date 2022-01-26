@@ -67,8 +67,8 @@ type nodeResult struct {
 
 // CapacityResult is the NodeData capacity results to unmarshal json in it
 type capacityResult struct {
-	Total gridtypes.Capacity `json:"total"`
-	Used  gridtypes.Capacity `json:"used"`
+	Total gridtypes.Capacity `json:"total_resources"`
+	Used  gridtypes.Capacity `json:"used_resources"`
 }
 
 // NodeInfo is node specific info, queried directly from the node
@@ -120,6 +120,11 @@ func (n *NodeStatus) Deserialize(data []byte) error {
 	return nil
 }
 
+type location struct {
+	Country string `json:"country"`
+	City    string `json:"city"`
+}
+
 type publicConfig struct {
 	Domain string `json:"domain"`
 	Gw4    string `json:"gw4"`
@@ -130,25 +135,24 @@ type publicConfig struct {
 
 // Node is a struct holding the data for a node for the nodes view
 type node struct {
-	Version           int          `json:"version"`
-	ID                string       `json:"id"`
-	NodeID            int          `json:"nodeId"`
-	FarmID            int          `json:"farmId"`
-	TwinID            int          `json:"twinId"`
-	Country           string       `json:"country"`
-	GridVersion       int          `json:"gridVersion"`
-	City              string       `json:"city"`
-	Uptime            int64        `json:"uptime"`
-	Created           int64        `json:"created"`
-	FarmingPolicyID   int          `json:"farmingPolicyId"`
-	UpdatedAt         string       `json:"updatedAt"`
-	Cru               string       `json:"cru"`
-	Mru               string       `json:"mru"`
-	Sru               string       `json:"sru"`
-	Hru               string       `json:"hru"`
-	PublicConfig      publicConfig `json:"publicConfig"`
-	Status            string       `json:"status"` // added node status field for up or down
-	CertificationType string       `json:"certificationType"`
+	Version           int                `json:"version"`
+	ID                string             `json:"id"`
+	NodeID            int                `json:"nodeId"`
+	FarmID            int                `json:"farmId"`
+	TwinID            int                `json:"twinId"`
+	Country           string             `json:"country"`
+	GridVersion       int                `json:"gridVersion"`
+	City              string             `json:"city"`
+	Uptime            int64              `json:"uptime"`
+	Created           int64              `json:"created"`
+	FarmingPolicyID   int                `json:"farmingPolicyId"`
+	UpdatedAt         string             `json:"updatedAt"`
+	TotalResources    gridtypes.Capacity `json:"total_resources"`
+	UsedResources     gridtypes.Capacity `json:"used_resources"`
+	Location          location           `json:"location"`
+	PublicConfig      publicConfig       `json:"publicConfig"`
+	Status            string             `json:"status"` // added node status field for up or down
+	CertificationType string             `json:"certificationType"`
 }
 
 // Nodes is struct for the whole nodes view
@@ -176,12 +180,13 @@ type nodeIDResult struct {
 }
 
 type farm struct {
-	Name            string `json:"name"`
-	FarmID          int    `json:"farmId"`
-	TwinID          int    `json:"twinId"`
-	Version         int    `json:"version"`
-	PricingPolicyID int    `json:"pricingPolicyId"`
-	StellarAddress  string `json:"stellarAddress"`
+	Name            string     `json:"name"`
+	FarmID          int        `json:"farmId"`
+	TwinID          int        `json:"twinId"`
+	Version         int        `json:"version"`
+	PricingPolicyID int        `json:"pricingPolicyId"`
+	StellarAddress  string     `json:"stellarAddress"`
+	PublicIps       []publicIP `json:"publicIps"`
 }
 
 type publicIP struct {
@@ -193,8 +198,7 @@ type publicIP struct {
 }
 
 type farmData struct {
-	Farms     []farm     `json:"farms"`
-	PublicIps []publicIP `json:"publicIps"`
+	Farms []farm `json:"farms"`
 }
 
 // FarmResult is to unmarshal json in it

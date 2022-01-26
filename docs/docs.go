@@ -50,7 +50,7 @@ var doc = `{
                     {
                         "type": "integer",
                         "description": "Max result per page",
-                        "name": "max_result",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -87,7 +87,7 @@ var doc = `{
                     {
                         "type": "integer",
                         "description": "Max result per page",
-                        "name": "max_result",
+                        "name": "size",
                         "in": "query"
                     },
                     {
@@ -161,7 +161,7 @@ var doc = `{
                     {
                         "type": "integer",
                         "description": "Max result per page",
-                        "name": "max_result",
+                        "name": "size",
                         "in": "query"
                     },
                     {

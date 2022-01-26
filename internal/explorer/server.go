@@ -1,6 +1,7 @@
 package explorer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,7 +24,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param page query int false "Page number"
-// @Param max_result query int false "Max result per page"
+// @Param size query int false "Max result per page"
 // @Success 200 {object} FarmResult
 // @Router /farms [get]
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
@@ -56,13 +57,24 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	}
 	`, maxResult, pageOffset)
 
-	_, err = a.queryProxy(queryString, w)
+	farms := FarmResult{}
+	err = a.query(queryString, &farms)
 
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query farm")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 	}
+
+	result, err := json.Marshal(farms.Data.Farms)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to marshal farm")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(result))
 }
 
 // listNodes godoc
@@ -72,7 +84,7 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param page query int false "Page number"
-// @Param max_result query int false "Max result per page"
+// @Param size query int false "Max result per page"
 // @Param farm_id query int false "Get nodes for specific farm"
 // @Success 200 {object} nodesResponse
 // @Router /nodes [get]
@@ -101,6 +113,8 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	var nodeList []node
 	for _, node := range nodes.Nodes.Data {
+		// check if node is down or not by checking redis key existence in redis cache and if it is down
+		// set status to down in node struct and add it to nodeList slice
 		isStored, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(node.NodeID)))
 		if err != nil {
 			node.Status = "down"
@@ -111,6 +125,21 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 		if isStored != "" && isStored != "likely down" {
 			node.Status = "up"
 		}
+
+		node.Location.City = node.City
+		node.Location.Country = node.Country
+
+		// append the usage resources to the node object if it is up
+		if node.Status == "up" {
+			capacity, err := a.getNodeCapacity(context.Background(), fmt.Sprintf("%v", node.NodeID), false)
+			if err != nil {
+				log.Error().Err(err).Msg("error fetching node statistics")
+				continue
+			}
+			node.TotalResources = capacity.Total
+			node.UsedResources = capacity.Used
+		}
+
 		nodeList = append(nodeList, node)
 	}
 	result, err := json.Marshal(nodeList)
