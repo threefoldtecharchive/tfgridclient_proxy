@@ -23,11 +23,6 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
-type ErrorReply struct {
-	Error   string
-	Message string
-}
-
 func errorReplyWithStatus(err error, w http.ResponseWriter, status int) {
 	w.WriteHeader(status)
 	var res ErrorReply

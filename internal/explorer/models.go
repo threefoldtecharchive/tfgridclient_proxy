@@ -72,6 +72,12 @@ type NodeInfo struct {
 	ZosVersion string         `json:"zosVersion"`
 }
 
+// ErrorReply when something bad happens at grid proxy
+type ErrorReply struct {
+	Error   string
+	Message string
+}
+
 // Serialize is the serializer for node info struct
 func (n *NodeInfo) Serialize() (json.RawMessage, error) {
 	bytes, err := json.Marshal(n)
