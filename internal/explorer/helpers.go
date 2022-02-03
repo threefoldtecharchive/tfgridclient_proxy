@@ -15,13 +15,47 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/zos/client"
-	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 )
 
 const maxGoRoutnes = 30 // limit go routines so we have 30 node per time
 
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+type ErrorReply struct {
+	Error   string
+	Message string
+}
+
+func errorReplyWithStatus(err error, w http.ResponseWriter, status int) {
+	w.WriteHeader(status)
+	var res ErrorReply
+	res.Message = err.Error()
+	res.Error = http.StatusText(status)
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		w.Write([]byte(`{"error": "Internal server error", "message": "couldn't encode json"}`))
+	}
+}
+func errorReply(err error, w http.ResponseWriter) {
+	var res ErrorReply
+	res.Message = err.Error()
+	if errors.Is(err, ErrNodeNotFound) {
+		// return not found 404
+		w.WriteHeader(http.StatusNotFound)
+		res.Error = http.StatusText(http.StatusNotFound)
+	} else if errors.Is(err, ErrBadGateway) {
+		w.WriteHeader(http.StatusBadGateway)
+		res.Error = http.StatusText(http.StatusBadGateway)
+	} else if err != nil {
+		// return internal server error
+		log.Error().Err(err).Msg("failed to get node information")
+		w.WriteHeader(http.StatusInternalServerError)
+		res.Error = http.StatusText(http.StatusInternalServerError)
+	}
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		w.Write([]byte(`{"error": "Internal server error", "message": "couldn't encode json"}`))
+	}
 }
 
 func (a *App) getNodeKey(nodeID string) string {
@@ -107,16 +141,6 @@ func (a *App) query(queryString string, result interface{}) error {
 	}
 
 	return nil
-}
-
-func (a *App) queryProxy(queryString string, w http.ResponseWriter) (written int64, err error) {
-	response, err := a.baseQuery(queryString)
-	if err != nil {
-		return 0, err
-	}
-	defer response.Close()
-	w.Header().Add("Content-Type", "application/json")
-	return io.Copy(w, response)
 }
 
 func getOffset(ctx context.Context) int {
@@ -212,21 +236,6 @@ func (a *App) getNodeHypervisor(ctx context.Context, nodeID string, nodeClient *
 	return hypervisor, nil
 }
 
-func (a *App) getNodeDMI(ctx context.Context, nodeID string, nodeClient *client.NodeClient) (dmi.DMI, error) {
-	nodeKey := fmt.Sprintf("node_%s_dmi", nodeID)
-	if nodeDMI, found := a.lruCache.Get(nodeKey); found {
-		return nodeDMI.(dmi.DMI), nil
-	}
-
-	dmiData, err := nodeClient.SystemDMI(ctx)
-	if err != nil {
-		return dmi.DMI{}, err
-	}
-
-	a.lruCache.Set(nodeKey, dmiData, cache.NoExpiration)
-	return dmiData, nil
-}
-
 // fetchNodeData is a helper method that fetches nodes data over rmb
 // returns the node capacity, hypervisor and dmi
 func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
@@ -258,33 +267,13 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	}
 
 	// get node dmi
-	dmiData, err := a.getNodeDMI(ctx, nodeID, nodeClient)
-	if err != nil {
-		return NodeInfo{}, errors.Wrapf(err, "error fetching node dmi")
-	}
+
 	log.Debug().Str("duration", time.Since(start).String()).Msg("time taken to fetch node data")
 	return NodeInfo{
 		Capacity:   capacity,
-		DMI:        dmiData,
 		Hypervisor: hypervisor,
 		ZosVersion: version.ZOS,
 	}, nil
-}
-
-func (a *App) checkLikelyDown(data string, nodeID string, originalError error) (string, error) {
-
-	redisData := NodeInfo{}
-	err := redisData.Deserialize([]byte(data))
-	if err != nil {
-		return "", err
-	}
-
-	// mark the node likely down if we can't reach this node in 10 mins it's down
-	err = a.SetRedisKey(a.getNodeKey(nodeID), []byte("likely down"), 10*60)
-	if err != nil {
-		log.Warn().Err(err).Msg("could not cache data in redis")
-	}
-	return "", ErrLikelyDown
 }
 
 // getNodeData is a helper function that wraps fetch node data
@@ -305,8 +294,6 @@ func (a *App) getNodeData(nodeID string, force bool) (string, error) {
 			log.Warn().Err(err).Msg("could not delete key in redis")
 		}
 		return "", ErrNodeNotFound
-	} else if fetchingNodesError != nil && value != "" {
-		return a.checkLikelyDown(value, nodeID, fetchingNodesError)
 	} else if fetchingNodesError != nil {
 		// if node is down delete the key and return bad gateway
 		err := a.DeleteRedisKey(a.getNodeKey(nodeID))
@@ -347,9 +334,10 @@ func (a *App) getNodeCapacity(ctx context.Context, nodeID string, force bool) (c
 	}
 
 	nodeClient := client.NewNodeClient(twinID, a.rmb)
-
+	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	// get node capacity
-	total, used, err := nodeClient.Counters(ctx)
+	total, used, err := nodeClient.Counters(ctx2)
 	if err != nil {
 		return nodeCapacityResult, errors.Wrapf(err, "error fetching node statistics")
 	}

@@ -6,7 +6,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
-	"github.com/threefoldtech/zos/pkg/capacity/dmi"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
@@ -22,11 +21,6 @@ var (
 // ErrBadGateway creates new error type to define node existence or server problem
 var (
 	ErrBadGateway = errors.New("bad gateway")
-)
-
-// ErrBadGateway creates new error type to define node existence or server problem
-var (
-	ErrLikelyDown = errors.New("node is likely down")
 )
 
 // App is the main app objects
@@ -74,7 +68,6 @@ type capacityResult struct {
 // NodeInfo is node specific info, queried directly from the node
 type NodeInfo struct {
 	Capacity   capacityResult `json:"capacity"`
-	DMI        dmi.DMI        `json:"dmi"`
 	Hypervisor string         `json:"hypervisor"`
 	ZosVersion string         `json:"zosVersion"`
 }

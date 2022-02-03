@@ -1,7 +1,6 @@
 package explorer
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
-	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -31,8 +29,7 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+		errorReplyWithStatus(err, w, http.StatusBadRequest)
 		return
 	}
 	maxResult, pageOffset := getMaxResult(r.Context()), getOffset(r.Context())
@@ -62,15 +59,15 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query farm")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+		errorReplyWithStatus(err, w, http.StatusInternalServerError)
+		return
 	}
 
 	result, err := json.Marshal(farms.Data.Farms)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal farm")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+		errorReplyWithStatus(err, w, http.StatusInternalServerError)
+		return
 	}
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -93,8 +90,7 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 	r, err := a.handleRequestsQueryParams(r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+		errorReplyWithStatus(err, w, http.StatusBadRequest)
 		return
 	}
 
@@ -107,46 +103,40 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("fail to list nodes")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+		errorReplyWithStatus(err, w, http.StatusInternalServerError)
 		return
 	}
 	var nodeList []node
 	for _, node := range nodes.Nodes.Data {
 		// check if node is down or not by checking redis key existence in redis cache and if it is down
 		// set status to down in node struct and add it to nodeList slice
-		isStored, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(node.NodeID)))
+		nodeInfoStr, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(node.NodeID)))
 		if err != nil {
 			node.Status = "down"
 		}
-		if isStored == "likely down" {
-			node.Status = "likely down"
-		}
-		if isStored != "" && isStored != "likely down" {
+		if nodeInfoStr == "" {
+			node.Status = "down"
+		} else {
+			var nodeInfo NodeInfo
+			err := json.Unmarshal([]byte(nodeInfoStr), &nodeInfo)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to unmarshal redis data to struct")
+			}
 			node.Status = "up"
+			node.TotalResources = nodeInfo.Capacity.Total
+			node.UsedResources = nodeInfo.Capacity.Used
+
 		}
 
 		node.Location.City = node.City
 		node.Location.Country = node.Country
-
-		// append the usage resources to the node object if it is up
-		if node.Status == "up" {
-			capacity, err := a.getNodeCapacity(context.Background(), fmt.Sprintf("%v", node.NodeID), false)
-			if err != nil {
-				log.Error().Err(err).Msg("error fetching node statistics")
-				continue
-			}
-			node.TotalResources = capacity.Total
-			node.UsedResources = capacity.Used
-		}
 
 		nodeList = append(nodeList, node)
 	}
 	result, err := json.Marshal(nodeList)
 	if err != nil {
 		log.Error().Err(err).Msg("fail to list nodes")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+		errorReply(err, w)
 		return
 	}
 	w.Header().Add("Content-Type", "application/json")
@@ -166,60 +156,37 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 // @Router /gateways/{node_id} [get]
 func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
+	w.Header().Add("Content-Type", "application/json")
 
 	nodeID := mux.Vars(r)["node_id"]
 	nodeData, err := a.getNodeData(nodeID, false)
-	if errors.Is(err, ErrNodeNotFound) {
-		// return not found 404
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(http.StatusText(http.StatusNotFound)))
-		return
-	} else if errors.Is(err, ErrBadGateway) {
-		w.WriteHeader(http.StatusBadGateway)
-		w.Write([]byte(http.StatusText(http.StatusBadGateway)))
-		return
-	} else if err != nil {
-		// return internal server error
-		log.Error().Err(err).Msg("failed to get node information")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+	if err != nil {
+		errorReply(err, w)
 		return
 	}
-	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(nodeData))
 }
 
 func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
+	w.Header().Add("Content-Type", "application/json")
 
 	response := NodeStatus{}
 	nodeID := mux.Vars(r)["node_id"]
 
-	isStored, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(nodeID)))
+	nodeInfo, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(nodeID)))
 	if err != nil {
+		errorReply(err, w)
+		return
+	} else if nodeInfo == "" {
 		response.Status = "down"
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		res, _ := response.Serialize()
-		w.Write(res)
-		return
-	}
-	if isStored == "likely down" {
-		response.Status = "likely down"
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		res, _ := response.Serialize()
-		w.Write(res)
-	}
-	if isStored != "" && isStored != "likely down" {
+	} else {
 		response.Status = "up"
-		res, _ := response.Serialize()
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(res)
-		return
 	}
+	w.WriteHeader(http.StatusOK)
+	res, _ := response.Serialize()
+	w.Write(res)
 }
 
 func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
