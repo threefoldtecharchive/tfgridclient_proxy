@@ -227,18 +227,18 @@ func (a *App) getNodeDMI(ctx context.Context, nodeID string, nodeClient *client.
 	return dmiData, nil
 }
 
-
 // fetchNodeData is a helper method that fetches nodes data over rmb
 // returns the node capacity, hypervisor and dmi
 func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*3)
+	start := time.Now()
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*30)
 	defer cancel()
-	
+
 	twinID, err := a.getNodeTwinID(nodeID)
 	if err != nil {
 		return NodeInfo{}, err
 	}
-	
+
 	capacity, err := a.getNodeCapacity(ctx, nodeID, false)
 	if err != nil {
 		return NodeInfo{}, errors.Wrapf(err, "error fetching node capacity")
@@ -262,7 +262,7 @@ func (a *App) fetchNodeData(nodeID string) (NodeInfo, error) {
 	if err != nil {
 		return NodeInfo{}, errors.Wrapf(err, "error fetching node dmi")
 	}
-
+	log.Debug().Str("duration", time.Since(start).String()).Msg("time taken to fetch node data")
 	return NodeInfo{
 		Capacity:   capacity,
 		DMI:        dmiData,
