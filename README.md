@@ -4,6 +4,12 @@
 
 Interact with TFgridDB using rest APIs
 
+## Endpoints
+
+- https://gridproxy.dev.grid.tf
+- https://gridproxy.test.grid.tf
+- https://gridproxy.grid.tf
+
 ## Prerequisites
 
 1. A msgbusd instance must be running on the node. This client uses RMB (message bus) to send messages to nodes, and get the responses.
