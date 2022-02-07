@@ -3,6 +3,7 @@ package explorer
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
@@ -133,6 +134,18 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 
 		nodeList = append(nodeList, node)
 	}
+
+	// return the number of pages and totalCount in the response headers
+	nodesCount, err := a.getTotalCount()
+	if err != nil {
+		log.Error().Err(err).Msg("error fetching pages")
+	} else {
+		pages := math.Ceil(float64(nodesCount) / float64(maxResult)) 
+		w.Header().Add("count", fmt.Sprintf("%d", nodesCount))
+		w.Header().Add("size", fmt.Sprintf("%d", maxResult))
+		w.Header().Add("pages", fmt.Sprintf("%d", int(pages)))
+	}
+
 	result, err := json.Marshal(nodeList)
 	if err != nil {
 		log.Error().Err(err).Msg("fail to list nodes")

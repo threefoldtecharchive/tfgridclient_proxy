@@ -398,6 +398,23 @@ func (a *App) cacheNodesInfo() {
 	log.Debug().Msg("Fetching nodes completed, next fetch will be in 15 minutes")
 }
 
+func (a *App) getTotalCount() (int, error) {
+	queryString := `
+	{
+		nodesConnection {
+			totalCount
+		}
+	}	
+	`
+	nodesCount := totalCountResponse{}
+	err := a.query(queryString, &nodesCount)
+	if err != nil {
+		return 0, fmt.Errorf("failed to query nodes %w", err)
+	}
+	return nodesCount.Date.NodesConnection.TotalCount, nil
+}
+
+
 // getAllNodes is a helper method to list all nodes data and set it to the proper struct
 func (a *App) getAllNodes(maxResult int, pageOffset int, isSpecificFarm string, isGateway string) (nodesResponse, error) {
 
