@@ -1,17 +1,18 @@
 package explorer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
-	"github.com/robfig/cron/v3"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
@@ -27,43 +28,22 @@ import (
 // @Router /farms [get]
 func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
-	r, err := a.handleRequestsQueryParams(r)
+	filter, limit, err := a.handleFarmRequestsQueryParams(r)
 	if err != nil {
 		errorReplyWithStatus(err, w, http.StatusBadRequest)
 		return
 	}
-	maxResult, pageOffset := getMaxResult(r.Context()), getOffset(r.Context())
-
-	queryString := fmt.Sprintf(`
-	{
-		farms (limit:%d,offset:%d) {
-			name
-			farmId
-			twinId
-			version
-			farmId
-			pricingPolicyId
-			stellarAddress
-			publicIPs{
-				id
-				ip
-				contractId
-				gateway
-			}
-		}
-	}
-	`, maxResult, pageOffset)
-
-	farms := FarmResult{}
-	err = a.query(queryString, &farms)
-
+	farms, err := a.db.GetFarms(filter, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query farm")
 		errorReplyWithStatus(err, w, http.StatusInternalServerError)
 		return
 	}
-
-	result, err := json.Marshal(farms.Data.Farms)
+	result := make([]farm, len(farms))
+	for idx, farm := range farms {
+		result[idx] = farmFromDBFarm(farm)
+	}
+	serialzied, err := json.Marshal(result)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal farm")
 		errorReplyWithStatus(err, w, http.StatusInternalServerError)
@@ -71,7 +51,7 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(result))
+	w.Write(serialzied)
 }
 
 // listNodes godoc
@@ -88,52 +68,22 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 // @Router /gateways [get]
 func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
-	r, err := a.handleRequestsQueryParams(r)
+	filter, limit, err := a.handleNodeRequestsQueryParams(r)
 	if err != nil {
 		errorReplyWithStatus(err, w, http.StatusBadRequest)
 		return
 	}
-
-	maxResult := getMaxResult(r.Context())
-	pageOffset := getOffset(r.Context())
-	isSpecificFarm := getSpecificFarm(r.Context())
-	isGateway := getIsGateway(r.Context())
-
-	nodes, err := a.getAllNodes(maxResult, pageOffset, isSpecificFarm, isGateway)
-
+	dbNodes, err := a.db.GetNodes(filter, limit)
 	if err != nil {
-		log.Error().Err(err).Msg("fail to list nodes")
 		errorReplyWithStatus(err, w, http.StatusInternalServerError)
 		return
 	}
-	var nodeList []node
-	for _, node := range nodes.Nodes.Data {
-		// check if node is down or not by checking redis key existence in redis cache and if it is down
-		// set status to down in node struct and add it to nodeList slice
-		nodeInfoStr, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(node.NodeID)))
-		if err != nil {
-			node.Status = "down"
-		}
-		if nodeInfoStr == "" {
-			node.Status = "down"
-		} else {
-			var nodeInfo NodeInfo
-			err := json.Unmarshal([]byte(nodeInfoStr), &nodeInfo)
-			if err != nil {
-				log.Error().Err(err).Msg("failed to unmarshal redis data to struct")
-			}
-			node.Status = "up"
-			node.TotalResources = nodeInfo.Capacity.Total
-			node.UsedResources = nodeInfo.Capacity.Used
+	nodes := make([]node, len(dbNodes))
+	for idx, node := range dbNodes {
+		nodes[idx] = nodeFromDBNode(node)
 
-		}
-
-		node.Location.City = node.City
-		node.Location.Country = node.Country
-
-		nodeList = append(nodeList, node)
 	}
-	result, err := json.Marshal(nodeList)
+	result, err := json.Marshal(nodes)
 	if err != nil {
 		log.Error().Err(err).Msg("fail to list nodes")
 		errorReply(err, w)
@@ -159,13 +109,18 @@ func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	nodeID := mux.Vars(r)["node_id"]
-	nodeData, err := a.getNodeData(nodeID, false)
+	nodeData, err := a.getNodeData(nodeID)
+	if err != nil {
+		errorReply(err, w)
+		return
+	}
+	serialized, err := json.Marshal(nodeData)
 	if err != nil {
 		errorReply(err, w)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(nodeData))
+	w.Write(serialized)
 }
 
 func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
@@ -175,14 +130,12 @@ func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
 	response := NodeStatus{}
 	nodeID := mux.Vars(r)["node_id"]
 
-	nodeInfo, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(nodeID)))
+	nodeData, err := a.getNodeData(nodeID)
 	if err != nil {
 		errorReply(err, w)
 		return
-	} else if nodeInfo == "" {
-		response.Status = "down"
 	} else {
-		response.Status = "up"
+		response.Status = nodeData.Status
 	}
 	w.WriteHeader(http.StatusOK)
 	res, _ := response.Serialize()
@@ -210,31 +163,22 @@ func (a *App) version(w http.ResponseWriter, r *http.Request) {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8080
 // @BasePath /
-func Setup(router *mux.Router, explorer string, redisServer string, gitCommit string) {
+func Setup(router *mux.Router, explorer string, redisServer string, gitCommit string) error {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
-
-	redis := &redis.Pool{
-		MaxIdle:   20,
-		MaxActive: 100,
-		Dial: func() (redis.Conn, error) {
-			conn, err := redis.Dial("tcp", redisServer)
-			if err != nil {
-				log.Error().Err(err).Msg("fail init redis")
-			}
-			return conn, err
-		},
-	}
 
 	rmbClient, err := rmb.NewClient("tcp://127.0.0.1:6379", 500)
 	if err != nil {
-		log.Error().Err(err).Msg("couldn't connect to rmb")
-		return
+		return errors.Wrap(err, "couldn't connect to rmb")
 	}
 	c := cache.New(2*time.Minute, 3*time.Minute)
-
+	db, err := db.NewSqliteDatabase("/tmp/fromflags.sqlite3")
+	if err != nil {
+		return errors.Wrap(err, "couldn't get sqlite3 client")
+	}
+	graphqlClient := NewGraphqLClient(explorer)
 	a := App{
-		explorer:       explorer,
-		redis:          redis,
+		db:             db,
+		explorer:       graphqlClient,
 		rmb:            rmbClient,
 		lruCache:       c,
 		releaseVersion: gitCommit,
@@ -250,9 +194,11 @@ func Setup(router *mux.Router, explorer string, redisServer string, gitCommit st
 	router.HandleFunc("/", a.indexPage)
 	router.HandleFunc("/version", a.version)
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
-	// Run node caching every 2 minutes
-	go a.cacheNodesInfo()
-	job := cron.New()
-	job.AddFunc("@every 2m", a.cacheNodesInfo)
-	job.Start()
+	nodeManager := NewNodeManager(db, rmbClient, 30)
+	nodeSyncer := NewNodeSyncer(&graphqlClient, db)
+	farmSyncer := NewFarmSyncer(&graphqlClient, db)
+	go nodeManager.Run(context.Background())
+	go nodeSyncer.Run(context.Background())
+	go farmSyncer.Run(context.Background())
+	return nil
 }

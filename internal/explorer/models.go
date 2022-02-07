@@ -3,9 +3,9 @@ package explorer
 import (
 	"encoding/json"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
@@ -21,42 +21,17 @@ var (
 // ErrBadGateway creates new error type to define node existence or server problem
 var (
 	ErrBadGateway = errors.New("bad gateway")
+	ErrBadRequest = errors.New("bad request")
 )
 
 // App is the main app objects
 type App struct {
-	explorer       string
-	redis          *redis.Pool
+	db       db.Database
+	explorer GraphqlClient
+	// redis          *redis.Pool
 	rmb            rmb.Client
 	lruCache       *cache.Cache
 	releaseVersion string
-}
-
-// OffsetKey is the type holds the request context
-type offsetKey struct{}
-
-// SpecificFarmKey is the type holds the request context
-type specificFarmKey struct{}
-
-// MaxResultKey is the type holds the request context
-type maxResultKey struct{}
-
-// isGatewayKey is the type holds the request context
-type isGatewayKey struct{}
-
-// NodeTwinID is the node twin ID to unmarshal json in it
-type nodeTwinID struct {
-	TwinID uint32 `json:"twinId"`
-}
-
-// NodeData is having nodeTwinID to unmarshal json in it
-type nodeData struct {
-	NodeResult []nodeTwinID `json:"nodes"`
-}
-
-// NodeResult is the NodeData to unmarshal nodeTwinID json in it
-type nodeResult struct {
-	Data nodeData `json:"data"`
 }
 
 // CapacityResult is the NodeData capacity results to unmarshal json in it
@@ -132,6 +107,13 @@ type publicConfig struct {
 	Ipv6   string `json:"ipv6"`
 }
 
+type ConnectionInfo struct {
+	LastFetchAttempt uint64 `json:"lastFetchAttempt"`
+	LastNodeError    string `json:"lastNodeError"`
+	Retries          uint64 `json:"retries"`
+	ProxyUpdateAt    uint64 `json:"proxyUpdatedAt"`
+}
+
 // Node is a struct holding the data for a node for the nodes view
 type node struct {
 	Version           int                `json:"version"`
@@ -152,30 +134,56 @@ type node struct {
 	PublicConfig      publicConfig       `json:"publicConfig"`
 	Status            string             `json:"status"` // added node status field for up or down
 	CertificationType string             `json:"certificationType"`
+	ConnectionInfo    ConnectionInfo     `json:"connectionInfo"`
+}
+
+func nodeFromDBNode(info db.AllNodeData) node {
+	return node{
+		Version:         info.Graphql.Version,
+		ID:              info.Graphql.ID,
+		NodeID:          info.NodeID,
+		FarmID:          info.Graphql.FarmID,
+		TwinID:          info.Graphql.TwinID,
+		Country:         info.Graphql.Country,
+		GridVersion:     info.Graphql.GridVersion,
+		City:            info.Graphql.City,
+		Uptime:          info.Graphql.Uptime,
+		Created:         info.Graphql.Created,
+		FarmingPolicyID: info.Graphql.FarmingPolicyID,
+		UpdatedAt:       info.Graphql.UpdatedAt,
+		TotalResources:  info.Node.TotalResources,
+		UsedResources:   info.Node.UsedResources,
+		Location: location{
+			Country: info.Graphql.Country,
+			City:    info.Graphql.City,
+		},
+		PublicConfig: publicConfig{
+			Domain: info.Graphql.PublicConfig.Domain,
+			Gw4:    info.Graphql.PublicConfig.Gw4,
+			Gw6:    info.Graphql.PublicConfig.Gw6,
+			Ipv4:   info.Graphql.PublicConfig.Ipv4,
+			Ipv6:   info.Graphql.PublicConfig.Ipv6,
+		},
+		Status:            info.Node.Status,
+		CertificationType: info.Graphql.CertificationType,
+		ConnectionInfo: ConnectionInfo{
+			info.ConnectionInfo.LastFetchAttempt,
+			info.ConnectionInfo.LastNodeError,
+			info.ConnectionInfo.Retries,
+			info.ConnectionInfo.ProxyUpdateAt,
+		},
+	}
+
 }
 
 // Nodes is struct for the whole nodes view
 type nodes struct {
-	Data []node `json:"nodes"`
+	Data []db.GraphqlData `json:"nodes"`
 }
 
 // NodeResponseStruct is struct for the whole nodes view
 type nodesResponse struct {
 	Nodes nodes `json:"data"`
-}
-
-type nodeID struct {
-	NodeID uint32 `json:"nodeId"`
-}
-
-// nodeIdData is the nodeIdData to unmarshal json in it
-type nodeIDData struct {
-	NodeResult []nodeID `json:"nodes"`
-}
-
-// nodeIdResult is the nodeIdResult  to unmarshal json in it
-type nodeIDResult struct {
-	Data nodeIDData `json:"data"`
 }
 
 type farm struct {
@@ -188,6 +196,28 @@ type farm struct {
 	PublicIps       []publicIP `json:"publicIps"`
 }
 
+func farmFromDBFarm(info db.Farm) farm {
+	res := farm{
+		Name:            info.Name,
+		FarmID:          info.FarmID,
+		TwinID:          info.TwinID,
+		Version:         info.Version,
+		PricingPolicyID: info.PricingPolicyID,
+		StellarAddress:  info.StellarAddress,
+	}
+	res.PublicIps = make([]publicIP, len(info.PublicIps))
+	for idx, ip := range info.PublicIps {
+		res.PublicIps[idx] = publicIP{
+			ID:         ip.ID,
+			IP:         ip.IP,
+			FarmID:     ip.FarmID,
+			ContractID: ip.ContractID,
+			Gateway:    ip.Gateway,
+		}
+	}
+	return res
+}
+
 type publicIP struct {
 	ID         string `json:"id"`
 	IP         string `json:"ip"`
@@ -197,7 +227,7 @@ type publicIP struct {
 }
 
 type farmData struct {
-	Farms []farm `json:"farms"`
+	Farms []db.Farm `json:"farms"`
 }
 
 // FarmResult is to unmarshal json in it

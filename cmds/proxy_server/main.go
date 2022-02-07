@@ -68,7 +68,7 @@ func main() {
 	logging.SetupLogging(f.debug)
 	s, err := createServer(f, GitCommit)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create mux server")
+		log.Fatal().Err(err).Msg("failed to create mux server")
 	}
 	if err := app(s, f); err != nil {
 		log.Fatal().Msg(err.Error())
@@ -126,8 +126,12 @@ func createServer(f flags, gitCommit string) (*http.Server, error) {
 	router := mux.NewRouter().StrictSlash(true)
 
 	// setup explorer
-	explorer.Setup(router, f.explorer, f.redis, gitCommit)
-	rmbproxy.Setup(router, f.substrate)
+	if err := explorer.Setup(router, f.explorer, f.redis, gitCommit); err != nil {
+		return nil, err
+	}
+	if err := rmbproxy.Setup(router, f.substrate); err != nil {
+		return nil, err
+	}
 
 	return &http.Server{
 		Handler: router,
