@@ -219,16 +219,3 @@ type farmData struct {
 type FarmResult struct {
 	Data farmData `json:"data"`
 }
-
-type totalCountResponse struct {
-	Date totalCountData `json:"data"`
-}
-
-type totalCountData struct {
-	NodesConnection nodesConnection `json:"nodesConnection"`
-}
-
-
-type nodesConnection struct {
-	TotalCount int `json:"totalCount"`
-}
