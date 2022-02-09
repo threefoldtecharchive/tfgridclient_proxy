@@ -259,7 +259,7 @@ func (d *PostgresDatabase) CountNodes() (int, error) {
 	if !rows.Next() {
 		return 0, errors.New("count query returned 0 rows")
 	}
-	err = rows.Scan(rows, &count)
+	err = rows.Scan(&count)
 	return count, err
 
 }
