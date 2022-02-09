@@ -40,7 +40,7 @@ const (
 		retries INTEGER /* number of times an error happened when contacting the node since last successful attempt*/
 	);
 	`
-	updatePostgresqlNodeData = `
+	updateNodeData = `
 	INSERT INTO node_pulled
 		VALUES (
 			$1,
@@ -82,7 +82,7 @@ const (
 		last_node_error = ''
 	WHERE node_pulled.node_id = $1
 	`
-	updatePostgresqlNodeError = `
+	updateNodeError = `
 	INSERT INTO node_pulled
 		VALUES (
 			$1,
@@ -112,7 +112,7 @@ const (
 	WHERE node_pulled.node_id = $1;
 	`
 
-	selectPostgresFarm = `
+	selectFarm = `
 	SELECT 
 		farm_id,
 		COALESCE(name, ''),
@@ -131,7 +131,7 @@ const (
 	JOIN 
 	WHERE farm.farm_id = $1
 	`
-	selectPostgresNodesWithFilter = `
+	selectNodesWithFilter = `
 	SELECT
 		node.version,
 		node.id,
@@ -171,7 +171,7 @@ const (
 	FROM node
 	LEFT JOIN node_pulled ON node.node_id = node_pulled.node_id
 	`
-	selectPostgresFarmsWithFilter = `
+	selectFarmsWithFilter = `
 	SELECT 
 		farm_id,
 		COALESCE(name, ''),
@@ -187,6 +187,11 @@ const (
 			WHERE farm.id = public_ip.farm_id
 		) as public_ips
 	FROM farm
+	`
+	countNodes = `
+	SELECT 
+		count(*)
+	FROM node
 	`
 )
 
@@ -217,9 +222,23 @@ func (d *PostgresDatabase) initialize() error {
 func (d *PostgresDatabase) Close() error {
 	return d.db.Close()
 }
+func (d *PostgresDatabase) CountNodes() (int, error) {
+	var count int
+	rows, err := d.db.Query(countNodes)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return 0, errors.New("count query returned 0 rows")
+	}
+	err = rows.Scan(rows, &count)
+	return count, err
+
+}
 
 func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo NodeData) error {
-	_, err := d.db.Exec(updatePostgresqlNodeData,
+	_, err := d.db.Exec(updateNodeData,
 		nodeID,
 		nodeInfo.TotalResources.CRU,
 		nodeInfo.TotalResources.SRU,
@@ -239,7 +258,7 @@ func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo NodeData) erro
 	return err
 }
 func (d *PostgresDatabase) UpdateNodeError(nodeID uint32, fetchErr error) error {
-	_, err := d.db.Exec(updatePostgresqlNodeError,
+	_, err := d.db.Exec(updateNodeError,
 		nodeID,
 		"down",
 		time.Now().Unix(),
@@ -310,7 +329,7 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 
 func (d *PostgresDatabase) GetNode(nodeID uint32) (AllNodeData, error) {
 	var node AllNodeData
-	query := fmt.Sprintf("%s WHERE node.node_id = $1", selectPostgresNodesWithFilter)
+	query := fmt.Sprintf("%s WHERE node.node_id = $1", selectNodesWithFilter)
 	rows, err := d.db.Query(query, nodeID)
 	if err != nil {
 		return node, err
@@ -325,7 +344,7 @@ func (d *PostgresDatabase) GetNode(nodeID uint32) (AllNodeData, error) {
 
 func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
 	var farm Farm
-	rows, err := d.db.Query(selectPostgresFarm, farmID)
+	rows, err := d.db.Query(selectFarm, farmID)
 	if err != nil {
 		return farm, err
 	}
@@ -342,7 +361,7 @@ func requiresFarmJoin(filter NodeFilter) bool {
 }
 
 func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error) {
-	query := selectPostgresNodesWithFilter
+	query := selectNodesWithFilter
 	args := make([]interface{}, 0)
 	if requiresFarmJoin(filter) {
 		query = fmt.Sprintf("%s JOIN farm ON node.farm_id = farm.farm_id", query)
@@ -432,7 +451,7 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 }
 
 func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, error) {
-	query := selectPostgresFarmsWithFilter
+	query := selectFarmsWithFilter
 	query = fmt.Sprintf("%s WHERE TRUE", query)
 	args := make([]interface{}, 0)
 	idx := 1

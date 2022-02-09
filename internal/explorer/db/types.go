@@ -131,6 +131,7 @@ type AllNodeData struct {
 }
 
 type Database interface {
+	CountNodes() (int, error)
 	UpdateNodeData(nodeID uint32, nodeInfo NodeData) error
 	UpdateNodeError(nodeID uint32, err error) error
 	GetNode(nodeID uint32) (AllNodeData, error)
