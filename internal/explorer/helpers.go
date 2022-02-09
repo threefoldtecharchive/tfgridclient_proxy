@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
+)
+
+const (
+	maxPageSize = 100
 )
 
 func enableCors(w *http.ResponseWriter) {
@@ -45,49 +50,64 @@ func errorReply(err error, w http.ResponseWriter) {
 	}
 }
 
+// test nodes?status=up&free_ips=0&free_cru=1&free_mru=1&free_hru=1&country=Belgium&city=Unknown&ipv4=true&ipv6=true&domain=false
 // HandleNodeRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
 func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.Limit, error) {
 	var filter db.NodeFilter
 	var limit db.Limit
-
-	freeCRU := r.URL.Query().Get("free_cru")
-	if freeCRU != "" {
-		parsed, err := strconv.ParseUint(freeCRU, 10, 64)
-		if err != nil {
-			return filter, limit, errors.Wrap(ErrBadGateway, fmt.Sprintf("couldn't parse free_cru %s", err.Error()))
-		}
-		filter.FreeCRU = &parsed
+	ints := map[string]**uint64{
+		"free_cru": &filter.FreeCRU,
+		"free_mru": &filter.FreeMRU,
+		"free_hru": &filter.FreeHRU,
+		"free_sru": &filter.FreeSRU,
+		"free_ips": &filter.FreeIPs,
 	}
-	freeMRU := r.URL.Query().Get("free_mru")
-	if freeMRU != "" {
-		parsed, err := strconv.ParseUint(freeMRU, 10, 64)
-		if err != nil {
-			return filter, limit, errors.Wrap(ErrBadGateway, fmt.Sprintf("couldn't parse free_cu %s", err.Error()))
-		}
-		filter.FreeMRU = &parsed
+	strs := map[string]**string{
+		"status":    &filter.Status,
+		"city":      &filter.City,
+		"country":   &filter.Country,
+		"farm_name": &filter.FarmName,
 	}
-	freeHRU := r.URL.Query().Get("free_hru")
-	if freeHRU != "" {
-		parsed, err := strconv.ParseUint(freeHRU, 10, 64)
-		if err != nil {
-			return filter, limit, errors.Wrap(ErrBadGateway, fmt.Sprintf("couldn't parse free_hru %s", err.Error()))
-		}
-		filter.FreeHRU = &parsed
+	bools := map[string]**bool{
+		"ipv4":   &filter.IPv4,
+		"ipv6":   &filter.IPv6,
+		"domain": &filter.Domain,
 	}
-	freeSRU := r.URL.Query().Get("free_sru")
-	if freeSRU != "" {
-		parsed, err := strconv.ParseUint(freeSRU, 10, 64)
-		if err != nil {
-			return filter, limit, errors.Wrap(ErrBadGateway, fmt.Sprintf("couldn't parse free_sru %s", err.Error()))
+	for param, prop := range ints {
+		value := r.URL.Query().Get(param)
+		if value != "" {
+			parsed, err := strconv.ParseUint(value, 10, 64)
+			if err != nil {
+				return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse %s %s", param, err.Error()))
+			}
+			*prop = &parsed
 		}
-		filter.FreeSRU = &parsed
 	}
 
-	status := r.URL.Query().Get("status")
-	if status != "" {
-		filter.Status = &status
+	for param, prop := range strs {
+		value := r.URL.Query().Get(param)
+		if value != "" {
+			*prop = &value
+		}
 	}
-
+	trueVal := true
+	for param, prop := range bools {
+		value := r.URL.Query().Get(param)
+		if value == "true" {
+			*prop = &trueVal
+		}
+	}
+	farmIDs := strings.Split(r.URL.Query().Get("farm_ids"), ",")
+	if len(farmIDs) != 1 || farmIDs[0] != "" {
+		filter.FarmIDs = make([]uint64, len(farmIDs))
+		for idx, id := range farmIDs {
+			parsed, err := strconv.ParseUint(strings.TrimSpace(id), 10, 64)
+			if err != nil {
+				return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse farm_id indexed at %d %s", idx, err.Error()))
+			}
+			filter.FarmIDs[idx] = parsed
+		}
+	}
 	page := r.URL.Query().Get("page")
 	size := r.URL.Query().Get("size")
 	if page == "" {
@@ -98,23 +118,56 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 	}
 	parsed, err := strconv.ParseUint(page, 10, 64)
 	if err != nil {
-		return filter, limit, errors.Wrap(ErrBadGateway, fmt.Sprintf("couldn't parse page %s", err.Error()))
+		return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse page %s", err.Error()))
 	}
 	limit.Page = parsed
 
 	parsed, err = strconv.ParseUint(size, 10, 64)
 	if err != nil {
-		return filter, limit, errors.Wrap(ErrBadGateway, fmt.Sprintf("couldn't parse size %s", err.Error()))
+		return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse size %s", err.Error()))
 	}
 	limit.Size = parsed
+	if limit.Size >= maxPageSize {
+		return filter, limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
+	}
 	return filter, limit, nil
 }
 
+// test farms?free_ips=1&pricing_policy_id=1&version=4&farm_id=23&twin_id=291&name=Farm-1&stellar_address=13VrxhaBZh87ZP8nuYF4LtAhnDPWMfSrMUvHeRAFaqN43W1X
 // HandleFarmRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
 func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.Limit, error) {
 	var filter db.FarmFilter
 	var limit db.Limit
 
+	ints := map[string]**uint64{
+		"free_ips":          &filter.FreeIPs,
+		"pricing_policy_id": &filter.PricingPolicyID,
+		"version":           &filter.Version,
+		"farm_id":           &filter.FarmID,
+		"twin_id":           &filter.TwinID,
+	}
+	strs := map[string]**string{
+		"name":            &filter.Name,
+		"stellar_address": &filter.StellarAddress,
+	}
+	for param, prop := range ints {
+		value := r.URL.Query().Get(param)
+		if value != "" {
+			parsed, err := strconv.ParseUint(value, 10, 64)
+			if err != nil {
+				return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse %s %s", param, err.Error()))
+			}
+			*prop = &parsed
+		}
+	}
+
+	for param, prop := range strs {
+		value := r.URL.Query().Get(param)
+		if value != "" {
+			*prop = &value
+		}
+	}
+
 	page := r.URL.Query().Get("page")
 	size := r.URL.Query().Get("size")
 	if page == "" {
@@ -125,15 +178,18 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 	}
 	parsed, err := strconv.ParseUint(page, 10, 64)
 	if err != nil {
-		return filter, limit, errors.Wrap(ErrBadGateway, fmt.Sprintf("couldn't parse page %s", err.Error()))
+		return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse page %s", err.Error()))
 	}
 	limit.Page = parsed
 
 	parsed, err = strconv.ParseUint(size, 10, 64)
 	if err != nil {
-		return filter, limit, errors.Wrap(ErrBadGateway, fmt.Sprintf("couldn't parse size %s", err.Error()))
+		return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse size %s", err.Error()))
 	}
 	limit.Size = parsed
+	if limit.Size >= maxPageSize {
+		return filter, limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
+	}
 	return filter, limit, nil
 }
 

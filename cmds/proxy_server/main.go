@@ -24,17 +24,22 @@ const (
 var GitCommit string
 
 type flags struct {
-	explorer     string
-	debug        string
-	redis        string
-	address      string
-	substrate    string
-	domain       string
-	TLSEmail     string
-	CA           string
-	certCacheDir string
-	version      bool
-	nocert       bool
+	explorer         string
+	debug            string
+	redis            string
+	postgresHost     string
+	postgresPort     int
+	postgresDB       string
+	postgresUser     string
+	postgresPassword string
+	address          string
+	substrate        string
+	domain           string
+	TLSEmail         string
+	CA               string
+	certCacheDir     string
+	version          bool
+	nocert           bool
 }
 
 func main() {
@@ -46,6 +51,11 @@ func main() {
 	flag.StringVar(&f.domain, "domain", "", "domain on which the server will be served")
 	flag.StringVar(&f.TLSEmail, "email", "", "tmail address to generate certificate with")
 	flag.StringVar(&f.CA, "ca", "https://acme-staging-v02.api.letsencrypt.org/directory", "certificate authority used to generate certificate")
+	flag.StringVar(&f.postgresHost, "postgres-host", "", "postgres host")
+	flag.IntVar(&f.postgresPort, "postgres-port", 5432, "postgres port")
+	flag.StringVar(&f.postgresDB, "postgres-db", "", "postgres database")
+	flag.StringVar(&f.postgresUser, "postgres-user", "", "postgres username")
+	flag.StringVar(&f.postgresPassword, "postgres-password", "", "postgres password")
 	flag.StringVar(&f.redis, "redis", ":6379", "redis url")
 	flag.BoolVar(&f.version, "v", false, "shows the package version")
 	flag.StringVar(&f.certCacheDir, "cert-cache-dir", CertDefaultCacheDir, "path to store generated certs in")
@@ -126,7 +136,7 @@ func createServer(f flags, gitCommit string) (*http.Server, error) {
 	router := mux.NewRouter().StrictSlash(true)
 
 	// setup explorer
-	if err := explorer.Setup(router, f.explorer, f.redis, gitCommit); err != nil {
+	if err := explorer.Setup(router, f.explorer, f.redis, gitCommit, f.postgresHost, f.postgresPort, f.postgresDB, f.postgresUser, f.postgresPassword); err != nil {
 		return nil, err
 	}
 	if err := rmbproxy.Setup(router, f.substrate); err != nil {

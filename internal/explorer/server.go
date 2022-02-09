@@ -163,7 +163,7 @@ func (a *App) version(w http.ResponseWriter, r *http.Request) {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8080
 // @BasePath /
-func Setup(router *mux.Router, explorer string, redisServer string, gitCommit string) error {
+func Setup(router *mux.Router, explorer string, redisServer string, gitCommit string, postgresHost string, postgresPort int, postgresDB, postgresUser, postgresPassword string) error {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
 	rmbClient, err := rmb.NewClient("tcp://127.0.0.1:6379", 500)
@@ -171,7 +171,7 @@ func Setup(router *mux.Router, explorer string, redisServer string, gitCommit st
 		return errors.Wrap(err, "couldn't connect to rmb")
 	}
 	c := cache.New(2*time.Minute, 3*time.Minute)
-	db, err := db.NewSqliteDatabase("/tmp/fromflags.sqlite3")
+	db, err := db.NewPostgresDatabase(postgresHost, postgresPort, postgresUser, postgresPassword, postgresDB)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get sqlite3 client")
 	}
@@ -195,10 +195,6 @@ func Setup(router *mux.Router, explorer string, redisServer string, gitCommit st
 	router.HandleFunc("/version", a.version)
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 	nodeManager := NewNodeManager(db, rmbClient, 30)
-	nodeSyncer := NewNodeSyncer(&graphqlClient, db)
-	farmSyncer := NewFarmSyncer(&graphqlClient, db)
 	go nodeManager.Run(context.Background())
-	go nodeSyncer.Run(context.Background())
-	go farmSyncer.Run(context.Background())
 	return nil
 }

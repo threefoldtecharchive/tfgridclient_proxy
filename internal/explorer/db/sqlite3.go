@@ -18,9 +18,6 @@ var (
 )
 
 const (
-	// TODO: should use free_* for resources instead?
-	// TODO: is updatedAt in graphql sufficient or should another field
-	//       representing last graphql sync must be added?
 	setupSql = `
 	CREATE TABLE IF NOT EXISTS nodes (
 		version INTEGER,
@@ -62,12 +59,13 @@ const (
 
 	CREATE TABLE IF NOT EXISTS farms (
 		farm_id INTEGER PRIMARY KEY,
+		name TEXT,
 		twin_id INTEGER,
 		version INTEGER,
 		pricing_policy_id INTEGER,
 		stellar_address TEXT,
 		public_ips TEXT,
-		public_ip_count INTEGER
+		free_ips INTEGER
 	);
 	`
 	insertNodeFromGraphql = `
@@ -154,22 +152,24 @@ const (
 	insertFarmFromGraphql = `
 	INSERT INTO farms (
 		farm_id,
+		name,
 		twin_id,
 		version,
 		pricing_policy_id,
 		stellar_address,
 		public_ips,
-		public_ip_count
+		free_ips
 	)
-	VALUES(?, ?, ?, ?, ?, ?, ?)
+	VALUES(?, ?, ?, ?, ?, ?, ?, ?)
 	ON CONFLICT DO UPDATE SET
 		farm_id = ?,
+		name = ?,
 		twin_id = ?,
 		version = ?,
 		pricing_policy_id = ?,
 		stellar_address = ?,
 		public_ips = ?,
-		public_ip_count = ?
+		free_ips = ?
 	WHERE farm_id = ?
 	;
 `
@@ -194,9 +194,12 @@ const (
 	WHERE farm_id = ?
 	`
 	selectNodesWithFilter = `
-	SELECT *
+	SELECT nodes.*
 	FROM nodes
-	WHERE true
+	`
+	selectFarmsWithFilter = `
+	SELECT farms.*
+	FROM farms
 	`
 )
 
@@ -296,14 +299,21 @@ func (d *SqliteDatabase) UpdateFarm(farmInfo Farm) error {
 	if err != nil {
 		return err
 	}
+	freePublicIPs := 0
+	for _, ip := range farmInfo.PublicIps {
+		if ip.ContractID == 0 {
+			freePublicIPs += 1
+		}
+	}
 	args := []interface{}{
 		farmInfo.FarmID,
+		farmInfo.Name,
 		farmInfo.TwinID,
 		farmInfo.Version,
 		farmInfo.PricingPolicyID,
 		farmInfo.StellarAddress,
 		string(publicIPStr),
-		len(farmInfo.PublicIps),
+		freePublicIPs,
 	}
 	args = append(args, args...)
 	args = append(args, farmInfo.FarmID)
@@ -312,11 +322,6 @@ func (d *SqliteDatabase) UpdateFarm(farmInfo Farm) error {
 	)
 	return err
 }
-
-/*
-	TODO: move to appropriate place
-
-*/
 
 func scanNode(rows *sql.Rows, node *AllNodeData) error {
 	return rows.Scan(
@@ -360,13 +365,16 @@ func scanNode(rows *sql.Rows, node *AllNodeData) error {
 
 func scanFarm(rows *sql.Rows, farm *Farm) error {
 	var publicIPStr string
+	var freeIPS int
 	err := rows.Scan(
 		&farm.FarmID,
+		&farm.Name,
 		&farm.TwinID,
 		&farm.Version,
 		&farm.PricingPolicyID,
 		&farm.StellarAddress,
 		&publicIPStr,
+		&freeIPS,
 	)
 	if err != nil {
 		return err
@@ -408,37 +416,76 @@ func (d *SqliteDatabase) GetFarm(farmID uint32) (Farm, error) {
 	err = scanFarm(rows, &farm)
 	return farm, err
 }
-
+func requiresFarmJoin(filter NodeFilter) bool {
+	return filter.FarmName != nil || filter.FreeIPs != nil
+}
 func (d *SqliteDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
 	query := selectNodesWithFilter
 	args := make([]interface{}, 0)
+	if requiresFarmJoin(filter) {
+		query = fmt.Sprintf("%s JOIN farms ON nodes.farm_id = farms.farm_id", query)
+	}
+	query = fmt.Sprintf("%s WHERE TRUE", query)
 	if filter.Status != nil {
-		query = fmt.Sprintf("%s AND status = ?", query)
+		query = fmt.Sprintf("%s AND nodes.status = ?", query)
 		args = append(args, *filter.Status)
 	}
 	if filter.FreeCRU != nil {
-		query = fmt.Sprintf("%s AND total_cru - used_cru >= ?", query)
+		query = fmt.Sprintf("%s AND nodes.total_cru - nodes.used_cru >= ?", query)
 		args = append(args, *filter.FreeCRU)
 	}
 	if filter.FreeMRU != nil {
-		query = fmt.Sprintf("%s AND total_mru - used_mru >= ?", query)
+		query = fmt.Sprintf("%s AND nodes.total_mru - nodes.used_mru >= ?", query)
 		args = append(args, *filter.FreeMRU)
 	}
 	if filter.FreeHRU != nil {
-		query = fmt.Sprintf("%s AND total_hru - used_hru >= ?", query)
+		query = fmt.Sprintf("%s AND nodes.total_hru - nodes.used_hru >= ?", query)
 		args = append(args, *filter.FreeHRU)
 	}
 	if filter.FreeSRU != nil {
-		query = fmt.Sprintf("%s AND total_sru - used_sru >= ?", query)
+		query = fmt.Sprintf("%s AND nodes.total_sru - nodes.used_sru >= ?", query)
 		args = append(args, *filter.FreeSRU)
 	}
+	if filter.Country != nil {
+		query = fmt.Sprintf("%s AND nodes.country = ?", query)
+		args = append(args, *filter.Country)
+	}
+	if filter.City != nil {
+		query = fmt.Sprintf("%s AND nodes.city = ?", query)
+		args = append(args, *filter.City)
+	}
+	if filter.FarmIDs != nil {
+		query = fmt.Sprintf("%s AND (false", query)
+		for _, id := range filter.FarmIDs {
+			query = fmt.Sprintf("%s OR nodes.farm_id = ?", query)
+			args = append(args, id)
+		}
+		query = fmt.Sprintf("%s)", query)
+	}
+	if filter.FarmName != nil {
+		query = fmt.Sprintf("%s AND farms.name = ?", query)
+		args = append(args, *filter.FarmName)
+	}
+	if filter.FreeIPs != nil {
+		query = fmt.Sprintf("%s AND farms.free_ips >= ?", query)
+		args = append(args, *filter.FreeIPs)
+	}
+	if filter.IPv4 != nil {
+		query = fmt.Sprintf(`%s AND nodes.ipv4 != ""`, query)
+	}
+	if filter.IPv6 != nil {
+		query = fmt.Sprintf(`%s AND nodes.ipv6 != ""`, query)
+	}
+	if filter.Domain != nil {
+		query = fmt.Sprintf(`%s AND nodes.domain != ""`, query)
+	}
 	query = fmt.Sprintf("%s LIMIT ? OFFSET ?;", query)
+	log.Debug().Str("query", query).Msg("node filter query")
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
 	rows, err := d.db.Query(query, args...)
 	if err != nil {
-		// TODO: revise error wrapping
 		return nil, err
 	}
 	defer rows.Close()
@@ -457,11 +504,11 @@ func (d *SqliteDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData
 func (d *SqliteDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, error) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
-	query := selectNodesWithFilter
+	query := selectFarmsWithFilter
 	args := make([]interface{}, 0)
-	if filter.PublicIPCount != nil {
-		query = fmt.Sprintf("%s AND public_ip_count >= ?", query)
-		args = append(args, *filter.PublicIPCount)
+	if filter.FreeIPs != nil {
+		query = fmt.Sprintf("%s AND free_ips >= ?", query)
+		args = append(args, *filter.FreeIPs)
 	}
 	// Q: most of these returns a single farm
 	if filter.StellarAddress != nil {
@@ -492,7 +539,6 @@ func (d *SqliteDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, error
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
 	rows, err := d.db.Query(query, args...)
 	if err != nil {
-		// TODO: revise error wrapping
 		return nil, err
 	}
 	defer rows.Close()

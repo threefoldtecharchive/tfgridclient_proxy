@@ -40,20 +40,28 @@ type Limit struct {
 }
 
 type NodeFilter struct {
-	Status  *string
-	FreeCRU *uint64
-	FreeMRU *uint64
-	FreeHRU *uint64
-	FreeSRU *uint64
+	Status   *string
+	FreeCRU  *uint64
+	FreeMRU  *uint64
+	FreeHRU  *uint64
+	FreeSRU  *uint64
+	Country  *string
+	City     *string
+	FarmName *string
+	FarmIDs  []uint64
+	FreeIPs  *uint64
+	IPv4     *bool
+	IPv6     *bool
+	Domain   *bool
 }
 
 type FarmFilter struct {
-	PublicIPCount   *uint64
+	FreeIPs         *uint64
 	StellarAddress  *string
-	PricingPolicyID *int
-	Version         *int
-	FarmID          *int
-	TwinID          *int
+	PricingPolicyID *uint64
+	Version         *uint64
+	FarmID          *uint64
+	TwinID          *uint64
 	Name            *string
 }
 
@@ -122,7 +130,6 @@ type AllNodeData struct {
 	ConnectionInfo ConnectionInfo
 }
 
-// TODO: check indexing
 type Database interface {
 	// if doesn't exist, insert the graphql info
 	// otherwise, update the graphql fields

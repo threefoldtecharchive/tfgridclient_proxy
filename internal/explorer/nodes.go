@@ -75,8 +75,10 @@ func shouldFetch(node *db.AllNodeData) bool {
 		// first time
 		return true
 	}
-	power := node.ConnectionInfo.Retries
-	if power > 5 {
+	power := node.ConnectionInfo.Retries - 3
+	if node.ConnectionInfo.Retries <= 3 {
+		power = 0
+	} else if node.ConnectionInfo.Retries >= 8 {
 		power = 5
 	}
 	waitPeriod := int(math.Pow(2, float64(power)))
