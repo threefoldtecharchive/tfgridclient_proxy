@@ -63,7 +63,7 @@ func (n *NodeManager) fetchNodes(ctx context.Context) {
 			if shouldFetch(&node) {
 				n.ch <- NodeRequest{
 					node.NodeID,
-					node.Graphql.TwinID,
+					node.NodeData.TwinID,
 				}
 			}
 		}
@@ -143,7 +143,7 @@ func (nf *NodeFetcher) fetchNodeData(ctx context.Context, req *NodeRequest) erro
 	if err != nil {
 		return errors.Wrap(err, "couldn't get node version")
 	}
-	nodeInfo := db.NodeData{
+	nodeInfo := db.PulledNodeData{
 		TotalResources: total,
 		UsedResources:  used,
 		Status:         "up",

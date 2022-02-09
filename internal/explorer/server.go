@@ -19,7 +19,7 @@ import (
 
 // listFarms godoc
 // @Summary Show farms on the grid
-// @Description Get all farms on the grid from graphql, It has pagination
+// @Description Get all farms on the grid, It has pagination
 // @Tags GridProxy
 // @Accept  json
 // @Produce  json
@@ -40,11 +40,7 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 		errorReplyWithStatus(err, w, http.StatusInternalServerError)
 		return
 	}
-	result := make([]farm, len(farms))
-	for idx, farm := range farms {
-		result[idx] = farmFromDBFarm(farm)
-	}
-	serialzied, err := json.Marshal(result)
+	serialzied, err := json.Marshal(farms)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal farm")
 		errorReplyWithStatus(err, w, http.StatusInternalServerError)
@@ -55,9 +51,33 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 	w.Write(serialzied)
 }
 
+// getStats godoc
+// @Summary Show stats about the grid
+// @Description Get statistics about the grid
+// @Tags GridProxy
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} FarmResult
+// @Router /stats [get]
+func (a *App) getStats(w http.ResponseWriter, r *http.Request) {
+	counters, err := a.db.GetCounters()
+	if err != nil {
+		errorReplyWithStatus(err, w, http.StatusInternalServerError)
+		return
+	}
+	serialized, err := json.Marshal(counters)
+	if err != nil {
+		errorReplyWithStatus(err, w, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(serialized)
+}
+
 // listNodes godoc
 // @Summary Show nodes on the grid
-// @Description Get all nodes on the grid from graphql, It has pagination
+// @Description Get all nodes on the grid, It has pagination
 // @Tags GridProxy
 // @Accept  json
 // @Produce  json
@@ -196,6 +216,7 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, postgresHos
 	}
 
 	router.HandleFunc("/farms", a.listFarms)
+	router.HandleFunc("/stats", a.getStats)
 	router.HandleFunc("/nodes", a.listNodes)
 	router.HandleFunc("/gateways", a.listNodes)
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)

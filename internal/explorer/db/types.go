@@ -73,7 +73,7 @@ type PublicConfig struct {
 	Ipv6   string `json:"ipv6"`
 }
 
-type GraphqlData struct {
+type NodaData struct {
 	Version           int          `json:"version"`
 	ID                string       `json:"id"`
 	FarmID            int          `json:"farmId"`
@@ -90,7 +90,7 @@ type GraphqlData struct {
 	PublicConfig      PublicConfig `json:"publicConfig"`
 }
 
-type NodeData struct {
+type PulledNodeData struct {
 	TotalResources gridtypes.Capacity `json:"total_resources"`
 	UsedResources  gridtypes.Capacity `json:"used_resources"`
 	Status         string             `json:"status"` // added node status field for up or down
@@ -125,14 +125,30 @@ type ConnectionInfo struct {
 
 type AllNodeData struct {
 	NodeID         int `json:"nodeId"`
-	Graphql        GraphqlData
-	Node           NodeData
+	NodeData       NodaData
+	PulledNodeData PulledNodeData
 	ConnectionInfo ConnectionInfo
 }
 
+type Counters struct {
+	Nodes       uint64 `json:"nodes"`
+	Farms       uint64 `json:"farms"`
+	Countries   uint64 `json:"countries"`
+	TotalCRU    uint64 `json:"totalCru"`
+	TotalSRU    uint64 `json:"totalSru"`
+	TotalMRU    uint64 `json:"totalMru"`
+	TotalHRU    uint64 `json:"totalHru"`
+	PublicIPs   uint64 `json:"publicIps"`
+	AccessNodes uint64 `json:"accessNodes"`
+	Gateways    uint64 `json:"gateways"`
+	Twins       uint64 `json:"twins"`
+	Contracts   uint64 `json:"contracts"`
+}
+
 type Database interface {
+	GetCounters() (Counters, error)
 	CountNodes() (int, error)
-	UpdateNodeData(nodeID uint32, nodeInfo NodeData) error
+	UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData) error
 	UpdateNodeError(nodeID uint32, err error) error
 	GetNode(nodeID uint32) (AllNodeData, error)
 	GetFarm(farmID uint32) (Farm, error)

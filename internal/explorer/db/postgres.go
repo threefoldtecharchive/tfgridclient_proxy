@@ -193,6 +193,25 @@ const (
 		count(*)
 	FROM node
 	`
+	totalResources = `
+	SELECT
+		sum(cru) AS total_cru,
+		sum(sru) AS total_sru,
+		sum(hru) AS total_hru,
+		sum(mru) AS total_mru
+	FROM node;
+	`
+	countersQuery = `
+	SELECT
+	(SELECT count(id) AS twins FROM twin),
+	(SELECT count(id) AS public_ips FROM public_ip),
+	(SELECT count(id) AS access_nodes FROM node where node.public_config::json->'ipv4' #>> '{}' != '' OR node.public_config::json->'ipv4' #>> '{}' != ''),
+	(SELECT count(id) AS gateways FROM node where node.public_config::json->'domain' #>> '{}' != '' AND (node.public_config::json->'ipv4' #>> '{}' != '' OR node.public_config::json->'ipv6' #>> '{}' != '')),
+	(SELECT count(id) AS contracts FROM node_contract),
+	(SELECT count(id) AS nodes FROM node),
+	(SELECT count(id) AS farms FROM farm),
+	(SELECT count(DISTINCT country) AS countries FROM node);
+	`
 )
 
 type PostgresDatabase struct {
@@ -236,8 +255,52 @@ func (d *PostgresDatabase) CountNodes() (int, error) {
 	return count, err
 
 }
+func (d *PostgresDatabase) GetCounters() (Counters, error) {
+	var counters Counters
+	rows, err := d.db.Query(countersQuery)
+	if err != nil {
+		return counters, errors.Wrap(err, "couldn't get counters")
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return counters, errors.New("count query returned 0 rows")
+	}
 
-func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo NodeData) error {
+	err = rows.Scan(
+		&counters.Twins,
+		&counters.PublicIPs,
+		&counters.AccessNodes,
+		&counters.Gateways,
+		&counters.Contracts,
+		&counters.Nodes,
+		&counters.Farms,
+		&counters.Countries,
+	)
+	if err != nil {
+		return counters, errors.Wrap(err, "couldn't scan counters")
+	}
+	rows, err = d.db.Query(totalResources)
+	if err != nil {
+		return counters, errors.Wrap(err, "couldn't query total resources")
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return counters, errors.New("total resources query returned 0 rows")
+	}
+
+	err = rows.Scan(
+		&counters.TotalCRU,
+		&counters.TotalSRU,
+		&counters.TotalHRU,
+		&counters.TotalMRU,
+	)
+	if err != nil {
+		return counters, errors.Wrap(err, "couldn't scan total resources")
+	}
+	return counters, nil
+}
+
+func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData) error {
 	_, err := d.db.Exec(updateNodeData,
 		nodeID,
 		nodeInfo.TotalResources.CRU,
@@ -269,37 +332,37 @@ func (d *PostgresDatabase) UpdateNodeError(nodeID uint32, fetchErr error) error 
 
 func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 	return rows.Scan(
-		&node.Graphql.Version,
-		&node.Graphql.ID,
+		&node.NodeData.Version,
+		&node.NodeData.ID,
 		&node.NodeID,
-		&node.Graphql.FarmID,
-		&node.Graphql.TwinID,
-		&node.Graphql.Country,
-		&node.Graphql.GridVersion,
-		&node.Graphql.City,
-		&node.Graphql.Uptime,
-		&node.Graphql.Created,
-		&node.Graphql.FarmingPolicyID,
-		&node.Graphql.UpdatedAt,
-		&node.Node.TotalResources.CRU,
-		&node.Node.TotalResources.SRU,
-		&node.Node.TotalResources.HRU,
-		&node.Node.TotalResources.MRU,
-		&node.Node.TotalResources.IPV4U,
-		&node.Node.UsedResources.CRU,
-		&node.Node.UsedResources.SRU,
-		&node.Node.UsedResources.HRU,
-		&node.Node.UsedResources.MRU,
-		&node.Node.UsedResources.IPV4U,
-		&node.Graphql.PublicConfig.Domain,
-		&node.Graphql.PublicConfig.Gw4,
-		&node.Graphql.PublicConfig.Gw6,
-		&node.Graphql.PublicConfig.Ipv4,
-		&node.Graphql.PublicConfig.Ipv6,
-		&node.Node.Status,
-		&node.Graphql.CertificationType,
-		&node.Node.ZosVersion,
-		&node.Node.Hypervisor,
+		&node.NodeData.FarmID,
+		&node.NodeData.TwinID,
+		&node.NodeData.Country,
+		&node.NodeData.GridVersion,
+		&node.NodeData.City,
+		&node.NodeData.Uptime,
+		&node.NodeData.Created,
+		&node.NodeData.FarmingPolicyID,
+		&node.NodeData.UpdatedAt,
+		&node.PulledNodeData.TotalResources.CRU,
+		&node.PulledNodeData.TotalResources.SRU,
+		&node.PulledNodeData.TotalResources.HRU,
+		&node.PulledNodeData.TotalResources.MRU,
+		&node.PulledNodeData.TotalResources.IPV4U,
+		&node.PulledNodeData.UsedResources.CRU,
+		&node.PulledNodeData.UsedResources.SRU,
+		&node.PulledNodeData.UsedResources.HRU,
+		&node.PulledNodeData.UsedResources.MRU,
+		&node.PulledNodeData.UsedResources.IPV4U,
+		&node.NodeData.PublicConfig.Domain,
+		&node.NodeData.PublicConfig.Gw4,
+		&node.NodeData.PublicConfig.Gw6,
+		&node.NodeData.PublicConfig.Ipv4,
+		&node.NodeData.PublicConfig.Ipv6,
+		&node.PulledNodeData.Status,
+		&node.NodeData.CertificationType,
+		&node.PulledNodeData.ZosVersion,
+		&node.PulledNodeData.Hypervisor,
 		&node.ConnectionInfo.ProxyUpdateAt,
 		&node.ConnectionInfo.LastNodeError,
 		&node.ConnectionInfo.LastFetchAttempt,

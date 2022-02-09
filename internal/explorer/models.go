@@ -134,33 +134,33 @@ type node struct {
 
 func nodeFromDBNode(info db.AllNodeData) node {
 	return node{
-		Version:         info.Graphql.Version,
-		ID:              info.Graphql.ID,
+		Version:         info.NodeData.Version,
+		ID:              info.NodeData.ID,
 		NodeID:          info.NodeID,
-		FarmID:          info.Graphql.FarmID,
-		TwinID:          info.Graphql.TwinID,
-		Country:         info.Graphql.Country,
-		GridVersion:     info.Graphql.GridVersion,
-		City:            info.Graphql.City,
-		Uptime:          info.Graphql.Uptime,
-		Created:         info.Graphql.Created,
-		FarmingPolicyID: info.Graphql.FarmingPolicyID,
-		UpdatedAt:       info.Graphql.UpdatedAt,
-		TotalResources:  info.Node.TotalResources,
-		UsedResources:   info.Node.UsedResources,
+		FarmID:          info.NodeData.FarmID,
+		TwinID:          info.NodeData.TwinID,
+		Country:         info.NodeData.Country,
+		GridVersion:     info.NodeData.GridVersion,
+		City:            info.NodeData.City,
+		Uptime:          info.NodeData.Uptime,
+		Created:         info.NodeData.Created,
+		FarmingPolicyID: info.NodeData.FarmingPolicyID,
+		UpdatedAt:       info.NodeData.UpdatedAt,
+		TotalResources:  info.PulledNodeData.TotalResources,
+		UsedResources:   info.PulledNodeData.UsedResources,
 		Location: location{
-			Country: info.Graphql.Country,
-			City:    info.Graphql.City,
+			Country: info.NodeData.Country,
+			City:    info.NodeData.City,
 		},
 		PublicConfig: publicConfig{
-			Domain: info.Graphql.PublicConfig.Domain,
-			Gw4:    info.Graphql.PublicConfig.Gw4,
-			Gw6:    info.Graphql.PublicConfig.Gw6,
-			Ipv4:   info.Graphql.PublicConfig.Ipv4,
-			Ipv6:   info.Graphql.PublicConfig.Ipv6,
+			Domain: info.NodeData.PublicConfig.Domain,
+			Gw4:    info.NodeData.PublicConfig.Gw4,
+			Gw6:    info.NodeData.PublicConfig.Gw6,
+			Ipv4:   info.NodeData.PublicConfig.Ipv4,
+			Ipv6:   info.NodeData.PublicConfig.Ipv6,
 		},
-		Status:            info.Node.Status,
-		CertificationType: info.Graphql.CertificationType,
+		Status:            info.PulledNodeData.Status,
+		CertificationType: info.NodeData.CertificationType,
 		ConnectionInfo: ConnectionInfo{
 			info.ConnectionInfo.LastFetchAttempt,
 			info.ConnectionInfo.LastNodeError,
@@ -169,46 +169,6 @@ func nodeFromDBNode(info db.AllNodeData) node {
 		},
 	}
 
-}
-
-type farm struct {
-	Name            string     `json:"name"`
-	FarmID          int        `json:"farmId"`
-	TwinID          int        `json:"twinId"`
-	Version         int        `json:"version"`
-	PricingPolicyID int        `json:"pricingPolicyId"`
-	StellarAddress  string     `json:"stellarAddress"`
-	PublicIps       []publicIP `json:"publicIps"`
-}
-
-func farmFromDBFarm(info db.Farm) farm {
-	res := farm{
-		Name:            info.Name,
-		FarmID:          info.FarmID,
-		TwinID:          info.TwinID,
-		Version:         info.Version,
-		PricingPolicyID: info.PricingPolicyID,
-		StellarAddress:  info.StellarAddress,
-	}
-	res.PublicIps = make([]publicIP, len(info.PublicIps))
-	for idx, ip := range info.PublicIps {
-		res.PublicIps[idx] = publicIP{
-			ID:         ip.ID,
-			IP:         ip.IP,
-			FarmID:     ip.FarmID,
-			ContractID: ip.ContractID,
-			Gateway:    ip.Gateway,
-		}
-	}
-	return res
-}
-
-type publicIP struct {
-	ID         string `json:"id"`
-	IP         string `json:"ip"`
-	FarmID     string `json:"farmId"`
-	ContractID int    `json:"contractId"`
-	Gateway    string `json:"gateway"`
 }
 
 type farmData struct {
