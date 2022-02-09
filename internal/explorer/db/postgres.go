@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	// to use for database/sql
 	_ "github.com/lib/pq"
 
 	"github.com/pkg/errors"
@@ -13,7 +14,9 @@ import (
 )
 
 var (
+	// ErrNodeNotFound node not found
 	ErrNodeNotFound = errors.New("node not found")
+	// ErrFarmNotFound farm not found
 	ErrFarmNotFound = errors.New("farm not found")
 )
 
@@ -214,10 +217,12 @@ const (
 	`
 )
 
+// PostgresDatabase postgres db client
 type PostgresDatabase struct {
 	db *sql.DB
 }
 
+// NewPostgresDatabase returns a new postgres db client
 func NewPostgresDatabase(host string, port int, user, password, dbname string) (Database, error) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -238,9 +243,12 @@ func (d *PostgresDatabase) initialize() error {
 	return err
 }
 
+// Close the db connection
 func (d *PostgresDatabase) Close() error {
 	return d.db.Close()
 }
+
+// CountNodes returns the total number of nodes
 func (d *PostgresDatabase) CountNodes() (int, error) {
 	var count int
 	rows, err := d.db.Query(countNodes)
@@ -255,6 +263,8 @@ func (d *PostgresDatabase) CountNodes() (int, error) {
 	return count, err
 
 }
+
+// GetCounters returns aggregate info about the grid
 func (d *PostgresDatabase) GetCounters() (Counters, error) {
 	var counters Counters
 	rows, err := d.db.Query(countersQuery)
@@ -300,6 +310,7 @@ func (d *PostgresDatabase) GetCounters() (Counters, error) {
 	return counters, nil
 }
 
+// UpdateNodeData update the database by the pulled data from the node
 func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData) error {
 	_, err := d.db.Exec(updateNodeData,
 		nodeID,
@@ -320,6 +331,8 @@ func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData
 	)
 	return err
 }
+
+// UpdateNodeError node error happened while fetching
 func (d *PostgresDatabase) UpdateNodeError(nodeID uint32, fetchErr error) error {
 	_, err := d.db.Exec(updateNodeError,
 		nodeID,
@@ -390,6 +403,7 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 	return nil
 }
 
+// GetNode returns node info
 func (d *PostgresDatabase) GetNode(nodeID uint32) (AllNodeData, error) {
 	var node AllNodeData
 	query := fmt.Sprintf("%s WHERE node.node_id = $1", selectNodesWithFilter)
@@ -405,6 +419,7 @@ func (d *PostgresDatabase) GetNode(nodeID uint32) (AllNodeData, error) {
 	return node, err
 }
 
+// GetFarm return farm info
 func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
 	var farm Farm
 	rows, err := d.db.Query(selectFarm, farmID)
@@ -423,6 +438,7 @@ func requiresFarmJoin(filter NodeFilter) bool {
 	return filter.FarmName != nil || filter.FreeIPs != nil
 }
 
+// GetNodes returns nodes filtered and paginated
 func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error) {
 	query := selectNodesWithFilter
 	args := make([]interface{}, 0)
@@ -513,6 +529,7 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	return nodes, nil
 }
 
+// GetFarms return farms filtered and paginated
 func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, error) {
 	query := selectFarmsWithFilter
 	query = fmt.Sprintf("%s WHERE TRUE", query)

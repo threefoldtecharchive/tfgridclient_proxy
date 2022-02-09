@@ -167,9 +167,8 @@ func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errorReply(err, w)
 		return
-	} else {
-		response.Status = nodeData.Status
 	}
+	response.Status = nodeData.Status
 	w.WriteHeader(http.StatusOK)
 	res, _ := response.Serialize()
 	w.Write(res)

@@ -17,12 +17,13 @@ const (
 	nodePageSize       = 20
 )
 
+// NodeRequest for a worker to fetch node information
 type NodeRequest struct {
 	NodeID int
 	TwinID int
 }
 
-// manages the fetchers
+// NodeManager manages the fetchers
 type NodeManager struct {
 	db      db.Database
 	rmb     rmb.Client
@@ -30,20 +31,22 @@ type NodeManager struct {
 	ch      chan NodeRequest
 }
 
+// NewNodeManager creates a new manager with number of fetching workers
 func NewNodeManager(db db.Database, rmb rmb.Client, workers int) NodeManager {
 	return NodeManager{db, rmb, workers, make(chan NodeRequest)}
 }
 
-func (nf *NodeManager) Run(ctx context.Context) {
-	nf.initWorkers(ctx)
-	nf.fetchNodes(ctx)
+// Run starts the workers and manages fetching requests
+func (n *NodeManager) Run(ctx context.Context) {
+	n.initWorkers(ctx)
+	n.fetchNodes(ctx)
 	tc := time.NewTicker(nodeFetchingPeriod)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-tc.C:
-			nf.fetchNodes(ctx)
+			n.fetchNodes(ctx)
 		}
 	}
 }
@@ -92,30 +95,32 @@ func (n *NodeManager) initWorkers(ctx context.Context) {
 	for i < n.workers {
 		fetcher := NewNodeFetcher(n.db, n.rmb, n.ch)
 		go fetcher.Run(ctx)
-		i += 1
+		i++
 	}
 }
 
+// NodeFetcher does the actual node data fetching
 type NodeFetcher struct {
 	db  db.Database
 	rmb rmb.Client
 	ch  chan NodeRequest
 }
 
+// NewNodeFetcher constructs a new node fetcher with a channel receiving its requests on
 func NewNodeFetcher(db db.Database, rmb rmb.Client, ch chan NodeRequest) NodeFetcher {
 	return NodeFetcher{db, rmb, ch}
 }
 
-func (nf *NodeFetcher) Run(ctx context.Context) {
-
+// Run starts listening on nodes fetching requests
+func (n *NodeFetcher) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case req := <-nf.ch:
-			if err := nf.fetchNodeData(ctx, &req); err != nil {
+		case req := <-n.ch:
+			if err := n.fetchNodeData(ctx, &req); err != nil {
 				log.Info().Err(err).Int("twin_id", req.TwinID).Int("node_ud", req.NodeID).Msg("couldn't fetch node info")
-				if err := nf.db.UpdateNodeError(uint32(req.NodeID), err); err != nil {
+				if err := n.db.UpdateNodeError(uint32(req.NodeID), err); err != nil {
 					log.Error().Err(err).Int("twin_id", req.TwinID).Int("node_ud", req.NodeID).Msg("couldn't update node error")
 				}
 				continue
@@ -126,11 +131,11 @@ func (nf *NodeFetcher) Run(ctx context.Context) {
 	}
 }
 
-func (nf *NodeFetcher) fetchNodeData(ctx context.Context, req *NodeRequest) error {
+func (n *NodeFetcher) fetchNodeData(ctx context.Context, req *NodeRequest) error {
 	sub, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	cl := client.NewNodeClient(uint32(req.TwinID), nf.rmb)
+	cl := client.NewNodeClient(uint32(req.TwinID), n.rmb)
 	total, used, err := cl.Counters(sub)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get node statistics")
@@ -150,7 +155,7 @@ func (nf *NodeFetcher) fetchNodeData(ctx context.Context, req *NodeRequest) erro
 		Hypervisor:     hypervisor,
 		ZosVersion:     version.ZOS,
 	}
-	if err := nf.db.UpdateNodeData(uint32(req.NodeID), nodeInfo); err != nil {
+	if err := n.db.UpdateNodeData(uint32(req.NodeID), nodeInfo); err != nil {
 		return err
 	}
 	return nil

@@ -1,44 +1,16 @@
 package db
 
 import (
-	"sync"
-
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 )
 
-type ActiveNodes struct {
-	mutex sync.RWMutex
-	nodes map[uint32]struct{}
-}
-
-func NewActiveNodes() ActiveNodes {
-	return ActiveNodes{sync.RWMutex{}, make(map[uint32]struct{})}
-}
-
-func (a *ActiveNodes) Add(node uint32) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	a.nodes[node] = struct{}{}
-}
-
-func (a *ActiveNodes) Remove(node uint32) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	delete(a.nodes, node)
-}
-
-func (a *ActiveNodes) Has(node uint32) bool {
-	a.mutex.RLock()
-	defer a.mutex.RUnlock()
-	_, ok := a.nodes[node]
-	return ok
-}
-
+// Limit used for pagination
 type Limit struct {
 	Size uint64
 	Page uint64
 }
 
+// NodeFilter node filters
 type NodeFilter struct {
 	Status   *string
 	FreeCRU  *uint64
@@ -55,6 +27,7 @@ type NodeFilter struct {
 	Domain   *bool
 }
 
+// FarmFilter farm filters
 type FarmFilter struct {
 	FreeIPs         *uint64
 	StellarAddress  *string
@@ -65,6 +38,7 @@ type FarmFilter struct {
 	Name            *string
 }
 
+// PublicConfig node public config
 type PublicConfig struct {
 	Domain string `json:"domain"`
 	Gw4    string `json:"gw4"`
@@ -73,7 +47,8 @@ type PublicConfig struct {
 	Ipv6   string `json:"ipv6"`
 }
 
-type NodaData struct {
+// NodeData data about nodes which is calculated from the chain
+type NodeData struct {
 	Version           int          `json:"version"`
 	ID                string       `json:"id"`
 	FarmID            int          `json:"farmId"`
@@ -90,6 +65,7 @@ type NodaData struct {
 	PublicConfig      PublicConfig `json:"publicConfig"`
 }
 
+// PulledNodeData data about nodes which is calculated from communicting with the node
 type PulledNodeData struct {
 	TotalResources gridtypes.Capacity `json:"total_resources"`
 	UsedResources  gridtypes.Capacity `json:"used_resources"`
@@ -98,6 +74,7 @@ type PulledNodeData struct {
 	ZosVersion     string             `json:"zosVersion"`
 }
 
+// Farm farm info
 type Farm struct {
 	Name            string     `json:"name"`
 	FarmID          int        `json:"farmId"`
@@ -108,6 +85,7 @@ type Farm struct {
 	PublicIps       []PublicIP `json:"publicIps"`
 }
 
+// PublicIP info about public ip in the farm
 type PublicIP struct {
 	ID         string `json:"id"`
 	IP         string `json:"ip"`
@@ -116,20 +94,23 @@ type PublicIP struct {
 	Gateway    string `json:"gateway"`
 }
 
+// ConnectionInfo info about connections to the nodes
 type ConnectionInfo struct {
-	ProxyUpdateAt    uint64
-	LastNodeError    string
-	LastFetchAttempt uint64
-	Retries          uint64
+	LastFetchAttempt uint64 `json:"lastFetchAttempt"`
+	LastNodeError    string `json:"lastNodeError"`
+	Retries          uint64 `json:"retries"`
+	ProxyUpdateAt    uint64 `json:"proxyUpdatedAt"`
 }
 
+// AllNodeData contains info from the chain, the node, connection info
 type AllNodeData struct {
 	NodeID         int `json:"nodeId"`
-	NodeData       NodaData
+	NodeData       NodeData
 	PulledNodeData PulledNodeData
 	ConnectionInfo ConnectionInfo
 }
 
+// Counters contains aggregate info about the grid
 type Counters struct {
 	Nodes       uint64 `json:"nodes"`
 	Farms       uint64 `json:"farms"`
@@ -145,6 +126,7 @@ type Counters struct {
 	Contracts   uint64 `json:"contracts"`
 }
 
+// Database interface for storing and fetching grid info
 type Database interface {
 	GetCounters() (Counters, error)
 	CountNodes() (int, error)
@@ -156,16 +138,19 @@ type Database interface {
 	GetFarms(filter FarmFilter, limit Limit) ([]Farm, error)
 }
 
+// NodeCursor for pagination
 type NodeCursor struct {
 	db       Database
 	current  int
 	pageSize int
 }
 
+// NewNodeCursor return a paginator over the db with the given page size
 func NewNodeCursor(db Database, pageSize int) NodeCursor {
 	return NodeCursor{db, 1, pageSize}
 }
 
+// Next returns the next node patch
 func (nc *NodeCursor) Next() ([]AllNodeData, error) {
 	nodes, err := nc.db.GetNodes(NodeFilter{}, Limit{
 		Size: uint64(nc.pageSize),
@@ -174,6 +159,6 @@ func (nc *NodeCursor) Next() ([]AllNodeData, error) {
 	if err != nil {
 		return nil, err
 	}
-	nc.current += 1
+	nc.current++
 	return nodes, nil
 }

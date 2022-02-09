@@ -94,21 +94,6 @@ type location struct {
 	City    string `json:"city"`
 }
 
-type publicConfig struct {
-	Domain string `json:"domain"`
-	Gw4    string `json:"gw4"`
-	Gw6    string `json:"gw6"`
-	Ipv4   string `json:"ipv4"`
-	Ipv6   string `json:"ipv6"`
-}
-
-type ConnectionInfo struct {
-	LastFetchAttempt uint64 `json:"lastFetchAttempt"`
-	LastNodeError    string `json:"lastNodeError"`
-	Retries          uint64 `json:"retries"`
-	ProxyUpdateAt    uint64 `json:"proxyUpdatedAt"`
-}
-
 // Node is a struct holding the data for a node for the nodes view
 type node struct {
 	Version           int                `json:"version"`
@@ -126,10 +111,10 @@ type node struct {
 	TotalResources    gridtypes.Capacity `json:"total_resources"`
 	UsedResources     gridtypes.Capacity `json:"used_resources"`
 	Location          location           `json:"location"`
-	PublicConfig      publicConfig       `json:"publicConfig"`
+	PublicConfig      db.PublicConfig    `json:"publicConfig"`
 	Status            string             `json:"status"` // added node status field for up or down
 	CertificationType string             `json:"certificationType"`
-	ConnectionInfo    ConnectionInfo     `json:"connectionInfo"`
+	ConnectionInfo    db.ConnectionInfo  `json:"connectionInfo"`
 }
 
 func nodeFromDBNode(info db.AllNodeData) node {
@@ -152,21 +137,10 @@ func nodeFromDBNode(info db.AllNodeData) node {
 			Country: info.NodeData.Country,
 			City:    info.NodeData.City,
 		},
-		PublicConfig: publicConfig{
-			Domain: info.NodeData.PublicConfig.Domain,
-			Gw4:    info.NodeData.PublicConfig.Gw4,
-			Gw6:    info.NodeData.PublicConfig.Gw6,
-			Ipv4:   info.NodeData.PublicConfig.Ipv4,
-			Ipv6:   info.NodeData.PublicConfig.Ipv6,
-		},
+		PublicConfig:      info.NodeData.PublicConfig,
 		Status:            info.PulledNodeData.Status,
 		CertificationType: info.NodeData.CertificationType,
-		ConnectionInfo: ConnectionInfo{
-			info.ConnectionInfo.LastFetchAttempt,
-			info.ConnectionInfo.LastNodeError,
-			info.ConnectionInfo.Retries,
-			info.ConnectionInfo.ProxyUpdateAt,
-		},
+		ConnectionInfo:    info.ConnectionInfo,
 	}
 
 }
