@@ -108,6 +108,9 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 			filter.FarmIDs[idx] = parsed
 		}
 	}
+	if strings.Contains(fmt.Sprint(r.URL), "gateways") {
+		filter.Domain = &trueVal
+	}
 	page := r.URL.Query().Get("page")
 	size := r.URL.Query().Get("size")
 	if page == "" {
