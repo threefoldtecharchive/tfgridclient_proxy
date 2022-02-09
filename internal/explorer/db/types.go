@@ -131,13 +131,8 @@ type AllNodeData struct {
 }
 
 type Database interface {
-	// if doesn't exist, insert the graphql info
-	// otherwise, update the graphql fields
-	InsertOrUpdateNodeGraphqlData(nodeID uint32, nodeInfo GraphqlData) error
-	// update nongraphql data
 	UpdateNodeData(nodeID uint32, nodeInfo NodeData) error
 	UpdateNodeError(nodeID uint32, err error) error
-	UpdateFarm(farmInfo Farm) error
 	GetNode(nodeID uint32) (AllNodeData, error)
 	GetFarm(farmID uint32) (Farm, error)
 	GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error)

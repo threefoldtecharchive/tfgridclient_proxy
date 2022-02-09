@@ -218,9 +218,6 @@ func (d *PostgresDatabase) Close() error {
 	return d.db.Close()
 }
 
-func (d *PostgresDatabase) InsertOrUpdateNodeGraphqlData(nodeID uint32, nodeInfo GraphqlData) error {
-	return errors.New("you shouldn't update graphql db when using postgres")
-}
 func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo NodeData) error {
 	_, err := d.db.Exec(updatePostgresqlNodeData,
 		nodeID,
@@ -249,10 +246,6 @@ func (d *PostgresDatabase) UpdateNodeError(nodeID uint32, fetchErr error) error 
 		fetchErr.Error(),
 	)
 	return err
-}
-
-func (d *PostgresDatabase) UpdateFarm(farmInfo Farm) error {
-	return errors.New("you shouldn't update farms when using postgres")
 }
 
 func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
