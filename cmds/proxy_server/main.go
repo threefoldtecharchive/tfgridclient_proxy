@@ -24,7 +24,6 @@ const (
 var GitCommit string
 
 type flags struct {
-	explorer         string
 	debug            string
 	redis            string
 	postgresHost     string
@@ -44,7 +43,6 @@ type flags struct {
 
 func main() {
 	f := flags{}
-	flag.StringVar(&f.explorer, "explorer", explorer.DefaultExplorerURL, "explorer url")
 	flag.StringVar(&f.debug, "log-level", "info", "log level [debug|info|warn|error|fatal|panic]")
 	flag.StringVar(&f.substrate, "substrate", "wss://tfchain.dev.grid.tf/ws", "substrate url")
 	flag.StringVar(&f.address, "address", ":443", "explorer running ip address")
@@ -136,7 +134,7 @@ func createServer(f flags, gitCommit string) (*http.Server, error) {
 	router := mux.NewRouter().StrictSlash(true)
 
 	// setup explorer
-	if err := explorer.Setup(router, f.explorer, f.redis, gitCommit, f.postgresHost, f.postgresPort, f.postgresDB, f.postgresUser, f.postgresPassword); err != nil {
+	if err := explorer.Setup(router, f.redis, gitCommit, f.postgresHost, f.postgresPort, f.postgresDB, f.postgresUser, f.postgresPassword); err != nil {
 		return nil, err
 	}
 	if err := rmbproxy.Setup(router, f.substrate); err != nil {

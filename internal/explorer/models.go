@@ -10,9 +10,6 @@ import (
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
-// DefaultExplorerURL is the default explorer graphql url
-const DefaultExplorerURL string = "https://graphql.dev.grid.tf/graphql"
-
 // ErrNodeNotFound creates new error type to define node existence or server problem
 var (
 	ErrNodeNotFound = errors.New("node not found")
@@ -26,9 +23,7 @@ var (
 
 // App is the main app objects
 type App struct {
-	db       db.Database
-	explorer GraphqlClient
-	// redis          *redis.Pool
+	db             db.Database
 	rmb            rmb.Client
 	lruCache       *cache.Cache
 	releaseVersion string
@@ -174,16 +169,6 @@ func nodeFromDBNode(info db.AllNodeData) node {
 		},
 	}
 
-}
-
-// Nodes is struct for the whole nodes view
-type nodes struct {
-	Data []db.GraphqlData `json:"nodes"`
-}
-
-// NodeResponseStruct is struct for the whole nodes view
-type nodesResponse struct {
-	Nodes nodes `json:"data"`
 }
 
 type farm struct {

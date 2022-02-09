@@ -163,7 +163,7 @@ func (a *App) version(w http.ResponseWriter, r *http.Request) {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8080
 // @BasePath /
-func Setup(router *mux.Router, explorer string, redisServer string, gitCommit string, postgresHost string, postgresPort int, postgresDB, postgresUser, postgresPassword string) error {
+func Setup(router *mux.Router, redisServer string, gitCommit string, postgresHost string, postgresPort int, postgresDB, postgresUser, postgresPassword string) error {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
 	rmbClient, err := rmb.NewClient("tcp://127.0.0.1:6379", 500)
@@ -175,10 +175,8 @@ func Setup(router *mux.Router, explorer string, redisServer string, gitCommit st
 	if err != nil {
 		return errors.Wrap(err, "couldn't get sqlite3 client")
 	}
-	graphqlClient := NewGraphqLClient(explorer)
 	a := App{
 		db:             db,
-		explorer:       graphqlClient,
 		rmb:            rmbClient,
 		lruCache:       c,
 		releaseVersion: gitCommit,

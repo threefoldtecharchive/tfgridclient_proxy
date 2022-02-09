@@ -12,6 +12,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var (
+	ErrNodeNotFound = errors.New("node not found")
+	ErrFarmNotFound = errors.New("farm not found")
+)
+
 const (
 	setupPostgresql = `
 	CREATE TABLE IF NOT EXISTS node_pulled (
@@ -338,6 +343,11 @@ func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
 	err = d.scanFarm(rows, &farm)
 	return farm, err
 }
+
+func requiresFarmJoin(filter NodeFilter) bool {
+	return filter.FarmName != nil || filter.FreeIPs != nil
+}
+
 func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error) {
 	query := selectPostgresNodesWithFilter
 	args := make([]interface{}, 0)
@@ -438,7 +448,7 @@ func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, err
 		idx++
 		args = append(args, *filter.FreeIPs)
 	}
-	// Q: most of these returns a single farm
+
 	if filter.StellarAddress != nil {
 		query = fmt.Sprintf("%s AND stellar_address = $%d", query, idx)
 		idx++

@@ -50,7 +50,7 @@ After=network.target
 After=msgbus.service
 
 [Service]
-ExecStart=gridproxy-server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory --substrate wss://tfchain.dev.grid.tf/ws --explorer https://graphql.dev.grid.tf/graphql
+ExecStart=gridproxy-server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory --substrate wss://tfchain.dev.grid.tf/ws --postgres-host 127.0.0.1 --postgres-db db --postgres-password password --postgres-user postgres
 Type=simple
 Restart=always
 User=root
@@ -81,7 +81,7 @@ EOF
   - email: the mail used to run generate the ssl certificate.
   - ca: certificate authority server url
   - substrate: substrate websocket link.
-  - explorer: explorer url which will get queries from.
+  - postgre-*: postgres connection info.
 
 ## To upgrade the machine
 - just replace the binary with the new one and apply
@@ -332,7 +332,7 @@ To build & run dockerfile
 
 ```bash
 docker build -t threefoldtech/gridproxy .
-docker run --name gridproxy -e MNEMONICS="" -e EXPLORER="https://graphql.dev.grid.tf/graphql" -e SUBSTRATE="wss://tfchain.dev.grid.tf/ws" -e PUBLIC_KEY="5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e PRIVATE_KEY="ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" --cap-add=NET_ADMIN threefoldtech/gridproxy
+docker run --name gridproxy -e MNEMONICS="" -e SUBSTRATE="wss://tfchain.dev.grid.tf/ws" -e PUBLIC_KEY="5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e PRIVATE_KEY="ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e POSTGRES_HOST="127.0.0.1" -e POSTGRES_PORT="5432" -e POSTGRES_DB="db" -e POSTGRES_USER="postgres" -e POSTGRES_PASSWORD="password" --cap-add=NET_ADMIN threefoldtech/gridproxy
 ```
 
 - PUBLIC_KEY: yggdrasil public key

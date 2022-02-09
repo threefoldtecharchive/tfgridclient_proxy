@@ -35,7 +35,11 @@ COPY rootfs /
 
 ENV MNEMONICS=""
 ENV SERVER_PORT=":443"
-ENV EXPLORER="https://graphql.dev.grid.tf/graphql"
+ENV POSTGRES_HOST="postgres"
+ENV POSTGRES_PORT="5432"
+ENV POSTGRES_DB="name"
+ENV POSTGRES_USER="postgres"
+ENV POSTGRES_PASSWORD="123"
 ENV SUBSTRATE="wss://tfchain.dev.grid.tf/ws"
 ENV REDIS="localhost:6379"
 
