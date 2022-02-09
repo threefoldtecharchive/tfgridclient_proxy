@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
@@ -83,6 +84,18 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 		nodes[idx] = nodeFromDBNode(node)
 
 	}
+
+	// return the number of pages and totalCount in the response headers
+	nodesCount, err := a.getTotalCount()
+	if err != nil {
+		log.Error().Err(err).Msg("error fetching pages")
+	} else {
+		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
+		w.Header().Add("count", fmt.Sprintf("%d", nodesCount))
+		w.Header().Add("size", fmt.Sprintf("%d", limit.Size))
+		w.Header().Add("pages", fmt.Sprintf("%d", int(pages)))
+	}
+
 	result, err := json.Marshal(nodes)
 	if err != nil {
 		log.Error().Err(err).Msg("fail to list nodes")

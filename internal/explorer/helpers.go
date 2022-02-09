@@ -193,6 +193,10 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 	return filter, limit, nil
 }
 
+func (a *App) getTotalCount() (int, error) {
+	return a.db.CountNodes()
+}
+
 // getNodeData is a helper function that wraps fetch node data
 // it caches the results in redis to save time
 func (a *App) getNodeData(nodeIDStr string) (node, error) {
