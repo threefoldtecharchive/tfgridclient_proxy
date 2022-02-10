@@ -365,7 +365,7 @@ docker run --name gridproxy -e MNEMONICS="" -e EXPLORER="https://graphql.dev.gri
   helm repo add gridproxy https://threefoldtech.github.io/tfgridclient_proxy/
   ```
 
-install a chart
+- install a chart
 
   ```bash
   helm install gridproxy/gridproxy
