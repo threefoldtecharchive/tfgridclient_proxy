@@ -130,7 +130,7 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 		return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse size %s", err.Error()))
 	}
 	limit.Size = parsed
-	if limit.Size >= maxPageSize {
+	if limit.Size > maxPageSize {
 		return filter, limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
 	}
 	return filter, limit, nil
@@ -190,7 +190,7 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 		return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse size %s", err.Error()))
 	}
 	limit.Size = parsed
-	if limit.Size >= maxPageSize {
+	if limit.Size > maxPageSize {
 		return filter, limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
 	}
 	return filter, limit, nil
