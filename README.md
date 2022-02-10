@@ -6,9 +6,9 @@ Interact with TFgridDB using rest APIs
 
 ## Endpoints
 
-- https://gridproxy.dev.grid.tf
-- https://gridproxy.test.grid.tf
-- https://gridproxy.grid.tf
+- <https://gridproxy.dev.grid.tf>
+- <https://gridproxy.test.grid.tf>
+- <https://gridproxy.grid.tf>
 
 ## Prerequisites
 
@@ -36,11 +36,14 @@ Interact with TFgridDB using rest APIs
 - Start the msgbus systemd service with a machine MNEMONICS linked to its yggdrasil IP or public ip if there, [download and more info](https://github.com/threefoldtech/go-rmb)
 - Download the latest binary [here](https://github.com/threefoldtech/tfgridclient_proxy/releases)
 - add the execution permission to the binary and move it to the bin directory
+
   ```bash
   chmod +x ./gridproxy-server
   mv ./gridproxy-server /usr/local/bin/gridproxy-server
   ```
+
 - Add a new systemd service
+
 ```bash
 # create msgbus service
 cat << EOF > /etc/systemd/system/gridproxy-server.service
@@ -63,10 +66,13 @@ EOF
 ```
 
 - enable the service
+
   ```
    systemctl enable gridproxy.service
   ```
+
 - start the service
+
   ```
   systemctl start gridproxy.service
   ```
@@ -76,6 +82,7 @@ EOF
   ```
   systemctl status gridproxy.service
   ```
+
 - The command options:
   - domain: the host domain which will generate ssl certificate to.
   - email: the mail used to run generate the ssl certificate.
@@ -84,11 +91,15 @@ EOF
   - explorer: explorer url which will get queries from.
 
 ## To upgrade the machine
+
 - just replace the binary with the new one and apply
+
 ```
 systemctl restart gridproxy-server.service
 ```
+
 - it you have changes in the `/etc/systemd/system/gridproxy-server.service` you have to run this command first
+
 ```
 systemctl daemon-reload
 ```
@@ -345,3 +356,17 @@ docker run --name gridproxy -e MNEMONICS="" -e EXPLORER="https://graphql.dev.gri
 - Regenerate the packages `helm package -u charts/gridproxy`
 - Regenerate index.yaml `helm repo index --url https://threefoldtech.github.io/tfgridclient_proxy/ .`
 - Push your changes
+
+### Install the chart using helm package
+
+- Adding the repo to your helm
+
+  ```bash
+  helm repo add gridproxy https://threefoldtech.github.io/tfgridclient_proxy/
+  ```
+
+install a chart
+
+  ```bash
+  helm install gridproxy/gridproxy
+  ```
