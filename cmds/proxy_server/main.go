@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/rmbproxy"
 	logging "github.com/threefoldtech/grid_proxy_server/pkg"
+	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
 const (
@@ -55,7 +57,7 @@ func main() {
 	flag.StringVar(&f.postgresDB, "postgres-db", "", "postgres database")
 	flag.StringVar(&f.postgresUser, "postgres-user", "", "postgres username")
 	flag.StringVar(&f.postgresPassword, "postgres-password", "", "postgres password")
-	flag.StringVar(&f.redis, "redis", ":6379", "redis url")
+	flag.StringVar(&f.redis, "redis", "tcp://127.0.0.1:6379", "redis url")
 	flag.BoolVar(&f.version, "v", false, "shows the package version")
 	flag.StringVar(&f.certCacheDir, "cert-cache-dir", CertDefaultCacheDir, "path to store generated certs in")
 	flag.BoolVar(&f.nocert, "no-cert", false, "start the server without certificate")
@@ -75,10 +77,17 @@ func main() {
 	}
 
 	logging.SetupLogging(f.debug)
-	s, err := createServer(f, GitCommit)
+	s, bus, err := createServer(f, GitCommit)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create mux server")
 	}
+	go func() {
+		for {
+			if err := bus.Run(context.Background()); err != nil {
+				log.Warn().Err(err).Msg("bus failed, will be restarted")
+			}
+		}
+	}()
 	if err := app(s, f); err != nil {
 		log.Fatal().Msg(err.Error())
 	}
@@ -130,24 +139,29 @@ func app(s *http.Server, f flags) error {
 	return nil
 }
 
-func createServer(f flags, gitCommit string) (*http.Server, error) {
+func createServer(f flags, gitCommit string) (*http.Server, *rmb.MessageBus, error) {
 	log.Info().Msg("Creating server")
+
+	bus, err := rmb.New(f.redis)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to initialize message bus server")
+	}
 	router := mux.NewRouter().StrictSlash(true)
 	db, err := db.NewPostgresDatabase(f.postgresHost, f.postgresPort, f.postgresUser, f.postgresPassword, f.postgresDB)
 	if err != nil {
-		return nil, errors.Wrap(err, "couldn't get postgres client")
+		return nil, nil, errors.Wrap(err, "couldn't get postgres client")
 	}
 
 	// setup explorer
-	if err := explorer.Setup(router, f.redis, gitCommit, db); err != nil {
-		return nil, err
+	if err := explorer.Setup(router, f.redis, gitCommit, db, bus); err != nil {
+		return nil, nil, err
 	}
 	if err := rmbproxy.Setup(router, f.substrate); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	return &http.Server{
 		Handler: router,
 		Addr:    f.address,
-	}, nil
+	}, bus, nil
 }

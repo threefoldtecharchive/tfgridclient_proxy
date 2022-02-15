@@ -105,10 +105,7 @@ type PublicIP struct {
 
 // ConnectionInfo info about connections to the nodes
 type ConnectionInfo struct {
-	LastFetchAttempt uint64 `json:"lastFetchAttempt"`
-	LastNodeError    string `json:"lastNodeError"`
-	Retries          uint64 `json:"retries"`
-	ProxyUpdateAt    uint64 `json:"proxyUpdatedAt"`
+	ProxyUpdateAt uint64 `json:"proxyUpdatedAt"`
 }
 
 // AllNodeData contains info from the chain, the node, connection info
@@ -116,7 +113,7 @@ type AllNodeData struct {
 	NodeID         int `json:"nodeId"`
 	NodeData       NodeData
 	PulledNodeData PulledNodeData
-	ConnectionInfo ConnectionInfo
+	ProxyUpdatedAt uint64
 }
 
 // Counters contains aggregate info about the grid
@@ -140,7 +137,7 @@ type Database interface {
 	GetCounters() (Counters, error)
 	CountNodes() (int, error)
 	UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData) error
-	UpdateNodeError(nodeID uint32, err error) error
+	UpdateNodeDataByTwin(twinID uint32, nodeInfo PulledNodeData) error
 	GetNode(nodeID uint32) (AllNodeData, error)
 	GetFarm(farmID uint32) (Farm, error)
 	GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error)

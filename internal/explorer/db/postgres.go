@@ -9,6 +9,8 @@ import (
 
 	// to use for database/sql
 	_ "github.com/lib/pq"
+	"github.com/threefoldtech/zos/cmds/modules/noded"
+	"github.com/threefoldtech/zos/pkg/gridtypes"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -22,6 +24,12 @@ var (
 )
 
 const (
+	NodeStateFactor = 2
+	// the number of missed reports to mark the node down
+	// if node reports every 5 mins, it's marked down if the last report is more than 15 mins in the past
+)
+
+const (
 	setupPostgresql = `
 	CREATE TABLE IF NOT EXISTS node_pulled (
 		node_id INTEGER PRIMARY KEY,
@@ -30,13 +38,9 @@ const (
 		free_hru BIGINT,
 		free_mru BIGINT,
 		used_ipv4 INTEGER,
-		status TEXT,
 		zos_version TEXT,
 		hypervisor TEXT,
-		proxy_updated_at BIGINT, /* epoch of last update inside the proxy */
-		last_node_error TEXT, /* last error encountered when getting node info */
-		last_fetch_attempt BIGINT, /* last time the node got contacted */
-		retries INTEGER /* number of times an error happened when contacting the node since last successful attempt*/
+		proxy_updated_at BIGINT /* epoch of last update inside the proxy */
 	);
 	`
 	updateNodeData = `
@@ -50,11 +54,7 @@ const (
 			$6,
 			$7,
 			$8,
-			$9,
-			$10,
-			'',
-			$10,
-			0
+			$9
 		)
 	ON CONFLICT (node_id) DO UPDATE
 	SET	used_cru = $2,
@@ -62,38 +62,34 @@ const (
 		free_hru = $4,
 		free_mru = $5,
 		used_ipv4 = $6,
-		status = $7,
-		zos_version = $8,
-		hypervisor = $9,
-		proxy_updated_at = $10,
-		last_fetch_attempt = $10,
-		retries = 0,
-		last_node_error = ''
+		zos_version = $7,
+		hypervisor = $8,
+		proxy_updated_at = $9
 	WHERE node_pulled.node_id = $1
 	`
-	updateNodeError = `
+	updateNodeDataByTwin = `
 	INSERT INTO node_pulled
 		VALUES (
-			$1,
-			0,
-			0,
-			0,
-			0,
-			0,
+			(select node_id from node where twin_id = $1),
 			$2,
-			'',
-			'',
 			$3,
 			$4,
-			$3,
-			1
+			$5,
+			$6,
+			$7,
+			$8,
+			$9
 		)
 	ON CONFLICT (node_id) DO UPDATE
-	SET retries = node_pulled.retries + 1,
-		last_node_error = $4,
-		status = $2,
-		last_fetch_attempt = $3
-	WHERE node_pulled.node_id = $1;
+	SET	used_cru = $2,
+		free_sru = $3,
+		free_hru = $4,
+		free_mru = $5,
+		used_ipv4 = $6,
+		zos_version = $7,
+		hypervisor = $8,
+		proxy_updated_at = $9
+	WHERE node_pulled.node_id = (select node_id from node where twin_id = $1)
 	`
 
 	selectFarm = `
@@ -143,14 +139,10 @@ const (
 		COALESCE(node.public_config::json->'gw6' #>> '{}', ''),
 		COALESCE(node.public_config::json->'ipv4' #>> '{}', ''),
 		COALESCE(node.public_config::json->'ipv6' #>> '{}', ''),
-		COALESCE(node_pulled.status, 'init'),
 		node.certification_type,
 		COALESCE(node_pulled.zos_version, ''),
 		COALESCE(node_pulled.hypervisor, ''),
-		COALESCE(node_pulled.proxy_updated_at, 0),
-		COALESCE(node_pulled.last_node_error, ''),
-		COALESCE(node_pulled.last_fetch_attempt, 0),
-		COALESCE(node_pulled.retries, 0)
+		COALESCE(node_pulled.proxy_updated_at, 0)
 	FROM node
 	LEFT JOIN node_pulled ON node.node_id = node_pulled.node_id
 	`
@@ -299,7 +291,6 @@ func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData
 		nodeInfo.Resources.FreeMRU,
 		nodeInfo.Resources.FreeMRU,
 		nodeInfo.Resources.UsedIPV4U,
-		nodeInfo.Status,
 		nodeInfo.ZosVersion,
 		nodeInfo.Hypervisor,
 		time.Now().Unix(),
@@ -307,19 +298,24 @@ func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData
 	return err
 }
 
-// UpdateNodeError node error happened while fetching
-func (d *PostgresDatabase) UpdateNodeError(nodeID uint32, fetchErr error) error {
-	_, err := d.db.Exec(updateNodeError,
-		nodeID,
-		"down",
+// UpdateNodeDataByTwin update the database by the pulled data from the node given its twin id
+func (d *PostgresDatabase) UpdateNodeDataByTwin(twinID uint32, nodeInfo PulledNodeData) error {
+	_, err := d.db.Exec(updateNodeDataByTwin,
+		twinID,
+		nodeInfo.Resources.UsedCRU,
+		nodeInfo.Resources.FreeSRU,
+		nodeInfo.Resources.FreeMRU,
+		nodeInfo.Resources.FreeMRU,
+		nodeInfo.Resources.UsedIPV4U,
+		nodeInfo.ZosVersion,
+		nodeInfo.Hypervisor,
 		time.Now().Unix(),
-		fetchErr.Error(),
 	)
 	return err
 }
 
 func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
-	return rows.Scan(
+	err := rows.Scan(
 		&node.NodeData.Version,
 		&node.NodeData.ID,
 		&node.NodeID,
@@ -346,15 +342,20 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.PublicConfig.Gw6,
 		&node.NodeData.PublicConfig.Ipv4,
 		&node.NodeData.PublicConfig.Ipv6,
-		&node.PulledNodeData.Status,
 		&node.NodeData.CertificationType,
 		&node.PulledNodeData.ZosVersion,
 		&node.PulledNodeData.Hypervisor,
-		&node.ConnectionInfo.ProxyUpdateAt,
-		&node.ConnectionInfo.LastNodeError,
-		&node.ConnectionInfo.LastFetchAttempt,
-		&node.ConnectionInfo.Retries,
+		&node.ProxyUpdatedAt,
 	)
+	if err != nil {
+		return err
+	}
+	if int64(node.ProxyUpdatedAt) >= time.Now().Unix()-NodeStateFactor*int64(noded.ReportInterval/time.Second) {
+		node.PulledNodeData.Status = "up"
+	} else {
+		node.PulledNodeData.Status = "down"
+	}
+	return nil
 }
 
 func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
@@ -417,7 +418,13 @@ func convertParam(p interface{}) string {
 		return fmt.Sprintf("'%s'", v)
 	} else if v, ok := p.(uint64); ok {
 		return fmt.Sprintf("%d", v)
+	} else if v, ok := p.(int64); ok {
+		return fmt.Sprintf("%d", v)
+	} else if v, ok := p.(uint32); ok {
+		return fmt.Sprintf("%d", v)
 	} else if v, ok := p.(int); ok {
+		return fmt.Sprintf("%d", v)
+	} else if v, ok := p.(gridtypes.Unit); ok {
 		return fmt.Sprintf("%d", v)
 	}
 	log.Error().Msgf("can't recognize type %s", fmt.Sprintf("%v", p))
@@ -440,9 +447,13 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	idx := 1
 	query = fmt.Sprintf("%s WHERE TRUE", query)
 	if filter.Status != nil {
-		query = fmt.Sprintf("%s AND node_pulled.status = $%d", query, idx)
+		op := ">="
+		if *filter.Status == "down" {
+			op = "<"
+		}
+		query = fmt.Sprintf("%s AND node_pulled.proxy_updated_at %s $%d", query, op, idx)
 		idx++
-		args = append(args, *filter.Status)
+		args = append(args, time.Now().Unix()-NodeStateFactor*int64(noded.ReportInterval/time.Second))
 	}
 	if filter.FreeMRU != nil {
 		query = fmt.Sprintf("%s AND node_pulled.free_mru >= $%d", query, idx)
@@ -500,7 +511,6 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	query = fmt.Sprintf("%s ORDER BY node.node_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
-	printQuery(query, args...)
 	rows, err := d.db.Query(query, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query nodes")

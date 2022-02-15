@@ -108,7 +108,9 @@ type node struct {
 	PublicConfig      db.PublicConfig    `json:"publicConfig"`
 	Status            string             `json:"status"` // added node status field for up or down
 	CertificationType string             `json:"certificationType"`
-	ConnectionInfo    db.ConnectionInfo  `json:"connectionInfo"`
+	Hypervisor        string             `json:"hypervisor"`
+	ZosVersion        string             `json:"zosVersion"`
+	ProxyUpdatedAt    uint64             `json:"proxyUpdatedAt"`
 }
 
 func nodeFromDBNode(info db.AllNodeData) node {
@@ -140,7 +142,9 @@ func nodeFromDBNode(info db.AllNodeData) node {
 		PublicConfig:      info.NodeData.PublicConfig,
 		Status:            info.PulledNodeData.Status,
 		CertificationType: info.NodeData.CertificationType,
-		ConnectionInfo:    info.ConnectionInfo,
+		ZosVersion:        info.PulledNodeData.ZosVersion,
+		Hypervisor:        info.PulledNodeData.Hypervisor,
+		ProxyUpdatedAt:    info.ProxyUpdatedAt,
 	}
 
 }
