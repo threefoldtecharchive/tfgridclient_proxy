@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	// to use for database/sql
@@ -24,15 +25,10 @@ const (
 	setupPostgresql = `
 	CREATE TABLE IF NOT EXISTS node_pulled (
 		node_id INTEGER PRIMARY KEY,
-		total_cru INTEGER,
-		total_sru BIGINT,
-		total_hru BIGINT,
-		total_mru BIGINT,
-		total_ipv4 INTEGER,
 		used_cru INTEGER,
-		used_sru BIGINT,
-		used_hru BIGINT,
-		used_mru BIGINT,
+		free_sru BIGINT,
+		free_hru BIGINT,
+		free_mru BIGINT,
 		used_ipv4 INTEGER,
 		status TEXT,
 		zos_version TEXT,
@@ -56,31 +52,21 @@ const (
 			$8,
 			$9,
 			$10,
-			$11,
-			$12,
-			$13,
-			$14,
-			$15,
 			'',
-			$15,
+			$10,
 			0
 		)
 	ON CONFLICT (node_id) DO UPDATE
-	SET	total_cru = $2,
-		total_sru = $3,
-		total_hru = $4,
-		total_mru = $5,
-		total_ipv4 = $6,
-		used_cru = $7,
-		used_sru = $8,
-		used_hru = $9,
-		used_mru = $10,
-		used_ipv4 = $11,
-		status = $12,
-		zos_version = $13,
-		hypervisor = $14,
-		proxy_updated_at = $15,
-		last_fetch_attempt = $15,
+	SET	used_cru = $2,
+		free_sru = $3,
+		free_hru = $4,
+		free_mru = $5,
+		used_ipv4 = $6,
+		status = $7,
+		zos_version = $8,
+		hypervisor = $9,
+		proxy_updated_at = $10,
+		last_fetch_attempt = $10,
 		retries = 0,
 		last_node_error = ''
 	WHERE node_pulled.node_id = $1
@@ -89,11 +75,6 @@ const (
 	INSERT INTO node_pulled
 		VALUES (
 			$1,
-			0,
-			0,
-			0,
-			0,
-			0,
 			0,
 			0,
 			0,
@@ -148,15 +129,14 @@ const (
 		node.created,
 		node.farming_policy_id,
 		node.updated_at,
-		COALESCE(node_pulled.total_cru, 0),
-		COALESCE(node_pulled.total_sru, 0),
-		COALESCE(node_pulled.total_hru, 0),
-		COALESCE(node_pulled.total_mru, 0),
-		COALESCE(node_pulled.used_ipv4, 0),
+		COALESCE(node.cru, 0),
+		COALESCE(node.sru, 0),
+		COALESCE(node.hru, 0),
+		COALESCE(node.mru, 0),
 		COALESCE(node_pulled.used_cru, 0),
-		COALESCE(node_pulled.used_sru, 0),
-		COALESCE(node_pulled.used_hru, 0),
-		COALESCE(node_pulled.used_mru, 0),
+		COALESCE(node_pulled.free_sru, 0),
+		COALESCE(node_pulled.free_hru, 0),
+		COALESCE(node_pulled.free_mru, 0),
 		COALESCE(node_pulled.used_ipv4, 0),
 		COALESCE(node.public_config::json->'domain' #>> '{}', ''),
 		COALESCE(node.public_config::json->'gw4' #>> '{}', ''),
@@ -314,16 +294,11 @@ func (d *PostgresDatabase) GetCounters() (Counters, error) {
 func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData) error {
 	_, err := d.db.Exec(updateNodeData,
 		nodeID,
-		nodeInfo.TotalResources.CRU,
-		nodeInfo.TotalResources.SRU,
-		nodeInfo.TotalResources.MRU,
-		nodeInfo.TotalResources.MRU,
-		nodeInfo.TotalResources.IPV4U,
-		nodeInfo.UsedResources.CRU,
-		nodeInfo.UsedResources.SRU,
-		nodeInfo.UsedResources.MRU,
-		nodeInfo.UsedResources.MRU,
-		nodeInfo.UsedResources.IPV4U,
+		nodeInfo.Resources.UsedCRU,
+		nodeInfo.Resources.FreeSRU,
+		nodeInfo.Resources.FreeMRU,
+		nodeInfo.Resources.FreeMRU,
+		nodeInfo.Resources.UsedIPV4U,
 		nodeInfo.Status,
 		nodeInfo.ZosVersion,
 		nodeInfo.Hypervisor,
@@ -357,16 +332,15 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.Created,
 		&node.NodeData.FarmingPolicyID,
 		&node.NodeData.UpdatedAt,
-		&node.PulledNodeData.TotalResources.CRU,
-		&node.PulledNodeData.TotalResources.SRU,
-		&node.PulledNodeData.TotalResources.HRU,
-		&node.PulledNodeData.TotalResources.MRU,
-		&node.PulledNodeData.TotalResources.IPV4U,
-		&node.PulledNodeData.UsedResources.CRU,
-		&node.PulledNodeData.UsedResources.SRU,
-		&node.PulledNodeData.UsedResources.HRU,
-		&node.PulledNodeData.UsedResources.MRU,
-		&node.PulledNodeData.UsedResources.IPV4U,
+		&node.NodeData.TotalResources.CRU,
+		&node.NodeData.TotalResources.SRU,
+		&node.NodeData.TotalResources.HRU,
+		&node.NodeData.TotalResources.MRU,
+		&node.PulledNodeData.Resources.UsedCRU,
+		&node.PulledNodeData.Resources.FreeSRU,
+		&node.PulledNodeData.Resources.FreeHRU,
+		&node.PulledNodeData.Resources.FreeMRU,
+		&node.PulledNodeData.Resources.UsedIPV4U,
 		&node.NodeData.PublicConfig.Domain,
 		&node.NodeData.PublicConfig.Gw4,
 		&node.NodeData.PublicConfig.Gw6,
@@ -438,6 +412,24 @@ func requiresFarmJoin(filter NodeFilter) bool {
 	return filter.FarmName != nil || filter.FreeIPs != nil
 }
 
+func convertParam(p interface{}) string {
+	if v, ok := p.(string); ok {
+		return fmt.Sprintf("'%s'", v)
+	} else if v, ok := p.(uint64); ok {
+		return fmt.Sprintf("%d", v)
+	} else if v, ok := p.(int); ok {
+		return fmt.Sprintf("%d", v)
+	}
+	log.Error().Msgf("can't recognize type %s", fmt.Sprintf("%v", p))
+	return "0"
+}
+func printQuery(query string, args ...interface{}) {
+	for i, e := range args {
+		query = strings.ReplaceAll(query, fmt.Sprintf("$%d", i+1), convertParam(e))
+	}
+	fmt.Printf("node query: %s", query)
+}
+
 // GetNodes returns nodes filtered and paginated
 func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error) {
 	query := selectNodesWithFilter
@@ -452,23 +444,18 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 		idx++
 		args = append(args, *filter.Status)
 	}
-	if filter.FreeCRU != nil {
-		query = fmt.Sprintf("%s AND node_pulled.total_cru - node_pulled.used_cru >= $%d", query, idx)
-		idx++
-		args = append(args, *filter.FreeCRU)
-	}
 	if filter.FreeMRU != nil {
-		query = fmt.Sprintf("%s AND node_pulled.total_mru - node_pulled.used_mru >= $%d", query, idx)
+		query = fmt.Sprintf("%s AND node_pulled.free_mru >= $%d", query, idx)
 		idx++
 		args = append(args, *filter.FreeMRU)
 	}
 	if filter.FreeHRU != nil {
-		query = fmt.Sprintf("%s AND node_pulled.total_hru - node_pulled.used_hru >= $%d", query, idx)
+		query = fmt.Sprintf("%s AND node_pulled.free_hru >= $%d", query, idx)
 		idx++
 		args = append(args, *filter.FreeHRU)
 	}
 	if filter.FreeSRU != nil {
-		query = fmt.Sprintf("%s AND node_pulled.total_sru - node_pulled.used_sru >= $%d", query, idx)
+		query = fmt.Sprintf("%s AND node_pulled.free_sru >= $%d", query, idx)
 		idx++
 		args = append(args, *filter.FreeSRU)
 	}
@@ -513,6 +500,7 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	query = fmt.Sprintf("%s ORDER BY node.node_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
+	printQuery(query, args...)
 	rows, err := d.db.Query(query, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query nodes")

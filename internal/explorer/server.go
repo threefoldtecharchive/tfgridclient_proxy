@@ -2,7 +2,6 @@ package explorer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
@@ -27,28 +27,17 @@ import (
 // @Param size query int false "Max result per page"
 // @Success 200 {object} FarmResult
 // @Router /farms [get]
-func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
+func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleFarmRequestsQueryParams(r)
 	if err != nil {
-		errorReplyWithStatus(err, w, http.StatusBadRequest)
-		return
+		return nil, mw.BadRequest(err)
 	}
 	farms, err := a.db.GetFarms(filter, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query farm")
-		errorReplyWithStatus(err, w, http.StatusInternalServerError)
-		return
+		return nil, mw.Error(err)
 	}
-	serialzied, err := json.Marshal(farms)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to marshal farm")
-		errorReplyWithStatus(err, w, http.StatusInternalServerError)
-		return
-	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(serialzied)
+	return farms, nil
 }
 
 // getStats godoc
@@ -59,20 +48,12 @@ func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Success 200 {object} FarmResult
 // @Router /stats [get]
-func (a *App) getStats(w http.ResponseWriter, r *http.Request) {
+func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 	counters, err := a.db.GetCounters()
 	if err != nil {
-		errorReplyWithStatus(err, w, http.StatusInternalServerError)
-		return
+		return nil, mw.Error(err)
 	}
-	serialized, err := json.Marshal(counters)
-	if err != nil {
-		errorReplyWithStatus(err, w, http.StatusInternalServerError)
-		return
-	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(serialized)
+	return counters, nil
 }
 
 // listNodes godoc
@@ -87,23 +68,21 @@ func (a *App) getStats(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} nodesResponse
 // @Router /nodes [get]
 // @Router /gateways [get]
-func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
+func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleNodeRequestsQueryParams(r)
 	if err != nil {
-		errorReplyWithStatus(err, w, http.StatusBadRequest)
-		return
+		return nil, mw.BadRequest(err)
 	}
 	dbNodes, err := a.db.GetNodes(filter, limit)
 	if err != nil {
-		errorReplyWithStatus(err, w, http.StatusInternalServerError)
-		return
+		return nil, mw.Error(err)
 	}
 	nodes := make([]node, len(dbNodes))
 	for idx, node := range dbNodes {
 		nodes[idx] = nodeFromDBNode(node)
 
 	}
+	resp := mw.Ok()
 
 	// return the number of pages and totalCount in the response headers
 	nodesCount, err := a.getTotalCount()
@@ -111,20 +90,11 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 		log.Error().Err(err).Msg("error fetching pages")
 	} else {
 		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
-		w.Header().Add("count", fmt.Sprintf("%d", nodesCount))
-		w.Header().Add("size", fmt.Sprintf("%d", limit.Size))
-		w.Header().Add("pages", fmt.Sprintf("%d", int(pages)))
+		resp.WithHeader("count", fmt.Sprintf("%d", nodesCount))
+		resp.WithHeader("size", fmt.Sprintf("%d", limit.Size))
+		resp.WithHeader("pages", fmt.Sprintf("%d", int(pages)))
 	}
-
-	result, err := json.Marshal(nodes)
-	if err != nil {
-		log.Error().Err(err).Msg("fail to list nodes")
-		errorReply(err, w)
-		return
-	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(result))
+	return nodes, resp
 }
 
 // getNode godoc
@@ -137,41 +107,25 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} NodeInfo
 // @Router /nodes/{node_id} [get]
 // @Router /gateways/{node_id} [get]
-func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	w.Header().Add("Content-Type", "application/json")
-
+func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {
 	nodeID := mux.Vars(r)["node_id"]
 	nodeData, err := a.getNodeData(nodeID)
 	if err != nil {
-		errorReply(err, w)
-		return
+		return nil, errorReply(err)
 	}
-	serialized, err := json.Marshal(nodeData)
-	if err != nil {
-		errorReply(err, w)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(serialized)
+	return nodeData, nil
 }
 
-func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	w.Header().Add("Content-Type", "application/json")
-
+func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
 	response := NodeStatus{}
 	nodeID := mux.Vars(r)["node_id"]
 
 	nodeData, err := a.getNodeData(nodeID)
 	if err != nil {
-		errorReply(err, w)
-		return
+		return nil, errorReply(err)
 	}
 	response.Status = nodeData.Status
-	w.WriteHeader(http.StatusOK)
-	res, _ := response.Serialize()
-	w.Write(res)
+	return response, nil
 }
 
 func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
@@ -195,7 +149,7 @@ func (a *App) version(w http.ResponseWriter, r *http.Request) {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8080
 // @BasePath /
-func Setup(router *mux.Router, redisServer string, gitCommit string, postgresHost string, postgresPort int, postgresDB, postgresUser, postgresPassword string) error {
+func Setup(router *mux.Router, redisServer string, gitCommit string, db db.Database) error {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
 	rmbClient, err := rmb.NewClient("tcp://127.0.0.1:6379", 500)
@@ -203,10 +157,6 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, postgresHos
 		return errors.Wrap(err, "couldn't connect to rmb")
 	}
 	c := cache.New(2*time.Minute, 3*time.Minute)
-	db, err := db.NewPostgresDatabase(postgresHost, postgresPort, postgresUser, postgresPassword, postgresDB)
-	if err != nil {
-		return errors.Wrap(err, "couldn't get sqlite3 client")
-	}
 	a := App{
 		db:             db,
 		rmb:            rmbClient,
@@ -214,14 +164,14 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, postgresHos
 		releaseVersion: gitCommit,
 	}
 
-	router.HandleFunc("/farms", a.listFarms)
-	router.HandleFunc("/stats", a.getStats)
-	router.HandleFunc("/nodes", a.listNodes)
-	router.HandleFunc("/gateways", a.listNodes)
-	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)
-	router.HandleFunc("/gateways/{node_id:[0-9]+}", a.getNode)
-	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", a.getNodeStatus)
-	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", a.getNodeStatus)
+	router.HandleFunc("/farms", mw.AsHandlerFunc(a.listFarms))
+	router.HandleFunc("/stats", mw.AsHandlerFunc(a.getStats))
+	router.HandleFunc("/nodes", mw.AsHandlerFunc(a.listNodes))
+	router.HandleFunc("/gateways", mw.AsHandlerFunc(a.listNodes))
+	router.HandleFunc("/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
+	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
+	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
+	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/", a.indexPage)
 	router.HandleFunc("/version", a.version)
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)

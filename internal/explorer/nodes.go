@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	nodeFetchingPeriod = 1 * time.Minute
-	nodePageSize       = 20
+	nodeFetchingPeriod     = 1 * time.Minute
+	nodePageSize           = 20
+	SSDOverProvisionFactor = 2
 )
 
 // NodeRequest for a worker to fetch node information
@@ -149,11 +150,16 @@ func (n *NodeFetcher) fetchNodeData(ctx context.Context, req *NodeRequest) error
 		return errors.Wrap(err, "couldn't get node version")
 	}
 	nodeInfo := db.PulledNodeData{
-		TotalResources: total,
-		UsedResources:  used,
-		Status:         "up",
-		Hypervisor:     hypervisor,
-		ZosVersion:     version.ZOS,
+		Resources: db.CapacityInfo{
+			UsedCRU:   used.CRU,
+			FreeSRU:   total.SRU*SSDOverProvisionFactor - used.SRU,
+			FreeHRU:   total.HRU - 2,
+			FreeMRU:   total.MRU - used.MRU,
+			UsedIPV4U: used.IPV4U,
+		},
+		Status:     "up",
+		Hypervisor: hypervisor,
+		ZosVersion: version.ZOS,
 	}
 	if err := n.db.UpdateNodeData(uint32(req.NodeID), nodeInfo); err != nil {
 		return err

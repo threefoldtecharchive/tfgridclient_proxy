@@ -1,15 +1,13 @@
 package explorer
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 )
 
 const (
@@ -20,65 +18,56 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
-func errorReplyWithStatus(err error, w http.ResponseWriter, status int) {
-	w.WriteHeader(status)
-	var res ErrorReply
-	res.Message = err.Error()
-	res.Error = http.StatusText(status)
-	if err := json.NewEncoder(w).Encode(res); err != nil {
-		w.Write([]byte(`{"error": "Internal server error", "message": "couldn't encode json"}`))
-	}
-}
-func errorReply(err error, w http.ResponseWriter) {
-	var res ErrorReply
-	res.Message = err.Error()
+func errorReply(err error) mw.Response {
 	if errors.Is(err, ErrNodeNotFound) {
-		// return not found 404
-		w.WriteHeader(http.StatusNotFound)
-		res.Error = http.StatusText(http.StatusNotFound)
+		return mw.NotFound(err)
 	} else if errors.Is(err, ErrBadGateway) {
-		w.WriteHeader(http.StatusBadGateway)
-		res.Error = http.StatusText(http.StatusBadGateway)
-	} else if err != nil {
-		// return internal server error
-		log.Error().Err(err).Msg("failed to get node information")
-		w.WriteHeader(http.StatusInternalServerError)
-		res.Error = http.StatusText(http.StatusInternalServerError)
-	}
-	if err := json.NewEncoder(w).Encode(res); err != nil {
-		w.Write([]byte(`{"error": "Internal server error", "message": "couldn't encode json"}`))
+		return mw.BadGateway(err)
+	} else {
+		return mw.Error(err)
 	}
 }
 
-// test nodes?status=up&free_ips=0&free_cru=1&free_mru=1&free_hru=1&country=Belgium&city=Unknown&ipv4=true&ipv6=true&domain=false
-// HandleNodeRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
-func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.Limit, error) {
-	var filter db.NodeFilter
+func GetLimit(r *http.Request) (db.Limit, error) {
 	var limit db.Limit
-	ints := map[string]**uint64{
-		"free_cru": &filter.FreeCRU,
-		"free_mru": &filter.FreeMRU,
-		"free_hru": &filter.FreeHRU,
-		"free_sru": &filter.FreeSRU,
-		"free_ips": &filter.FreeIPs,
+
+	page := r.URL.Query().Get("page")
+	size := r.URL.Query().Get("size")
+	if page == "" {
+		page = "1"
 	}
-	strs := map[string]**string{
-		"status":    &filter.Status,
-		"city":      &filter.City,
-		"country":   &filter.Country,
-		"farm_name": &filter.FarmName,
+	if size == "" {
+		size = "50"
 	}
-	bools := map[string]**bool{
-		"ipv4":   &filter.IPv4,
-		"ipv6":   &filter.IPv6,
-		"domain": &filter.Domain,
+	parsed, err := strconv.ParseUint(page, 10, 64)
+	if err != nil {
+		return limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse page %s", err.Error()))
 	}
+	limit.Page = parsed
+
+	parsed, err = strconv.ParseUint(size, 10, 64)
+	if err != nil {
+		return limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse size %s", err.Error()))
+	}
+	limit.Size = parsed
+	if limit.Size > maxPageSize {
+		return limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
+	}
+	return limit, nil
+}
+func ParseParams(
+	r *http.Request,
+	ints map[string]**uint64,
+	strs map[string]**string,
+	bools map[string]**bool,
+	listOfInts map[string]*[]uint64,
+) error {
 	for param, prop := range ints {
 		value := r.URL.Query().Get(param)
 		if value != "" {
 			parsed, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse %s %s", param, err.Error()))
+				return errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse %s %s", param, err.Error()))
 			}
 			*prop = &parsed
 		}
@@ -97,41 +86,40 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 			*prop = &trueVal
 		}
 	}
-	farmIDs := strings.Split(r.URL.Query().Get("farm_ids"), ",")
-	if len(farmIDs) != 1 || farmIDs[0] != "" {
-		filter.FarmIDs = make([]uint64, len(farmIDs))
-		for idx, id := range farmIDs {
-			parsed, err := strconv.ParseUint(strings.TrimSpace(id), 10, 64)
-			if err != nil {
-				return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse farm_id indexed at %d %s", idx, err.Error()))
-			}
-			filter.FarmIDs[idx] = parsed
-		}
-	}
-	if strings.Contains(fmt.Sprint(r.URL), "gateways") {
-		filter.Domain = &trueVal
-	}
-	page := r.URL.Query().Get("page")
-	size := r.URL.Query().Get("size")
-	if page == "" {
-		page = "1"
-	}
-	if size == "" {
-		size = "50"
-	}
-	parsed, err := strconv.ParseUint(page, 10, 64)
-	if err != nil {
-		return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse page %s", err.Error()))
-	}
-	limit.Page = parsed
+	return nil
+}
 
-	parsed, err = strconv.ParseUint(size, 10, 64)
-	if err != nil {
-		return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse size %s", err.Error()))
+// test nodes?status=up&free_ips=0&free_cru=1&free_mru=1&free_hru=1&country=Belgium&city=Unknown&ipv4=true&ipv6=true&domain=false
+// HandleNodeRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
+func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.Limit, error) {
+	var filter db.NodeFilter
+	var limit db.Limit
+	ints := map[string]**uint64{
+		"free_mru": &filter.FreeMRU,
+		"free_hru": &filter.FreeHRU,
+		"free_sru": &filter.FreeSRU,
+		"free_ips": &filter.FreeIPs,
 	}
-	limit.Size = parsed
-	if limit.Size > maxPageSize {
-		return filter, limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
+	strs := map[string]**string{
+		"status":    &filter.Status,
+		"city":      &filter.City,
+		"country":   &filter.Country,
+		"farm_name": &filter.FarmName,
+	}
+	bools := map[string]**bool{
+		"ipv4":   &filter.IPv4,
+		"ipv6":   &filter.IPv6,
+		"domain": &filter.Domain,
+	}
+	listOfInts := map[string]*[]uint64{
+		"farm_ids": &filter.FarmIDs,
+	}
+	if err := ParseParams(r, ints, strs, bools, listOfInts); err != nil {
+		return filter, limit, err
+	}
+	limit, err := GetLimit(r)
+	if err != nil {
+		return filter, limit, err
 	}
 	return filter, limit, nil
 }
@@ -153,45 +141,13 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 		"name":            &filter.Name,
 		"stellar_address": &filter.StellarAddress,
 	}
-	for param, prop := range ints {
-		value := r.URL.Query().Get(param)
-		if value != "" {
-			parsed, err := strconv.ParseUint(value, 10, 64)
-			if err != nil {
-				return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse %s %s", param, err.Error()))
-			}
-			*prop = &parsed
-		}
+	if err := ParseParams(r, ints, strs, nil, nil); err != nil {
+		return filter, limit, err
 	}
 
-	for param, prop := range strs {
-		value := r.URL.Query().Get(param)
-		if value != "" {
-			*prop = &value
-		}
-	}
-
-	page := r.URL.Query().Get("page")
-	size := r.URL.Query().Get("size")
-	if page == "" {
-		page = "1"
-	}
-	if size == "" {
-		size = "50"
-	}
-	parsed, err := strconv.ParseUint(page, 10, 64)
+	limit, err := GetLimit(r)
 	if err != nil {
-		return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse page %s", err.Error()))
-	}
-	limit.Page = parsed
-
-	parsed, err = strconv.ParseUint(size, 10, 64)
-	if err != nil {
-		return filter, limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse size %s", err.Error()))
-	}
-	limit.Size = parsed
-	if limit.Size > maxPageSize {
-		return filter, limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
+		return filter, limit, err
 	}
 	return filter, limit, nil
 }

@@ -13,7 +13,6 @@ type Limit struct {
 // NodeFilter node filters
 type NodeFilter struct {
 	Status   *string
-	FreeCRU  *uint64
 	FreeMRU  *uint64
 	FreeHRU  *uint64
 	FreeSRU  *uint64
@@ -49,29 +48,39 @@ type PublicConfig struct {
 
 // NodeData data about nodes which is calculated from the chain
 type NodeData struct {
-	Version           int          `json:"version"`
-	ID                string       `json:"id"`
-	FarmID            int          `json:"farmId"`
-	NodeID            int          `json:"nodeId"`
-	TwinID            int          `json:"twinId"`
-	Country           string       `json:"country"`
-	GridVersion       int          `json:"gridVersion"`
-	City              string       `json:"city"`
-	Uptime            int64        `json:"uptime"`
-	Created           int64        `json:"created"`
-	FarmingPolicyID   int          `json:"farmingPolicyId"`
-	UpdatedAt         string       `json:"updatedAt"`
-	CertificationType string       `json:"certificationType"`
-	PublicConfig      PublicConfig `json:"publicConfig"`
+	Version           int                `json:"version"`
+	ID                string             `json:"id"`
+	FarmID            int                `json:"farmId"`
+	NodeID            int                `json:"nodeId"`
+	TwinID            int                `json:"twinId"`
+	Country           string             `json:"country"`
+	GridVersion       int                `json:"gridVersion"`
+	City              string             `json:"city"`
+	Uptime            int64              `json:"uptime"`
+	Created           int64              `json:"created"`
+	FarmingPolicyID   int                `json:"farmingPolicyId"`
+	UpdatedAt         string             `json:"updatedAt"`
+	CertificationType string             `json:"certificationType"`
+	TotalResources    gridtypes.Capacity `json:"total_resources"`
+	PublicConfig      PublicConfig       `json:"publicConfig"`
+}
+
+// CapacityInfo capacity info about the node
+
+type CapacityInfo struct {
+	UsedCRU   uint64         `json:"cru"`
+	FreeSRU   gridtypes.Unit `json:"sru"`
+	FreeHRU   gridtypes.Unit `json:"hru"`
+	FreeMRU   gridtypes.Unit `json:"mru"`
+	UsedIPV4U uint64         `json:"ipv4u"`
 }
 
 // PulledNodeData data about nodes which is calculated from communicting with the node
 type PulledNodeData struct {
-	TotalResources gridtypes.Capacity `json:"total_resources"`
-	UsedResources  gridtypes.Capacity `json:"used_resources"`
-	Status         string             `json:"status"` // added node status field for up or down
-	Hypervisor     string             `json:"hypervisor"`
-	ZosVersion     string             `json:"zosVersion"`
+	Resources  CapacityInfo `json:"resources_info"`
+	Status     string       `json:"status"` // added node status field for up or down
+	Hypervisor string       `json:"hypervisor"`
+	ZosVersion string       `json:"zosVersion"`
 }
 
 // Farm farm info

@@ -2,15 +2,16 @@ package main
 
 import (
 	"crypto/tls"
-	"errors"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer"
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/rmbproxy"
 	logging "github.com/threefoldtech/grid_proxy_server/pkg"
 )
@@ -132,9 +133,13 @@ func app(s *http.Server, f flags) error {
 func createServer(f flags, gitCommit string) (*http.Server, error) {
 	log.Info().Msg("Creating server")
 	router := mux.NewRouter().StrictSlash(true)
+	db, err := db.NewPostgresDatabase(f.postgresHost, f.postgresPort, f.postgresUser, f.postgresPassword, f.postgresDB)
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't get postgres client")
+	}
 
 	// setup explorer
-	if err := explorer.Setup(router, f.redis, gitCommit, f.postgresHost, f.postgresPort, f.postgresDB, f.postgresUser, f.postgresPassword); err != nil {
+	if err := explorer.Setup(router, f.redis, gitCommit, db); err != nil {
 		return nil, err
 	}
 	if err := rmbproxy.Setup(router, f.substrate); err != nil {

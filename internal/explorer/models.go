@@ -42,12 +42,6 @@ type NodeInfo struct {
 	ZosVersion string         `json:"zosVersion"`
 }
 
-// ErrorReply when something bad happens at grid proxy
-type ErrorReply struct {
-	Error   string
-	Message string
-}
-
 // Serialize is the serializer for node info struct
 func (n *NodeInfo) Serialize() (json.RawMessage, error) {
 	bytes, err := json.Marshal(n)
@@ -131,8 +125,14 @@ func nodeFromDBNode(info db.AllNodeData) node {
 		Created:         info.NodeData.Created,
 		FarmingPolicyID: info.NodeData.FarmingPolicyID,
 		UpdatedAt:       info.NodeData.UpdatedAt,
-		TotalResources:  info.PulledNodeData.TotalResources,
-		UsedResources:   info.PulledNodeData.UsedResources,
+		TotalResources:  info.NodeData.TotalResources,
+		UsedResources: gridtypes.Capacity{
+			CRU:   info.PulledNodeData.Resources.UsedCRU,
+			SRU:   2*info.NodeData.TotalResources.SRU - info.PulledNodeData.Resources.FreeSRU,
+			HRU:   info.NodeData.TotalResources.HRU - info.PulledNodeData.Resources.FreeHRU,
+			MRU:   info.NodeData.TotalResources.MRU - info.PulledNodeData.Resources.FreeMRU,
+			IPV4U: info.PulledNodeData.Resources.UsedIPV4U,
+		},
 		Location: location{
 			Country: info.NodeData.Country,
 			City:    info.NodeData.City,
