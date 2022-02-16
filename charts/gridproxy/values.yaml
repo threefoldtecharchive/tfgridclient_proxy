@@ -8,7 +8,7 @@ image:
   repository: threefoldtech/gridproxy
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.1.3"
+  tag: "1.1.4"
 
   env:          
     - name: "MNEMONICS"
@@ -27,6 +27,16 @@ image:
       value: ""
     - name: "PEERS"
       value: ""
+    - name: "POSTGRES_HOST"
+      value: "postgres"
+    - name: "POSTGRES_PORT"
+      value: "5432"
+    - name: "POSTGRES_DB"
+      value: "name"
+    - name: "POSTGRES_USER"
+      value: "postgres"
+    - name: "POSTGRES_PASSWORD"
+      value: "123"
 
 imagePullSecrets: []
 nameOverride: ""
