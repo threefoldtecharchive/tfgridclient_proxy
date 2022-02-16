@@ -29,7 +29,7 @@ var doc = `{
     "paths": {
         "/farms": {
             "get": {
-                "description": "Get all farms on the grid from graphql, It has pagination",
+                "description": "Get all farms on the grid, It has pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -52,13 +52,58 @@ var doc = `{
                         "description": "Max result per page",
                         "name": "size",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min number of free ips in the farm",
+                        "name": "free_ips",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pricing policy id",
+                        "name": "pricing_policy_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "farm version",
+                        "name": "version",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "farm id",
+                        "name": "farm_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "twin id associated with the farm",
+                        "name": "twin_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "farm name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "farm stellar_address",
+                        "name": "stellar_address",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/explorer.FarmResult"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/db.Farm"
+                            }
                         }
                     }
                 }
@@ -66,7 +111,7 @@ var doc = `{
         },
         "/gateways": {
             "get": {
-                "description": "Get all nodes on the grid from graphql, It has pagination",
+                "description": "Get all nodes on the grid, It has pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -92,8 +137,80 @@ var doc = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Get nodes for specific farm",
+                        "description": "Return nodes from a specific farm",
                         "name": "farm_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min free reservable mru",
+                        "name": "free_mru",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min free reservable hru",
+                        "name": "free_hru",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min free reservable sru",
+                        "name": "free_sru",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min number of free ips in the farm of the node",
+                        "name": "free_ips",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Node status filter, up/down.",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Node city filter",
+                        "name": "city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Node country filter",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Get nodes for specific farm",
+                        "name": "farm_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set to true to filter nodes with ipv4",
+                        "name": "ipv4",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set to true to filter nodes with ipv6",
+                        "name": "ipv6",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set to true to filter nodes with domain",
+                        "name": "domain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')",
+                        "name": "farm_ids",
                         "in": "query"
                     }
                 ],
@@ -101,7 +218,10 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/explorer.nodesResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/explorer.node"
+                            }
                         }
                     }
                 }
@@ -132,7 +252,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/explorer.NodeInfo"
+                            "$ref": "#/definitions/explorer.node"
                         }
                     }
                 }
@@ -140,7 +260,7 @@ var doc = `{
         },
         "/nodes": {
             "get": {
-                "description": "Get all nodes on the grid from graphql, It has pagination",
+                "description": "Get all nodes on the grid, It has pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -166,8 +286,80 @@ var doc = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Get nodes for specific farm",
+                        "description": "Return nodes from a specific farm",
                         "name": "farm_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min free reservable mru",
+                        "name": "free_mru",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min free reservable hru",
+                        "name": "free_hru",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min free reservable sru",
+                        "name": "free_sru",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min number of free ips in the farm of the node",
+                        "name": "free_ips",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Node status filter, up/down.",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Node city filter",
+                        "name": "city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Node country filter",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Get nodes for specific farm",
+                        "name": "farm_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set to true to filter nodes with ipv4",
+                        "name": "ipv4",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set to true to filter nodes with ipv6",
+                        "name": "ipv6",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set to true to filter nodes with domain",
+                        "name": "domain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')",
+                        "name": "farm_ids",
                         "in": "query"
                     }
                 ],
@@ -175,7 +367,10 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/explorer.nodesResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/explorer.node"
+                            }
                         }
                     }
                 }
@@ -206,7 +401,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/explorer.NodeInfo"
+                            "$ref": "#/definitions/explorer.node"
                         }
                     }
                 }
@@ -230,6 +425,32 @@ var doc = `{
                         "description": "pong",
                         "schema": {
                             "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats": {
+            "get": {
+                "description": "Get statistics about the grid",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show stats about the grid",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/db.Counters"
+                            }
                         }
                     }
                 }
@@ -320,113 +541,48 @@ var doc = `{
         }
     },
     "definitions": {
-        "dmi.DMI": {
+        "db.Counters": {
             "type": "object",
             "properties": {
-                "sections": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dmi.Section"
-                    }
-                },
-                "tooling": {
-                    "$ref": "#/definitions/dmi.Tooling"
-                }
-            }
-        },
-        "dmi.PropertyData": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "dmi.Section": {
-            "type": "object",
-            "properties": {
-                "handleline": {
-                    "type": "string"
-                },
-                "subsections": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dmi.SubSection"
-                    }
-                },
-                "typenum": {
+                "accessNodes": {
                     "type": "integer"
                 },
-                "typestr": {
-                    "type": "string"
-                }
-            }
-        },
-        "dmi.SubSection": {
-            "type": "object",
-            "properties": {
-                "properties": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/dmi.PropertyData"
-                    }
+                "contracts": {
+                    "type": "integer"
                 },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "dmi.Tooling": {
-            "type": "object",
-            "properties": {
-                "aggregator": {
-                    "type": "string"
+                "countries": {
+                    "type": "integer"
                 },
-                "decoder": {
-                    "type": "string"
-                }
-            }
-        },
-        "explorer.FarmResult": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/explorer.farmData"
-                }
-            }
-        },
-        "explorer.NodeInfo": {
-            "type": "object",
-            "properties": {
-                "capacity": {
-                    "$ref": "#/definitions/explorer.capacityResult"
+                "farms": {
+                    "type": "integer"
                 },
-                "dmi": {
-                    "$ref": "#/definitions/dmi.DMI"
+                "gateways": {
+                    "type": "integer"
                 },
-                "hypervisor": {
-                    "type": "string"
+                "nodes": {
+                    "type": "integer"
+                },
+                "publicIps": {
+                    "type": "integer"
+                },
+                "totalCru": {
+                    "type": "integer"
+                },
+                "totalHru": {
+                    "type": "integer"
+                },
+                "totalMru": {
+                    "type": "integer"
+                },
+                "totalSru": {
+                    "type": "integer"
+                },
+                "twins": {
+                    "type": "integer"
                 }
             }
         },
-        "explorer.capacityResult": {
-            "type": "object",
-            "properties": {
-                "total": {
-                    "$ref": "#/definitions/gridtypes.Capacity"
-                },
-                "used": {
-                    "$ref": "#/definitions/gridtypes.Capacity"
-                }
-            }
-        },
-        "explorer.farm": {
+        "db.Farm": {
             "type": "object",
             "properties": {
                 "farmId": {
@@ -437,6 +593,12 @@ var doc = `{
                 },
                 "pricingPolicyId": {
                     "type": "integer"
+                },
+                "publicIps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/db.PublicIP"
+                    }
                 },
                 "stellarAddress": {
                     "type": "string"
@@ -449,103 +611,7 @@ var doc = `{
                 }
             }
         },
-        "explorer.farmData": {
-            "type": "object",
-            "properties": {
-                "farms": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/explorer.farm"
-                    }
-                },
-                "publicIps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/explorer.publicIP"
-                    }
-                }
-            }
-        },
-        "explorer.node": {
-            "type": "object",
-            "properties": {
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "integer"
-                },
-                "cru": {
-                    "type": "string"
-                },
-                "farmId": {
-                    "type": "integer"
-                },
-                "farmingPolicyId": {
-                    "type": "integer"
-                },
-                "gridVersion": {
-                    "type": "integer"
-                },
-                "hru": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "mru": {
-                    "type": "string"
-                },
-                "nodeId": {
-                    "type": "integer"
-                },
-                "publicConfig": {
-                    "$ref": "#/definitions/explorer.publicConfig"
-                },
-                "sru": {
-                    "type": "string"
-                },
-                "status": {
-                    "description": "added node status field for up or down",
-                    "type": "string"
-                },
-                "twinId": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "uptime": {
-                    "type": "integer"
-                },
-                "version": {
-                    "type": "integer"
-                }
-            }
-        },
-        "explorer.nodes": {
-            "type": "object",
-            "properties": {
-                "nodes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/explorer.node"
-                    }
-                }
-            }
-        },
-        "explorer.nodesResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/explorer.nodes"
-                }
-            }
-        },
-        "explorer.publicConfig": {
+        "db.PublicConfig": {
             "type": "object",
             "properties": {
                 "domain": {
@@ -565,7 +631,7 @@ var doc = `{
                 }
             }
         },
-        "explorer.publicIP": {
+        "db.PublicIP": {
             "type": "object",
             "properties": {
                 "contractId": {
@@ -581,6 +647,86 @@ var doc = `{
                     "type": "string"
                 },
                 "ip": {
+                    "type": "string"
+                }
+            }
+        },
+        "explorer.location": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                }
+            }
+        },
+        "explorer.node": {
+            "type": "object",
+            "properties": {
+                "certificationType": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "integer"
+                },
+                "farmId": {
+                    "type": "integer"
+                },
+                "farmingPolicyId": {
+                    "type": "integer"
+                },
+                "gridVersion": {
+                    "type": "integer"
+                },
+                "hypervisor": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/explorer.location"
+                },
+                "nodeId": {
+                    "type": "integer"
+                },
+                "proxyUpdatedAt": {
+                    "type": "integer"
+                },
+                "publicConfig": {
+                    "$ref": "#/definitions/db.PublicConfig"
+                },
+                "status": {
+                    "description": "added node status field for up or down",
+                    "type": "string"
+                },
+                "total_resources": {
+                    "$ref": "#/definitions/gridtypes.Capacity"
+                },
+                "twinId": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "uptime": {
+                    "type": "integer"
+                },
+                "used_resources": {
+                    "$ref": "#/definitions/gridtypes.Capacity"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "zosVersion": {
                     "type": "string"
                 }
             }
@@ -679,7 +825,7 @@ type swaggerInfo struct {
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = swaggerInfo{
 	Version:     "1.0",
-	Host:        "localhost:8080",
+	Host:        "",
 	BasePath:    "/",
 	Schemes:     []string{},
 	Title:       "Grid Proxy Server API",
@@ -718,5 +864,5 @@ func (s *s) ReadDoc() string {
 }
 
 func init() {
-	swag.Register("swagger", &s{})
+	swag.Register(swag.Name, &s{})
 }

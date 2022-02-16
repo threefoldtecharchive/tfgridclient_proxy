@@ -25,7 +25,7 @@ RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.1.9/msgbus
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.5/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
-RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/1.1.3/server -O server \
+RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/1.1.4/server -O server \
     && chmod +x server \
     && mv server /usr/bin/server
 
@@ -35,7 +35,11 @@ COPY rootfs /
 
 ENV MNEMONICS=""
 ENV SERVER_PORT=":443"
-ENV EXPLORER="https://graphql.dev.grid.tf/graphql"
+ENV POSTGRES_HOST="postgres"
+ENV POSTGRES_PORT="5432"
+ENV POSTGRES_DB="name"
+ENV POSTGRES_USER="postgres"
+ENV POSTGRES_PASSWORD="123"
 ENV SUBSTRATE="wss://tfchain.dev.grid.tf/ws"
 ENV REDIS="localhost:6379"
 

@@ -1,18 +1,21 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
-	"errors"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer"
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/rmbproxy"
 	logging "github.com/threefoldtech/grid_proxy_server/pkg"
+	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
 const (
@@ -24,29 +27,37 @@ const (
 var GitCommit string
 
 type flags struct {
-	explorer     string
-	debug        string
-	redis        string
-	address      string
-	substrate    string
-	domain       string
-	TLSEmail     string
-	CA           string
-	certCacheDir string
-	version      bool
-	nocert       bool
+	debug            string
+	redis            string
+	postgresHost     string
+	postgresPort     int
+	postgresDB       string
+	postgresUser     string
+	postgresPassword string
+	address          string
+	substrate        string
+	domain           string
+	TLSEmail         string
+	CA               string
+	certCacheDir     string
+	version          bool
+	nocert           bool
 }
 
 func main() {
 	f := flags{}
-	flag.StringVar(&f.explorer, "explorer", explorer.DefaultExplorerURL, "explorer url")
 	flag.StringVar(&f.debug, "log-level", "info", "log level [debug|info|warn|error|fatal|panic]")
 	flag.StringVar(&f.substrate, "substrate", "wss://tfchain.dev.grid.tf/ws", "substrate url")
 	flag.StringVar(&f.address, "address", ":443", "explorer running ip address")
 	flag.StringVar(&f.domain, "domain", "", "domain on which the server will be served")
 	flag.StringVar(&f.TLSEmail, "email", "", "tmail address to generate certificate with")
 	flag.StringVar(&f.CA, "ca", "https://acme-staging-v02.api.letsencrypt.org/directory", "certificate authority used to generate certificate")
-	flag.StringVar(&f.redis, "redis", ":6379", "redis url")
+	flag.StringVar(&f.postgresHost, "postgres-host", "", "postgres host")
+	flag.IntVar(&f.postgresPort, "postgres-port", 5432, "postgres port")
+	flag.StringVar(&f.postgresDB, "postgres-db", "", "postgres database")
+	flag.StringVar(&f.postgresUser, "postgres-user", "", "postgres username")
+	flag.StringVar(&f.postgresPassword, "postgres-password", "", "postgres password")
+	flag.StringVar(&f.redis, "redis", "tcp://127.0.0.1:6379", "redis url")
 	flag.BoolVar(&f.version, "v", false, "shows the package version")
 	flag.StringVar(&f.certCacheDir, "cert-cache-dir", CertDefaultCacheDir, "path to store generated certs in")
 	flag.BoolVar(&f.nocert, "no-cert", false, "start the server without certificate")
@@ -66,10 +77,17 @@ func main() {
 	}
 
 	logging.SetupLogging(f.debug)
-	s, err := createServer(f, GitCommit)
+	s, bus, err := createServer(f, GitCommit)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create mux server")
+		log.Fatal().Err(err).Msg("failed to create mux server")
 	}
+	go func() {
+		for {
+			if err := bus.Run(context.Background()); err != nil {
+				log.Warn().Err(err).Msg("bus failed, will be restarted")
+			}
+		}
+	}()
 	if err := app(s, f); err != nil {
 		log.Fatal().Msg(err.Error())
 	}
@@ -121,16 +139,29 @@ func app(s *http.Server, f flags) error {
 	return nil
 }
 
-func createServer(f flags, gitCommit string) (*http.Server, error) {
+func createServer(f flags, gitCommit string) (*http.Server, *rmb.MessageBus, error) {
 	log.Info().Msg("Creating server")
+
+	bus, err := rmb.New(f.redis)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to initialize message bus server")
+	}
 	router := mux.NewRouter().StrictSlash(true)
+	db, err := db.NewPostgresDatabase(f.postgresHost, f.postgresPort, f.postgresUser, f.postgresPassword, f.postgresDB)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "couldn't get postgres client")
+	}
 
 	// setup explorer
-	explorer.Setup(router, f.explorer, f.redis, gitCommit)
-	rmbproxy.Setup(router, f.substrate)
+	if err := explorer.Setup(router, f.redis, gitCommit, db, bus); err != nil {
+		return nil, nil, err
+	}
+	if err := rmbproxy.Setup(router, f.substrate); err != nil {
+		return nil, nil, err
+	}
 
 	return &http.Server{
 		Handler: router,
 		Addr:    f.address,
-	}, nil
+	}, bus, nil
 }

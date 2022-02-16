@@ -8,10 +8,9 @@ import (
 	"strconv"
 
 	// swagger configuration
-	_ "github.com/threefoldtech/grid_proxy_server/docs"
+	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
 )

@@ -3,15 +3,12 @@ package explorer
 import (
 	"encoding/json"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
-
-// DefaultExplorerURL is the default explorer graphql url
-const DefaultExplorerURL string = "https://graphql.dev.grid.tf/graphql"
 
 // ErrNodeNotFound creates new error type to define node existence or server problem
 var (
@@ -21,42 +18,15 @@ var (
 // ErrBadGateway creates new error type to define node existence or server problem
 var (
 	ErrBadGateway = errors.New("bad gateway")
+	ErrBadRequest = errors.New("bad request")
 )
 
 // App is the main app objects
 type App struct {
-	explorer       string
-	redis          *redis.Pool
+	db             db.Database
 	rmb            rmb.Client
 	lruCache       *cache.Cache
 	releaseVersion string
-}
-
-// OffsetKey is the type holds the request context
-type offsetKey struct{}
-
-// SpecificFarmKey is the type holds the request context
-type specificFarmKey struct{}
-
-// MaxResultKey is the type holds the request context
-type maxResultKey struct{}
-
-// isGatewayKey is the type holds the request context
-type isGatewayKey struct{}
-
-// NodeTwinID is the node twin ID to unmarshal json in it
-type nodeTwinID struct {
-	TwinID uint32 `json:"twinId"`
-}
-
-// NodeData is having nodeTwinID to unmarshal json in it
-type nodeData struct {
-	NodeResult []nodeTwinID `json:"nodes"`
-}
-
-// NodeResult is the NodeData to unmarshal nodeTwinID json in it
-type nodeResult struct {
-	Data nodeData `json:"data"`
 }
 
 // CapacityResult is the NodeData capacity results to unmarshal json in it
@@ -70,12 +40,6 @@ type NodeInfo struct {
 	Capacity   capacityResult `json:"capacity"`
 	Hypervisor string         `json:"hypervisor"`
 	ZosVersion string         `json:"zosVersion"`
-}
-
-// ErrorReply when something bad happens at grid proxy
-type ErrorReply struct {
-	Error   string
-	Message string
 }
 
 // Serialize is the serializer for node info struct
@@ -124,14 +88,6 @@ type location struct {
 	City    string `json:"city"`
 }
 
-type publicConfig struct {
-	Domain string `json:"domain"`
-	Gw4    string `json:"gw4"`
-	Gw6    string `json:"gw6"`
-	Ipv4   string `json:"ipv4"`
-	Ipv6   string `json:"ipv6"`
-}
-
 // Node is a struct holding the data for a node for the nodes view
 type node struct {
 	Version           int                `json:"version"`
@@ -149,71 +105,55 @@ type node struct {
 	TotalResources    gridtypes.Capacity `json:"total_resources"`
 	UsedResources     gridtypes.Capacity `json:"used_resources"`
 	Location          location           `json:"location"`
-	PublicConfig      publicConfig       `json:"publicConfig"`
+	PublicConfig      db.PublicConfig    `json:"publicConfig"`
 	Status            string             `json:"status"` // added node status field for up or down
 	CertificationType string             `json:"certificationType"`
+	Hypervisor        string             `json:"hypervisor"`
+	ZosVersion        string             `json:"zosVersion"`
+	ProxyUpdatedAt    uint64             `json:"proxyUpdatedAt"`
 }
 
-// Nodes is struct for the whole nodes view
-type nodes struct {
-	Data []node `json:"nodes"`
-}
+func nodeFromDBNode(info db.AllNodeData) node {
+	return node{
+		Version:         info.NodeData.Version,
+		ID:              info.NodeData.ID,
+		NodeID:          info.NodeID,
+		FarmID:          info.NodeData.FarmID,
+		TwinID:          info.NodeData.TwinID,
+		Country:         info.NodeData.Country,
+		GridVersion:     info.NodeData.GridVersion,
+		City:            info.NodeData.City,
+		Uptime:          info.NodeData.Uptime,
+		Created:         info.NodeData.Created,
+		FarmingPolicyID: info.NodeData.FarmingPolicyID,
+		UpdatedAt:       info.NodeData.UpdatedAt,
+		TotalResources:  info.NodeData.TotalResources,
+		UsedResources: gridtypes.Capacity{
+			CRU:   info.PulledNodeData.Resources.UsedCRU,
+			SRU:   2*info.NodeData.TotalResources.SRU - info.PulledNodeData.Resources.FreeSRU,
+			HRU:   info.NodeData.TotalResources.HRU - info.PulledNodeData.Resources.FreeHRU,
+			MRU:   info.NodeData.TotalResources.MRU - info.PulledNodeData.Resources.FreeMRU,
+			IPV4U: info.PulledNodeData.Resources.UsedIPV4U,
+		},
+		Location: location{
+			Country: info.NodeData.Country,
+			City:    info.NodeData.City,
+		},
+		PublicConfig:      info.NodeData.PublicConfig,
+		Status:            info.PulledNodeData.Status,
+		CertificationType: info.NodeData.CertificationType,
+		ZosVersion:        info.PulledNodeData.ZosVersion,
+		Hypervisor:        info.PulledNodeData.Hypervisor,
+		ProxyUpdatedAt:    info.ProxyUpdatedAt,
+	}
 
-// NodeResponseStruct is struct for the whole nodes view
-type nodesResponse struct {
-	Nodes nodes `json:"data"`
-}
-
-type nodeID struct {
-	NodeID uint32 `json:"nodeId"`
-}
-
-// nodeIdData is the nodeIdData to unmarshal json in it
-type nodeIDData struct {
-	NodeResult []nodeID `json:"nodes"`
-}
-
-// nodeIdResult is the nodeIdResult  to unmarshal json in it
-type nodeIDResult struct {
-	Data nodeIDData `json:"data"`
-}
-
-type farm struct {
-	Name            string     `json:"name"`
-	FarmID          int        `json:"farmId"`
-	TwinID          int        `json:"twinId"`
-	Version         int        `json:"version"`
-	PricingPolicyID int        `json:"pricingPolicyId"`
-	StellarAddress  string     `json:"stellarAddress"`
-	PublicIps       []publicIP `json:"publicIps"`
-}
-
-type publicIP struct {
-	ID         string `json:"id"`
-	IP         string `json:"ip"`
-	FarmID     string `json:"farmId"`
-	ContractID int    `json:"contractId"`
-	Gateway    string `json:"gateway"`
 }
 
 type farmData struct {
-	Farms []farm `json:"farms"`
+	Farms []db.Farm `json:"farms"`
 }
 
 // FarmResult is to unmarshal json in it
 type FarmResult struct {
 	Data farmData `json:"data"`
-}
-
-type totalCountResponse struct {
-	Date totalCountData `json:"data"`
-}
-
-type totalCountData struct {
-	NodesConnection nodesConnection `json:"nodesConnection"`
-}
-
-
-type nodesConnection struct {
-	TotalCount int `json:"totalCount"`
 }

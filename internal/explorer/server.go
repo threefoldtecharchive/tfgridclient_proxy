@@ -1,160 +1,129 @@
 package explorer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
-	"github.com/robfig/cron/v3"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
+
+	// swagger configuration
+	_ "github.com/threefoldtech/grid_proxy_server/docs"
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
+	"github.com/threefoldtech/zos/client"
 	"github.com/threefoldtech/zos/pkg/rmb"
+)
+
+const (
+	// SSDOverProvisionFactor factor by which the ssd are allowed to be overprovisioned
+	SSDOverProvisionFactor = 2
 )
 
 // listFarms godoc
 // @Summary Show farms on the grid
-// @Description Get all farms on the grid from graphql, It has pagination
+// @Description Get all farms on the grid, It has pagination
 // @Tags GridProxy
 // @Accept  json
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
-// @Success 200 {object} FarmResult
+// @Param free_ips query int false "Min number of free ips in the farm"
+// @Param pricing_policy_id query int false "Pricing policy id"
+// @Param version query int false "farm version"
+// @Param farm_id query int false "farm id"
+// @Param twin_id query int false "twin id associated with the farm"
+// @Param name query string false "farm name"
+// @Param stellar_address query string false "farm stellar_address"
+// @Success 200 {object} []db.Farm
 // @Router /farms [get]
-func (a *App) listFarms(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	r, err := a.handleRequestsQueryParams(r)
+func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
+	filter, limit, err := a.handleFarmRequestsQueryParams(r)
 	if err != nil {
-		errorReplyWithStatus(err, w, http.StatusBadRequest)
-		return
+		return nil, mw.BadRequest(err)
 	}
-	maxResult, pageOffset := getMaxResult(r.Context()), getOffset(r.Context())
-
-	queryString := fmt.Sprintf(`
-	{
-		farms (limit:%d,offset:%d) {
-			name
-			farmId
-			twinId
-			version
-			farmId
-			pricingPolicyId
-			stellarAddress
-			publicIPs{
-				id
-				ip
-				contractId
-				gateway
-			}
-		}
-	}
-	`, maxResult, pageOffset)
-
-	farms := FarmResult{}
-	err = a.query(queryString, &farms)
-
+	farms, err := a.db.GetFarms(filter, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query farm")
-		errorReplyWithStatus(err, w, http.StatusInternalServerError)
-		return
+		return nil, mw.Error(err)
 	}
+	return farms, nil
+}
 
-	result, err := json.Marshal(farms.Data.Farms)
+// getStats godoc
+// @Summary Show stats about the grid
+// @Description Get statistics about the grid
+// @Tags GridProxy
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} []db.Counters
+// @Router /stats [get]
+func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
+	counters, err := a.db.GetCounters()
 	if err != nil {
-		log.Error().Err(err).Msg("failed to marshal farm")
-		errorReplyWithStatus(err, w, http.StatusInternalServerError)
-		return
+		return nil, mw.Error(err)
 	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(result))
+	return counters, nil
 }
 
 // listNodes godoc
 // @Summary Show nodes on the grid
-// @Description Get all nodes on the grid from graphql, It has pagination
+// @Description Get all nodes on the grid, It has pagination
 // @Tags GridProxy
 // @Accept  json
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
-// @Param farm_id query int false "Get nodes for specific farm"
-// @Success 200 {object} nodesResponse
+// @Param farm_id query int false "Return nodes from a specific farm"
+// @Param free_mru query int false "Min free reservable mru"
+// @Param free_hru query int false "Min free reservable hru"
+// @Param free_sru query int false "Min free reservable sru"
+// @Param free_ips query int false "Min number of free ips in the farm of the node"
+// @Param status query string false "Node status filter, up/down."
+// @Param city query string false "Node city filter"
+// @Param country query string false "Node country filter"
+// @Param farm_name query string false "Get nodes for specific farm"
+// @Param ipv4 query string false "Set to true to filter nodes with ipv4"
+// @Param ipv6 query string false "Set to true to filter nodes with ipv6"
+// @Param domain query string false "Set to true to filter nodes with domain"
+// @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
+// @Success 200 {object} []node
 // @Router /nodes [get]
 // @Router /gateways [get]
-func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	r, err := a.handleRequestsQueryParams(r)
+func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
+	filter, limit, err := a.handleNodeRequestsQueryParams(r)
 	if err != nil {
-		errorReplyWithStatus(err, w, http.StatusBadRequest)
-		return
+		return nil, mw.BadRequest(err)
 	}
-
-	maxResult := getMaxResult(r.Context())
-	pageOffset := getOffset(r.Context())
-	isSpecificFarm := getSpecificFarm(r.Context())
-	isGateway := getIsGateway(r.Context())
-
-	nodes, err := a.getAllNodes(maxResult, pageOffset, isSpecificFarm, isGateway)
-
+	dbNodes, err := a.db.GetNodes(filter, limit)
 	if err != nil {
-		log.Error().Err(err).Msg("fail to list nodes")
-		errorReplyWithStatus(err, w, http.StatusInternalServerError)
-		return
+		return nil, mw.Error(err)
 	}
-	var nodeList []node
-	for _, node := range nodes.Nodes.Data {
-		// check if node is down or not by checking redis key existence in redis cache and if it is down
-		// set status to down in node struct and add it to nodeList slice
-		nodeInfoStr, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(node.NodeID)))
-		if err != nil {
-			node.Status = "down"
-		}
-		if nodeInfoStr == "" {
-			node.Status = "down"
-		} else {
-			var nodeInfo NodeInfo
-			err := json.Unmarshal([]byte(nodeInfoStr), &nodeInfo)
-			if err != nil {
-				log.Error().Err(err).Msg("failed to unmarshal redis data to struct")
-			}
-			node.Status = "up"
-			node.TotalResources = nodeInfo.Capacity.Total
-			node.UsedResources = nodeInfo.Capacity.Used
+	nodes := make([]node, len(dbNodes))
+	for idx, node := range dbNodes {
+		nodes[idx] = nodeFromDBNode(node)
 
-		}
-
-		node.Location.City = node.City
-		node.Location.Country = node.Country
-
-		nodeList = append(nodeList, node)
 	}
+	resp := mw.Ok()
 
 	// return the number of pages and totalCount in the response headers
 	nodesCount, err := a.getTotalCount()
 	if err != nil {
 		log.Error().Err(err).Msg("error fetching pages")
 	} else {
-		pages := math.Ceil(float64(nodesCount) / float64(maxResult)) 
-		w.Header().Add("count", fmt.Sprintf("%d", nodesCount))
-		w.Header().Add("size", fmt.Sprintf("%d", maxResult))
-		w.Header().Add("pages", fmt.Sprintf("%d", int(pages)))
+		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
+		resp.WithHeader("count", fmt.Sprintf("%d", nodesCount))
+		resp.WithHeader("size", fmt.Sprintf("%d", limit.Size))
+		resp.WithHeader("pages", fmt.Sprintf("%d", int(pages)))
 	}
-
-	result, err := json.Marshal(nodeList)
-	if err != nil {
-		log.Error().Err(err).Msg("fail to list nodes")
-		errorReply(err, w)
-		return
-	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(result))
+	return nodes, resp
 }
 
 // getNode godoc
@@ -164,42 +133,28 @@ func (a *App) listNodes(w http.ResponseWriter, r *http.Request) {
 // @Param node_id path int false "Node ID"
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} NodeInfo
+// @Success 200 {object} node
 // @Router /nodes/{node_id} [get]
 // @Router /gateways/{node_id} [get]
-func (a *App) getNode(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	w.Header().Add("Content-Type", "application/json")
-
+func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {
 	nodeID := mux.Vars(r)["node_id"]
-	nodeData, err := a.getNodeData(nodeID, false)
+	nodeData, err := a.getNodeData(nodeID)
 	if err != nil {
-		errorReply(err, w)
-		return
+		return nil, errorReply(err)
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(nodeData))
+	return nodeData, nil
 }
 
-func (a *App) getNodeStatus(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	w.Header().Add("Content-Type", "application/json")
-
+func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
 	response := NodeStatus{}
 	nodeID := mux.Vars(r)["node_id"]
 
-	nodeInfo, err := a.GetRedisKey(a.getNodeKey(fmt.Sprint(nodeID)))
+	nodeData, err := a.getNodeData(nodeID)
 	if err != nil {
-		errorReply(err, w)
-		return
-	} else if nodeInfo == "" {
-		response.Status = "down"
-	} else {
-		response.Status = "up"
+		return nil, errorReply(err)
 	}
-	w.WriteHeader(http.StatusOK)
-	res, _ := response.Serialize()
-	w.Write(res)
+	response.Status = nodeData.Status
+	return response, nil
 }
 
 func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
@@ -215,57 +170,63 @@ func (a *App) version(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("{\"version\": \"%s\"}", a.releaseVersion)))
 }
 
+func (a *App) setupRMBHandler(bus *rmb.MessageBus) {
+	bus.WithHandler("proxy.status.report", func(ctx context.Context, payload []byte) (interface{}, error) {
+
+		var report client.NodeStatus
+		if err := json.Unmarshal(payload, &report); err != nil {
+			return nil, errors.Wrap(err, "couldn't unmarshal stats report")
+		}
+		twin := rmb.GetTwinID(ctx)
+		log.Debug().Uint32("twin", twin).Msg("received a report")
+		nodeInfo := db.PulledNodeData{
+			Resources: db.CapacityInfo{
+				UsedCRU:   report.Current.CRU,
+				FreeSRU:   report.Total.SRU*SSDOverProvisionFactor - report.Current.SRU,
+				FreeHRU:   report.Total.HRU - 2,
+				FreeMRU:   report.Total.MRU - report.Current.MRU,
+				UsedIPV4U: report.Current.IPV4U,
+			},
+			Hypervisor: report.Hypervisor,
+			ZosVersion: report.ZosVersion,
+		}
+		return nil, a.db.UpdateNodeDataByTwin(twin, nodeInfo)
+	})
+}
+
 // Setup is the server and do initial configurations
 // @title Grid Proxy Server API
 // @version 1.0
 // @description grid proxy server has the main methods to list farms, nodes, node details in the grid.
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-// @host localhost:8080
 // @BasePath /
-func Setup(router *mux.Router, explorer string, redisServer string, gitCommit string) {
+func Setup(router *mux.Router, redisServer string, gitCommit string, database db.Database, bus *rmb.MessageBus) error {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
-	redis := &redis.Pool{
-		MaxIdle:   20,
-		MaxActive: 100,
-		Dial: func() (redis.Conn, error) {
-			conn, err := redis.Dial("tcp", redisServer)
-			if err != nil {
-				log.Error().Err(err).Msg("fail init redis")
-			}
-			return conn, err
-		},
-	}
-
-	rmbClient, err := rmb.NewClient("tcp://127.0.0.1:6379", 500)
+	rmbClient, err := rmb.NewClient(redisServer, 500)
 	if err != nil {
-		log.Error().Err(err).Msg("couldn't connect to rmb")
-		return
+		return errors.Wrap(err, "couldn't connect to rmb")
 	}
 	c := cache.New(2*time.Minute, 3*time.Minute)
-
 	a := App{
-		explorer:       explorer,
-		redis:          redis,
+		db:             database,
 		rmb:            rmbClient,
 		lruCache:       c,
 		releaseVersion: gitCommit,
 	}
 
-	router.HandleFunc("/farms", a.listFarms)
-	router.HandleFunc("/nodes", a.listNodes)
-	router.HandleFunc("/gateways", a.listNodes)
-	router.HandleFunc("/nodes/{node_id:[0-9]+}", a.getNode)
-	router.HandleFunc("/gateways/{node_id:[0-9]+}", a.getNode)
-	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", a.getNodeStatus)
-	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", a.getNodeStatus)
+	router.HandleFunc("/farms", mw.AsHandlerFunc(a.listFarms))
+	router.HandleFunc("/stats", mw.AsHandlerFunc(a.getStats))
+	router.HandleFunc("/nodes", mw.AsHandlerFunc(a.listNodes))
+	router.HandleFunc("/gateways", mw.AsHandlerFunc(a.listNodes))
+	router.HandleFunc("/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
+	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
+	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
+	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/", a.indexPage)
 	router.HandleFunc("/version", a.version)
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
-	// Run node caching every 2 minutes
-	go a.cacheNodesInfo()
-	job := cron.New()
-	job.AddFunc("@every 2m", a.cacheNodesInfo)
-	job.Start()
+	a.setupRMBHandler(bus)
+	return nil
 }
