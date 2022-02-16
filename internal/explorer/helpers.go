@@ -28,7 +28,7 @@ func errorReply(err error) mw.Response {
 	}
 }
 
-func GetLimit(r *http.Request) (db.Limit, error) {
+func getLimit(r *http.Request) (db.Limit, error) {
 	var limit db.Limit
 
 	page := r.URL.Query().Get("page")
@@ -56,7 +56,7 @@ func GetLimit(r *http.Request) (db.Limit, error) {
 	// }
 	return limit, nil
 }
-func ParseParams(
+func parseParams(
 	r *http.Request,
 	ints map[string]**uint64,
 	strs map[string]**string,
@@ -115,10 +115,10 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 	listOfInts := map[string]*[]uint64{
 		"farm_ids": &filter.FarmIDs,
 	}
-	if err := ParseParams(r, ints, strs, bools, listOfInts); err != nil {
+	if err := parseParams(r, ints, strs, bools, listOfInts); err != nil {
 		return filter, limit, err
 	}
-	limit, err := GetLimit(r)
+	limit, err := getLimit(r)
 	if err != nil {
 		return filter, limit, err
 	}
@@ -142,11 +142,11 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 		"name":            &filter.Name,
 		"stellar_address": &filter.StellarAddress,
 	}
-	if err := ParseParams(r, ints, strs, nil, nil); err != nil {
+	if err := parseParams(r, ints, strs, nil, nil); err != nil {
 		return filter, limit, err
 	}
 
-	limit, err := GetLimit(r)
+	limit, err := getLimit(r)
 	if err != nil {
 		return filter, limit, err
 	}

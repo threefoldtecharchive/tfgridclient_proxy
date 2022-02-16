@@ -66,7 +66,6 @@ type NodeData struct {
 }
 
 // CapacityInfo capacity info about the node
-
 type CapacityInfo struct {
 	UsedCRU   uint64         `json:"cru"`
 	FreeSRU   gridtypes.Unit `json:"sru"`

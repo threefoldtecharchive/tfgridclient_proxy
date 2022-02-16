@@ -8,12 +8,13 @@ import (
 	"net/http"
 	"time"
 
-	// swagger configuration
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
+
+	// swagger configuration
 	_ "github.com/threefoldtech/grid_proxy_server/docs"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
@@ -22,6 +23,7 @@ import (
 )
 
 const (
+	// SSDOverProvisionFactor factor by which the ssd are allowed to be overprovisioned
 	SSDOverProvisionFactor = 2
 )
 

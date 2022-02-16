@@ -24,7 +24,7 @@ var (
 )
 
 const (
-	NodeStateFactor = 2
+	nodeStateFactor = 2
 	// the number of missed reports to mark the node down
 	// if node reports every 5 mins, it's marked down if the last report is more than 15 mins in the past
 )
@@ -350,7 +350,7 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 	if err != nil {
 		return err
 	}
-	if int64(node.ProxyUpdatedAt) >= time.Now().Unix()-NodeStateFactor*int64(noded.ReportInterval/time.Second) {
+	if int64(node.ProxyUpdatedAt) >= time.Now().Unix()-nodeStateFactor*int64(noded.ReportInterval/time.Second) {
 		node.PulledNodeData.Status = "up"
 	} else {
 		node.PulledNodeData.Status = "down"
@@ -453,7 +453,7 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 		}
 		query = fmt.Sprintf("%s AND node_pulled.proxy_updated_at %s $%d", query, op, idx)
 		idx++
-		args = append(args, time.Now().Unix()-NodeStateFactor*int64(noded.ReportInterval/time.Second))
+		args = append(args, time.Now().Unix()-nodeStateFactor*int64(noded.ReportInterval/time.Second))
 	}
 	if filter.FreeMRU != nil {
 		query = fmt.Sprintf("%s AND node_pulled.free_mru >= $%d", query, idx)
