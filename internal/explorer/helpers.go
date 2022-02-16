@@ -50,9 +50,10 @@ func GetLimit(r *http.Request) (db.Limit, error) {
 		return limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse size %s", err.Error()))
 	}
 	limit.Size = parsed
-	if limit.Size > maxPageSize {
-		return limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
-	}
+	// TODO: readd the check once clients are updated
+	// if limit.Size > maxPageSize {
+	// 	return limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
+	// }
 	return limit, nil
 }
 func ParseParams(
