@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"time"
 
+	// swagger configuration
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
+	_ "github.com/threefoldtech/grid_proxy_server/docs"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 	"github.com/threefoldtech/zos/client"
@@ -31,7 +33,14 @@ const (
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
-// @Success 200 {object} FarmResult
+// @Param free_ips query int false "Min number of free ips in the farm"
+// @Param pricing_policy_id query int false "Pricing policy id"
+// @Param version query int false "farm version"
+// @Param farm_id query int false "farm id"
+// @Param twin_id query int false "twin id associated with the farm"
+// @Param name query string false "farm name"
+// @Param stellar_address query string false "farm stellar_address"
+// @Success 200 {object} []db.Farm
 // @Router /farms [get]
 func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleFarmRequestsQueryParams(r)
@@ -52,7 +61,7 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 // @Tags GridProxy
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} FarmResult
+// @Success 200 {object} []db.Counters
 // @Router /stats [get]
 func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 	counters, err := a.db.GetCounters()
@@ -70,8 +79,20 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
-// @Param farm_id query int false "Get nodes for specific farm"
-// @Success 200 {object} nodesResponse
+// @Param farm_id query int false "Return nodes from a specific farm"
+// @Param free_mru query int false "Min free reservable mru"
+// @Param free_hru query int false "Min free reservable hru"
+// @Param free_sru query int false "Min free reservable sru"
+// @Param free_ips query int false "Min number of free ips in the farm of the node"
+// @Param status query string false "Node status filter, up/down."
+// @Param city query string false "Node city filter"
+// @Param country query string false "Node country filter"
+// @Param farm_name query string false "Get nodes for specific farm"
+// @Param ipv4 query string false "Set to true to filter nodes with ipv4"
+// @Param ipv6 query string false "Set to true to filter nodes with ipv6"
+// @Param domain query string false "Set to true to filter nodes with domain"
+// @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
+// @Success 200 {object} []node
 // @Router /nodes [get]
 // @Router /gateways [get]
 func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
@@ -110,7 +131,7 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 // @Param node_id path int false "Node ID"
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} NodeInfo
+// @Success 200 {object} node
 // @Router /nodes/{node_id} [get]
 // @Router /gateways/{node_id} [get]
 func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {
@@ -177,7 +198,6 @@ func (a *App) setupRMBHandler(bus *rmb.MessageBus) {
 // @description grid proxy server has the main methods to list farms, nodes, node details in the grid.
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-// @host localhost:8080
 // @BasePath /
 func Setup(router *mux.Router, redisServer string, gitCommit string, database db.Database, bus *rmb.MessageBus) error {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")

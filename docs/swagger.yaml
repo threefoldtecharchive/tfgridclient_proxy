@@ -1,74 +1,33 @@
 basePath: /
 definitions:
-  dmi.DMI:
+  db.Counters:
     properties:
-      sections:
-        items:
-          $ref: '#/definitions/dmi.Section'
-        type: array
-      tooling:
-        $ref: '#/definitions/dmi.Tooling'
-    type: object
-  dmi.PropertyData:
-    properties:
-      items:
-        items:
-          type: string
-        type: array
-      value:
-        type: string
-    type: object
-  dmi.Section:
-    properties:
-      handleline:
-        type: string
-      subsections:
-        items:
-          $ref: '#/definitions/dmi.SubSection'
-        type: array
-      typenum:
+      accessNodes:
         type: integer
-      typestr:
-        type: string
+      contracts:
+        type: integer
+      countries:
+        type: integer
+      farms:
+        type: integer
+      gateways:
+        type: integer
+      nodes:
+        type: integer
+      publicIps:
+        type: integer
+      totalCru:
+        type: integer
+      totalHru:
+        type: integer
+      totalMru:
+        type: integer
+      totalSru:
+        type: integer
+      twins:
+        type: integer
     type: object
-  dmi.SubSection:
-    properties:
-      properties:
-        additionalProperties:
-          $ref: '#/definitions/dmi.PropertyData'
-        type: object
-      title:
-        type: string
-    type: object
-  dmi.Tooling:
-    properties:
-      aggregator:
-        type: string
-      decoder:
-        type: string
-    type: object
-  explorer.FarmResult:
-    properties:
-      data:
-        $ref: '#/definitions/explorer.farmData'
-    type: object
-  explorer.NodeInfo:
-    properties:
-      capacity:
-        $ref: '#/definitions/explorer.capacityResult'
-      dmi:
-        $ref: '#/definitions/dmi.DMI'
-      hypervisor:
-        type: string
-    type: object
-  explorer.capacityResult:
-    properties:
-      total:
-        $ref: '#/definitions/gridtypes.Capacity'
-      used:
-        $ref: '#/definitions/gridtypes.Capacity'
-    type: object
-  explorer.farm:
+  db.Farm:
     properties:
       farmId:
         type: integer
@@ -76,6 +35,10 @@ definitions:
         type: string
       pricingPolicyId:
         type: integer
+      publicIps:
+        items:
+          $ref: '#/definitions/db.PublicIP'
+        type: array
       stellarAddress:
         type: string
       twinId:
@@ -83,70 +46,7 @@ definitions:
       version:
         type: integer
     type: object
-  explorer.farmData:
-    properties:
-      farms:
-        items:
-          $ref: '#/definitions/explorer.farm'
-        type: array
-      publicIps:
-        items:
-          $ref: '#/definitions/explorer.publicIP'
-        type: array
-    type: object
-  explorer.node:
-    properties:
-      city:
-        type: string
-      country:
-        type: string
-      created:
-        type: integer
-      cru:
-        type: string
-      farmId:
-        type: integer
-      farmingPolicyId:
-        type: integer
-      gridVersion:
-        type: integer
-      hru:
-        type: string
-      id:
-        type: string
-      mru:
-        type: string
-      nodeId:
-        type: integer
-      publicConfig:
-        $ref: '#/definitions/explorer.publicConfig'
-      sru:
-        type: string
-      status:
-        description: added node status field for up or down
-        type: string
-      twinId:
-        type: integer
-      updatedAt:
-        type: string
-      uptime:
-        type: integer
-      version:
-        type: integer
-    type: object
-  explorer.nodes:
-    properties:
-      nodes:
-        items:
-          $ref: '#/definitions/explorer.node'
-        type: array
-    type: object
-  explorer.nodesResponse:
-    properties:
-      data:
-        $ref: '#/definitions/explorer.nodes'
-    type: object
-  explorer.publicConfig:
+  db.PublicConfig:
     properties:
       domain:
         type: string
@@ -159,7 +59,7 @@ definitions:
       ipv6:
         type: string
     type: object
-  explorer.publicIP:
+  db.PublicIP:
     properties:
       contractId:
         type: integer
@@ -170,6 +70,59 @@ definitions:
       id:
         type: string
       ip:
+        type: string
+    type: object
+  explorer.location:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+    type: object
+  explorer.node:
+    properties:
+      certificationType:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      created:
+        type: integer
+      farmId:
+        type: integer
+      farmingPolicyId:
+        type: integer
+      gridVersion:
+        type: integer
+      hypervisor:
+        type: string
+      id:
+        type: string
+      location:
+        $ref: '#/definitions/explorer.location'
+      nodeId:
+        type: integer
+      proxyUpdatedAt:
+        type: integer
+      publicConfig:
+        $ref: '#/definitions/db.PublicConfig'
+      status:
+        description: added node status field for up or down
+        type: string
+      total_resources:
+        $ref: '#/definitions/gridtypes.Capacity'
+      twinId:
+        type: integer
+      updatedAt:
+        type: string
+      uptime:
+        type: integer
+      used_resources:
+        $ref: '#/definitions/gridtypes.Capacity'
+      version:
+        type: integer
+      zosVersion:
         type: string
     type: object
   gridtypes.Capacity:
@@ -226,7 +179,6 @@ definitions:
         example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
         type: string
     type: object
-host: localhost:8080
 info:
   contact: {}
   description: grid proxy server has the main methods to list farms, nodes, node details
@@ -241,7 +193,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all farms on the grid from graphql, It has pagination
+      description: Get all farms on the grid, It has pagination
       parameters:
       - description: Page number
         in: query
@@ -251,13 +203,43 @@ paths:
         in: query
         name: size
         type: integer
+      - description: Min number of free ips in the farm
+        in: query
+        name: free_ips
+        type: integer
+      - description: Pricing policy id
+        in: query
+        name: pricing_policy_id
+        type: integer
+      - description: farm version
+        in: query
+        name: version
+        type: integer
+      - description: farm id
+        in: query
+        name: farm_id
+        type: integer
+      - description: twin id associated with the farm
+        in: query
+        name: twin_id
+        type: integer
+      - description: farm name
+        in: query
+        name: name
+        type: string
+      - description: farm stellar_address
+        in: query
+        name: stellar_address
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/explorer.FarmResult'
+            items:
+              $ref: '#/definitions/db.Farm'
+            type: array
       summary: Show farms on the grid
       tags:
       - GridProxy
@@ -265,7 +247,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all nodes on the grid from graphql, It has pagination
+      description: Get all nodes on the grid, It has pagination
       parameters:
       - description: Page number
         in: query
@@ -275,17 +257,67 @@ paths:
         in: query
         name: size
         type: integer
-      - description: Get nodes for specific farm
+      - description: Return nodes from a specific farm
         in: query
         name: farm_id
         type: integer
+      - description: Min free reservable mru
+        in: query
+        name: free_mru
+        type: integer
+      - description: Min free reservable hru
+        in: query
+        name: free_hru
+        type: integer
+      - description: Min free reservable sru
+        in: query
+        name: free_sru
+        type: integer
+      - description: Min number of free ips in the farm of the node
+        in: query
+        name: free_ips
+        type: integer
+      - description: Node status filter, up/down.
+        in: query
+        name: status
+        type: string
+      - description: Node city filter
+        in: query
+        name: city
+        type: string
+      - description: Node country filter
+        in: query
+        name: country
+        type: string
+      - description: Get nodes for specific farm
+        in: query
+        name: farm_name
+        type: string
+      - description: Set to true to filter nodes with ipv4
+        in: query
+        name: ipv4
+        type: string
+      - description: Set to true to filter nodes with ipv6
+        in: query
+        name: ipv6
+        type: string
+      - description: Set to true to filter nodes with domain
+        in: query
+        name: domain
+        type: string
+      - description: List of farms separated by comma to fetch nodes from (e.g. '1,2,3')
+        in: query
+        name: farm_ids
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/explorer.nodesResponse'
+            items:
+              $ref: '#/definitions/explorer.node'
+            type: array
       summary: Show nodes on the grid
       tags:
       - GridProxy
@@ -305,7 +337,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/explorer.NodeInfo'
+            $ref: '#/definitions/explorer.node'
       summary: Show the details for specific node
       tags:
       - GridProxy
@@ -313,7 +345,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all nodes on the grid from graphql, It has pagination
+      description: Get all nodes on the grid, It has pagination
       parameters:
       - description: Page number
         in: query
@@ -323,17 +355,67 @@ paths:
         in: query
         name: size
         type: integer
-      - description: Get nodes for specific farm
+      - description: Return nodes from a specific farm
         in: query
         name: farm_id
         type: integer
+      - description: Min free reservable mru
+        in: query
+        name: free_mru
+        type: integer
+      - description: Min free reservable hru
+        in: query
+        name: free_hru
+        type: integer
+      - description: Min free reservable sru
+        in: query
+        name: free_sru
+        type: integer
+      - description: Min number of free ips in the farm of the node
+        in: query
+        name: free_ips
+        type: integer
+      - description: Node status filter, up/down.
+        in: query
+        name: status
+        type: string
+      - description: Node city filter
+        in: query
+        name: city
+        type: string
+      - description: Node country filter
+        in: query
+        name: country
+        type: string
+      - description: Get nodes for specific farm
+        in: query
+        name: farm_name
+        type: string
+      - description: Set to true to filter nodes with ipv4
+        in: query
+        name: ipv4
+        type: string
+      - description: Set to true to filter nodes with ipv6
+        in: query
+        name: ipv6
+        type: string
+      - description: Set to true to filter nodes with domain
+        in: query
+        name: domain
+        type: string
+      - description: List of farms separated by comma to fetch nodes from (e.g. '1,2,3')
+        in: query
+        name: farm_ids
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/explorer.nodesResponse'
+            items:
+              $ref: '#/definitions/explorer.node'
+            type: array
       summary: Show nodes on the grid
       tags:
       - GridProxy
@@ -353,7 +435,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/explorer.NodeInfo'
+            $ref: '#/definitions/explorer.node'
       summary: Show the details for specific node
       tags:
       - GridProxy
@@ -372,6 +454,23 @@ paths:
       summary: ping the server
       tags:
       - ping
+  /stats:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics about the grid
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/db.Counters'
+            type: array
+      summary: Show stats about the grid
+      tags:
+      - GridProxy
   /twin/{twin_id}:
     post:
       consumes:

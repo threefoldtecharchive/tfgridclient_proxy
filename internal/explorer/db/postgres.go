@@ -570,7 +570,7 @@ func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, err
 		idx++
 		args = append(args, *filter.Name)
 	}
-	query = fmt.Sprintf("%s ORDER BY node.node_id", query)
+	query = fmt.Sprintf("%s ORDER BY farm.farm_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
 	rows, err := d.db.Query(query, args...)

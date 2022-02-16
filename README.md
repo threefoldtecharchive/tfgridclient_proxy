@@ -17,6 +17,10 @@ Interact with TFgridDB using rest APIs
 3. yggdrasil service running with a valid ip assigned to the MNEMONICS on polkadot.
 4. Golang compiler > 1.13 to run the grid proxy server.
 
+## Generate swagger doc files
+
+Run `make docs`.
+
 ## Build and run
 
 - Start the msgbus with your MNEMONICS ID

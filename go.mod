@@ -12,7 +12,7 @@ require (
 	github.com/swaggo/http-swagger v1.1.1
 	github.com/swaggo/swag v1.7.3
 	github.com/threefoldtech/substrate-client v0.0.0-20220118133601-4e68945dc064
-	github.com/threefoldtech/zos v0.4.10-0.20211201150923-af7ca807592c
+	github.com/threefoldtech/zos v0.4.10-0.20220216104946-d53ad0411708
 )
 
 require (
