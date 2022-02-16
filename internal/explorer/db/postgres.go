@@ -42,6 +42,18 @@ const (
 		hypervisor TEXT,
 		proxy_updated_at BIGINT /* epoch of last update inside the proxy */
 	);
+	CREATE INDEX IF NOT EXISTS node_pulled_sru ON node_pulled (
+		free_sru
+	);
+	CREATE INDEX IF NOT EXISTS node_pulled_mru ON node_pulled (
+		free_mru
+	);
+	CREATE INDEX IF NOT EXISTS node_pulled_hru ON node_pulled (
+		free_hru
+	);
+	CREATE INDEX IF NOT EXISTS node_pulled_proxy_updated_at ON node_pulled (
+		proxy_updated_at
+	);
 	`
 	updateNodeData = `
 	INSERT INTO node_pulled
