@@ -447,11 +447,11 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	idx := 1
 	query = fmt.Sprintf("%s WHERE TRUE", query)
 	if filter.Status != nil {
-		op := ">="
 		if *filter.Status == "down" {
-			op = "<"
+			query = fmt.Sprintf("%s AND (node_pulled.proxy_updated_at < $%d OR node_pulled.proxy_updated_at IS NULL)", query, idx)
+		} else {
+			query = fmt.Sprintf("%s AND node_pulled.proxy_updated_at >= $%d", query, idx)
 		}
-		query = fmt.Sprintf("%s AND node_pulled.proxy_updated_at %s $%d", query, op, idx)
 		idx++
 		args = append(args, time.Now().Unix()-nodeStateFactor*int64(noded.ReportInterval/time.Second))
 	}
