@@ -41,7 +41,7 @@ ENV POSTGRES_DB="name"
 ENV POSTGRES_USER="postgres"
 ENV POSTGRES_PASSWORD="123"
 ENV SUBSTRATE="wss://tfchain.dev.grid.tf/ws"
-ENV REDIS="localhost:6379"
+ENV REDIS="tcp://127.0.0.1:6379"
 
 EXPOSE 443
 ENTRYPOINT [ "zinit", "init" ]
