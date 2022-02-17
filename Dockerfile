@@ -7,7 +7,7 @@ WORKDIR /src
 ENV CGO_ENABLED=0
 
 RUN apk add git
-RUN git clone https://github.com/yggdrasil-network/yggdrasil-go.git . && git checkout $YGG_VERSION
+RUN git clone --depth 1 --branch $YGG_VERSION https://github.com/yggdrasil-network/yggdrasil-go.git .
 RUN ./build && go build -o /src/genkeys cmd/genkeys/main.go
 
 
