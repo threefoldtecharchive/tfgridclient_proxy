@@ -1,11 +1,13 @@
 FROM docker.io/golang:alpine as builder
 
+ARG YGG_VERSION=v0.4.3
+
 WORKDIR /src
 
 ENV CGO_ENABLED=0
 
-RUN apk add git 
-RUN git clone https://github.com/yggdrasil-network/yggdrasil-go.git .
+RUN apk add git
+RUN git clone https://github.com/yggdrasil-network/yggdrasil-go.git . && git checkout $YGG_VERSION
 RUN ./build && go build -o /src/genkeys cmd/genkeys/main.go
 
 
