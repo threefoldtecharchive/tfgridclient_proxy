@@ -1,11 +1,13 @@
 FROM docker.io/golang:alpine as builder
 
+ARG YGG_VERSION=v0.4.3
+
 WORKDIR /src
 
 ENV CGO_ENABLED=0
 
-RUN apk add git 
-RUN git clone https://github.com/yggdrasil-network/yggdrasil-go.git .
+RUN apk add git
+RUN git clone --depth 1 --branch $YGG_VERSION https://github.com/yggdrasil-network/yggdrasil-go.git .
 RUN ./build && go build -o /src/genkeys cmd/genkeys/main.go
 
 
@@ -25,7 +27,7 @@ RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.1.9/msgbus
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.5/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
-RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/1.1.4/server -O server \
+RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/1.1.5/server -O server \
     && chmod +x server \
     && mv server /usr/bin/server
 
