@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
@@ -87,6 +88,22 @@ func parseParams(
 			*prop = &trueVal
 		}
 	}
+	for param, prop := range listOfInts {
+		value := r.URL.Query().Get(param)
+		if value == "" {
+			continue
+		} else {
+			split := strings.Split(value, ",")
+			*prop = make([]uint64, 0)
+			for _, item := range split {
+				parsed, err := strconv.ParseUint(item, 10, 64)
+				if err != nil {
+					return errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse %s %s", param, err.Error()))
+				}
+				*prop = append(*prop, parsed)
+			}
+		}
+	}
 	return nil
 }
 
@@ -121,6 +138,11 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 	limit, err := getLimit(r)
 	if err != nil {
 		return filter, limit, err
+	}
+	trueval := true
+	if strings.HasSuffix(r.URL.Path, "gateways") {
+		filter.Domain = &trueval
+		filter.IPv4 = &trueval
 	}
 	return filter, limit, nil
 }

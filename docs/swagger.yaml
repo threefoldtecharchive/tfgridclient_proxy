@@ -257,19 +257,15 @@ paths:
         in: query
         name: size
         type: integer
-      - description: Return nodes from a specific farm
-        in: query
-        name: farm_id
-        type: integer
-      - description: Min free reservable mru
+      - description: Min free reservable mru in bytes
         in: query
         name: free_mru
         type: integer
-      - description: Min free reservable hru
+      - description: Min free reservable hru in bytes
         in: query
         name: free_hru
         type: integer
-      - description: Min free reservable sru
+      - description: Min free reservable sru in bytes
         in: query
         name: free_sru
         type: integer
@@ -355,19 +351,15 @@ paths:
         in: query
         name: size
         type: integer
-      - description: Return nodes from a specific farm
-        in: query
-        name: farm_id
-        type: integer
-      - description: Min free reservable mru
+      - description: Min free reservable mru in bytes
         in: query
         name: free_mru
         type: integer
-      - description: Min free reservable hru
+      - description: Min free reservable hru in bytes
         in: query
         name: free_hru
         type: integer
-      - description: Min free reservable sru
+      - description: Min free reservable sru in bytes
         in: query
         name: free_sru
         type: integer

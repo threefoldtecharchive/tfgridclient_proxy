@@ -81,10 +81,9 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
-// @Param farm_id query int false "Return nodes from a specific farm"
-// @Param free_mru query int false "Min free reservable mru"
-// @Param free_hru query int false "Min free reservable hru"
-// @Param free_sru query int false "Min free reservable sru"
+// @Param free_mru query int false "Min free reservable mru in bytes"
+// @Param free_hru query int false "Min free reservable hru in bytes"
+// @Param free_sru query int false "Min free reservable sru in bytes"
 // @Param free_ips query int false "Min number of free ips in the farm of the node"
 // @Param status query string false "Node status filter, up/down."
 // @Param city query string false "Node city filter"
@@ -119,9 +118,9 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 		log.Error().Err(err).Msg("error fetching pages")
 	} else {
 		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
-		resp.WithHeader("count", fmt.Sprintf("%d", nodesCount))
-		resp.WithHeader("size", fmt.Sprintf("%d", limit.Size))
-		resp.WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+		resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
+			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
+			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
 	}
 	return nodes, resp
 }

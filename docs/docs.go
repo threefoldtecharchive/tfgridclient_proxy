@@ -137,25 +137,19 @@ var doc = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Return nodes from a specific farm",
-                        "name": "farm_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Min free reservable mru",
+                        "description": "Min free reservable mru in bytes",
                         "name": "free_mru",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Min free reservable hru",
+                        "description": "Min free reservable hru in bytes",
                         "name": "free_hru",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Min free reservable sru",
+                        "description": "Min free reservable sru in bytes",
                         "name": "free_sru",
                         "in": "query"
                     },
@@ -286,25 +280,19 @@ var doc = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Return nodes from a specific farm",
-                        "name": "farm_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Min free reservable mru",
+                        "description": "Min free reservable mru in bytes",
                         "name": "free_mru",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Min free reservable hru",
+                        "description": "Min free reservable hru in bytes",
                         "name": "free_hru",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Min free reservable sru",
+                        "description": "Min free reservable sru in bytes",
                         "name": "free_sru",
                         "in": "query"
                     },
