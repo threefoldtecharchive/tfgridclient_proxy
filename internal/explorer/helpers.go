@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
@@ -85,6 +86,22 @@ func parseParams(
 		value := r.URL.Query().Get(param)
 		if value == "true" {
 			*prop = &trueVal
+		}
+	}
+	for param, prop := range listOfInts {
+		value := r.URL.Query().Get(param)
+		if value == "" {
+			continue
+		} else {
+			split := strings.Split(value, ",")
+			*prop = make([]uint64, 0)
+			for _, farm := range split {
+				parsed, err := strconv.ParseUint(farm, 10, 64)
+				if err != nil {
+					return errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse %s %s", param, err.Error()))
+				}
+				*prop = append(*prop, parsed)
+			}
 		}
 	}
 	return nil
