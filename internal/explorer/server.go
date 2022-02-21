@@ -119,9 +119,9 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 		log.Error().Err(err).Msg("error fetching pages")
 	} else {
 		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
-		resp.WithHeader("count", fmt.Sprintf("%d", nodesCount))
-		resp.WithHeader("size", fmt.Sprintf("%d", limit.Size))
-		resp.WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+		resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
+			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
+			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
 	}
 	return nodes, resp
 }
