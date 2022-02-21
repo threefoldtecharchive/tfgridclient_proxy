@@ -95,8 +95,8 @@ func parseParams(
 		} else {
 			split := strings.Split(value, ",")
 			*prop = make([]uint64, 0)
-			for _, farm := range split {
-				parsed, err := strconv.ParseUint(farm, 10, 64)
+			for _, item := range split {
+				parsed, err := strconv.ParseUint(item, 10, 64)
 				if err != nil {
 					return errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse %s %s", param, err.Error()))
 				}
