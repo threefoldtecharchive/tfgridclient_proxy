@@ -139,6 +139,11 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 	if err != nil {
 		return filter, limit, err
 	}
+	trueval := true
+	if strings.HasSuffix(r.URL.Path, "gateways") {
+		filter.Domain = &trueval
+		filter.IPv4 = &trueval
+	}
 	return filter, limit, nil
 }
 
