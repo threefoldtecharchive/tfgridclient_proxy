@@ -27,7 +27,7 @@ RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.1.10/msgbu
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.5/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
-RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/1.1.7/server -O server \
+RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/1.1.8/server -O server \
     && chmod +x server \
     && mv server /usr/bin/server
 
@@ -45,5 +45,5 @@ ENV POSTGRES_PASSWORD="123"
 ENV SUBSTRATE="wss://tfchain.dev.grid.tf/ws"
 ENV REDIS="tcp://127.0.0.1:6379"
 
-EXPOSE 443
+EXPOSE 443 8051
 ENTRYPOINT [ "zinit", "init" ]
