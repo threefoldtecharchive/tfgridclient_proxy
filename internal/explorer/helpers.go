@@ -181,18 +181,18 @@ func (a *App) getTotalCount() (int, error) {
 
 // getNodeData is a helper function that wraps fetch node data
 // it caches the results in redis to save time
-func (a *App) getNodeData(nodeIDStr string) (node, error) {
+func (a *App) getNodeData(nodeIDStr string) (nodeWithNestedCapacity, error) {
 	nodeID, err := strconv.Atoi(nodeIDStr)
 	if err != nil {
-		return node{}, errors.Wrap(ErrBadGateway, fmt.Sprintf("invalid node id %d: %s", nodeID, err.Error()))
+		return nodeWithNestedCapacity{}, errors.Wrap(ErrBadGateway, fmt.Sprintf("invalid node id %d: %s", nodeID, err.Error()))
 	}
 	info, err := a.db.GetNode(uint32(nodeID))
 	if errors.Is(err, db.ErrNodeNotFound) {
-		return node{}, ErrNodeNotFound
+		return nodeWithNestedCapacity{}, ErrNodeNotFound
 	} else if err != nil {
 		// TODO: wrapping
-		return node{}, err
+		return nodeWithNestedCapacity{}, err
 	}
-	apiNode := nodeFromDBNode(info)
+	apiNode := nodeWithNestedCapacityFromDBNode(info)
 	return apiNode, nil
 }
