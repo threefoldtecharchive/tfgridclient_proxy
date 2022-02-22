@@ -149,6 +149,68 @@ func nodeFromDBNode(info db.AllNodeData) node {
 
 }
 
+// Node to be compatible with old view
+type nodeWithNestedCapacity struct {
+	Version           int             `json:"version"`
+	ID                string          `json:"id"`
+	NodeID            int             `json:"nodeId"`
+	FarmID            int             `json:"farmId"`
+	TwinID            int             `json:"twinId"`
+	Country           string          `json:"country"`
+	GridVersion       int             `json:"gridVersion"`
+	City              string          `json:"city"`
+	Uptime            int64           `json:"uptime"`
+	Created           int64           `json:"created"`
+	FarmingPolicyID   int             `json:"farmingPolicyId"`
+	UpdatedAt         string          `json:"updatedAt"`
+	Capacity          capacityResult  `json:"capacity"`
+	Location          location        `json:"location"`
+	PublicConfig      db.PublicConfig `json:"publicConfig"`
+	Status            string          `json:"status"` // added node status field for up or down
+	CertificationType string          `json:"certificationType"`
+	Hypervisor        string          `json:"hypervisor"`
+	ZosVersion        string          `json:"zosVersion"`
+	ProxyUpdatedAt    uint64          `json:"proxyUpdatedAt"`
+}
+
+func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacity {
+	return nodeWithNestedCapacity{
+		Version:         info.NodeData.Version,
+		ID:              info.NodeData.ID,
+		NodeID:          info.NodeID,
+		FarmID:          info.NodeData.FarmID,
+		TwinID:          info.NodeData.TwinID,
+		Country:         info.NodeData.Country,
+		GridVersion:     info.NodeData.GridVersion,
+		City:            info.NodeData.City,
+		Uptime:          info.NodeData.Uptime,
+		Created:         info.NodeData.Created,
+		FarmingPolicyID: info.NodeData.FarmingPolicyID,
+		UpdatedAt:       info.NodeData.UpdatedAt,
+		Capacity: capacityResult{
+			Total: info.NodeData.TotalResources,
+			Used: gridtypes.Capacity{
+				CRU:   info.PulledNodeData.Resources.UsedCRU,
+				SRU:   2*info.NodeData.TotalResources.SRU - info.PulledNodeData.Resources.FreeSRU,
+				HRU:   info.NodeData.TotalResources.HRU - info.PulledNodeData.Resources.FreeHRU,
+				MRU:   info.NodeData.TotalResources.MRU - info.PulledNodeData.Resources.FreeMRU,
+				IPV4U: info.PulledNodeData.Resources.UsedIPV4U,
+			},
+		},
+		Location: location{
+			Country: info.NodeData.Country,
+			City:    info.NodeData.City,
+		},
+		PublicConfig:      info.NodeData.PublicConfig,
+		Status:            info.PulledNodeData.Status,
+		CertificationType: info.NodeData.CertificationType,
+		ZosVersion:        info.PulledNodeData.ZosVersion,
+		Hypervisor:        info.PulledNodeData.Hypervisor,
+		ProxyUpdatedAt:    info.ProxyUpdatedAt,
+	}
+
+}
+
 type farmData struct {
 	Farms []db.Farm `json:"farms"`
 }
