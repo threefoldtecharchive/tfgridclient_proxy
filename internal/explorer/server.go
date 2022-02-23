@@ -182,7 +182,7 @@ func (a *App) setupRMBHandler(bus *rmb.MessageBus) {
 			Resources: db.CapacityInfo{
 				UsedCRU:   report.Current.CRU,
 				FreeSRU:   report.Total.SRU*SSDOverProvisionFactor - report.Current.SRU,
-				FreeHRU:   report.Total.HRU - 2,
+				FreeHRU:   report.Total.HRU - report.Current.HRU,
 				FreeMRU:   report.Total.MRU - report.Current.MRU,
 				UsedIPV4U: report.Current.IPV4U,
 			},
