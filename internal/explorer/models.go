@@ -2,6 +2,7 @@ package explorer
 
 import (
 	"encoding/json"
+	"math"
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
@@ -88,6 +89,16 @@ type location struct {
 	City    string `json:"city"`
 }
 
+func roundTotalMemory(cap *gridtypes.Capacity) gridtypes.Capacity {
+	return gridtypes.Capacity{
+		CRU:   cap.CRU,
+		SRU:   cap.SRU,
+		HRU:   cap.HRU,
+		MRU:   gridtypes.Unit(math.Floor(float64(cap.MRU)/float64(gridtypes.Gigabyte))) * gridtypes.Gigabyte,
+		IPV4U: cap.IPV4U,
+	}
+}
+
 // Node is a struct holding the data for a node for the nodes view
 type node struct {
 	Version           int                `json:"version"`
@@ -114,6 +125,7 @@ type node struct {
 }
 
 func nodeFromDBNode(info db.AllNodeData) node {
+	total := roundTotalMemory(&info.NodeData.TotalResources)
 	return node{
 		Version:         info.NodeData.Version,
 		ID:              info.NodeData.ID,
@@ -127,12 +139,12 @@ func nodeFromDBNode(info db.AllNodeData) node {
 		Created:         info.NodeData.Created,
 		FarmingPolicyID: info.NodeData.FarmingPolicyID,
 		UpdatedAt:       info.NodeData.UpdatedAt,
-		TotalResources:  info.NodeData.TotalResources,
+		TotalResources:  total,
 		UsedResources: gridtypes.Capacity{
 			CRU:   info.PulledNodeData.Resources.UsedCRU,
-			SRU:   2*info.NodeData.TotalResources.SRU - info.PulledNodeData.Resources.FreeSRU,
-			HRU:   info.NodeData.TotalResources.HRU - info.PulledNodeData.Resources.FreeHRU,
-			MRU:   info.NodeData.TotalResources.MRU - info.PulledNodeData.Resources.FreeMRU,
+			SRU:   2*total.SRU - info.PulledNodeData.Resources.FreeSRU,
+			HRU:   total.HRU - info.PulledNodeData.Resources.FreeHRU,
+			MRU:   total.MRU - info.PulledNodeData.Resources.FreeMRU,
 			IPV4U: info.PulledNodeData.Resources.UsedIPV4U,
 		},
 		Location: location{
@@ -174,6 +186,7 @@ type nodeWithNestedCapacity struct {
 }
 
 func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacity {
+	total := roundTotalMemory(&info.NodeData.TotalResources)
 	return nodeWithNestedCapacity{
 		Version:         info.NodeData.Version,
 		ID:              info.NodeData.ID,
@@ -188,12 +201,12 @@ func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacit
 		FarmingPolicyID: info.NodeData.FarmingPolicyID,
 		UpdatedAt:       info.NodeData.UpdatedAt,
 		Capacity: capacityResult{
-			Total: info.NodeData.TotalResources,
+			Total: total,
 			Used: gridtypes.Capacity{
 				CRU:   info.PulledNodeData.Resources.UsedCRU,
-				SRU:   2*info.NodeData.TotalResources.SRU - info.PulledNodeData.Resources.FreeSRU,
-				HRU:   info.NodeData.TotalResources.HRU - info.PulledNodeData.Resources.FreeHRU,
-				MRU:   info.NodeData.TotalResources.MRU - info.PulledNodeData.Resources.FreeMRU,
+				SRU:   2*total.SRU - info.PulledNodeData.Resources.FreeSRU,
+				HRU:   total.HRU - info.PulledNodeData.Resources.FreeHRU,
+				MRU:   total.MRU - info.PulledNodeData.Resources.FreeMRU,
 				IPV4U: info.PulledNodeData.Resources.UsedIPV4U,
 			},
 		},
