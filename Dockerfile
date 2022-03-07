@@ -24,10 +24,10 @@ RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.1.10/msgbu
     unzip msgbusd.zip &&\
     mv msgbusd /usr/bin/msgbusd
 
-RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.5/zinit -O /sbin/zinit \
+RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.6/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
-RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/1.1.9/server -O server \
+RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/1.1.10/server -O server \
     && chmod +x server \
     && mv server /usr/bin/server
 
