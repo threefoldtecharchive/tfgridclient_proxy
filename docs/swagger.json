@@ -416,6 +416,14 @@
                     "GridProxy"
                 ],
                 "summary": "Show stats about the grid",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Node status filter, up/down.",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -732,7 +740,8 @@
                     "example": "zos.statistics.get"
                 },
                 "dat": {
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "dst": {
                     "type": "array",
@@ -741,7 +750,8 @@
                     }
                 },
                 "err": {
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "exp": {
                     "type": "integer",
@@ -752,10 +762,12 @@
                     "example": 1631078674
                 },
                 "ret": {
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "shm": {
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "src": {
                     "type": "integer",
@@ -766,7 +778,8 @@
                     "example": 2
                 },
                 "uid": {
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "ver": {
                     "type": "integer",

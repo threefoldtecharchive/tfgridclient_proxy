@@ -175,6 +175,19 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 	return filter, limit, nil
 }
 
+// test stats?status=up
+// HandleNodeRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
+func (a *App) handleStatsRequestsQueryParams(r *http.Request) (db.StatsFilter, error) {
+	var filter db.StatsFilter
+	strs := map[string]**string{
+		"status": &filter.Status,
+	}
+	if err := parseParams(r, nil, strs, nil, nil); err != nil {
+		return filter, err
+	}
+	return filter, nil
+}
+
 func (a *App) getTotalCount() (int, error) {
 	return a.db.CountNodes()
 }

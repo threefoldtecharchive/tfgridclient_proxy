@@ -144,12 +144,14 @@ definitions:
         example: zos.statistics.get
         type: string
       dat:
+        example: ""
         type: string
       dst:
         items:
           type: integer
         type: array
       err:
+        example: ""
         type: string
       exp:
         example: 0
@@ -158,8 +160,10 @@ definitions:
         example: 1631078674
         type: integer
       ret:
+        example: ""
         type: string
       shm:
+        example: ""
         type: string
       src:
         example: 1
@@ -168,6 +172,7 @@ definitions:
         example: 2
         type: integer
       uid:
+        example: ""
         type: string
       ver:
         example: 1
@@ -451,6 +456,11 @@ paths:
       consumes:
       - application/json
       description: Get statistics about the grid
+      parameters:
+      - description: Node status filter, up/down.
+        in: query
+        name: status
+        type: string
       produces:
       - application/json
       responses:
