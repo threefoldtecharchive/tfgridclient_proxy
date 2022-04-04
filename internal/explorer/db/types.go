@@ -37,6 +37,11 @@ type FarmFilter struct {
 	Name            *string
 }
 
+// StatsFilter statistics filters
+type StatsFilter struct {
+	Status *string
+}
+
 // PublicConfig node public config
 type PublicConfig struct {
 	Domain string `json:"domain"`
@@ -133,7 +138,7 @@ type Counters struct {
 
 // Database interface for storing and fetching grid info
 type Database interface {
-	GetCounters() (Counters, error)
+	GetCounters(filter StatsFilter) (Counters, error)
 	CountNodes() (int, error)
 	UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData) error
 	UpdateNodeDataByTwin(twinID uint32, nodeInfo PulledNodeData) error

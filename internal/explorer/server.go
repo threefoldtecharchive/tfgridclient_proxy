@@ -63,10 +63,12 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 // @Tags GridProxy
 // @Accept  json
 // @Produce  json
+// @Param status query string false "Node status filter, up/down."
 // @Success 200 {object} []db.Counters
 // @Router /stats [get]
 func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
-	counters, err := a.db.GetCounters()
+	filter, err := a.handleStatsRequestsQueryParams(r)
+	counters, err := a.db.GetCounters(filter)
 	if err != nil {
 		return nil, mw.Error(err)
 	}

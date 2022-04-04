@@ -182,22 +182,22 @@ const (
 	`
 	totalResources = `
 	SELECT
-		sum(cru) AS total_cru,
-		sum(sru) AS total_sru,
-		sum(hru) AS total_hru,
-		sum(mru) AS total_mru
-	FROM node;
+		COALESCE(sum(cru),0) AS total_cru,
+		COALESCE(sum(sru),0) AS total_sru,
+		COALESCE(sum(hru),0) AS total_hru,
+		COALESCE(sum(mru),0) AS total_mru
+	FROM node
 	`
 	countersQuery = `
 	SELECT
 	(SELECT count(id) AS twins FROM twin),
 	(SELECT count(id) AS public_ips FROM public_ip),
-	(SELECT count(id) AS access_nodes FROM node where node.public_config::json->'ipv4' #>> '{}' != '' OR node.public_config::json->'ipv4' #>> '{}' != ''),
-	(SELECT count(id) AS gateways FROM node where node.public_config::json->'domain' #>> '{}' != '' AND (node.public_config::json->'ipv4' #>> '{}' != '' OR node.public_config::json->'ipv6' #>> '{}' != '')),
+	(SELECT count(id) AS access_nodes FROM node %[1]s AND (node.public_config::json->'ipv4' #>> '{}' != '' OR node.public_config::json->'ipv4' #>> '{}' != '')),
+	(SELECT count(id) AS gateways FROM node %[1]s AND node.public_config::json->'domain' #>> '{}' != '' AND (node.public_config::json->'ipv4' #>> '{}' != '' OR node.public_config::json->'ipv6' #>> '{}' != '')),
 	(SELECT count(id) AS contracts FROM node_contract),
-	(SELECT count(id) AS nodes FROM node),
+	(SELECT count(id) AS nodes FROM node %[1]s),
 	(SELECT count(id) AS farms FROM farm),
-	(SELECT count(DISTINCT country) AS countries FROM node);
+	(SELECT count(DISTINCT country) AS countries FROM node)
 	`
 )
 
@@ -249,9 +249,22 @@ func (d *PostgresDatabase) CountNodes() (int, error) {
 }
 
 // GetCounters returns aggregate info about the grid
-func (d *PostgresDatabase) GetCounters() (Counters, error) {
+func (d *PostgresDatabase) GetCounters(filter StatsFilter) (Counters, error) {
 	var counters Counters
-	rows, err := d.db.Query(countersQuery)
+	query := countersQuery
+	totalResourcesQuery := totalResources
+
+	if filter.Status != nil && *filter.Status == "up" {
+		nodeUpInterval := time.Now().Unix() - nodeStateFactor*int64(noded.ReportInterval/time.Second)
+		condition := fmt.Sprintf(`LEFT JOIN node_pulled ON node.node_id = node_pulled.node_id
+			WHERE node_pulled.proxy_updated_at >= %d`, nodeUpInterval)
+		query = fmt.Sprintf(query, condition)
+		totalResourcesQuery = fmt.Sprintf(`%s %s`, totalResourcesQuery, condition)
+	} else {
+		query = fmt.Sprintf(query, "where TRUE")
+	}
+
+	rows, err := d.db.Query(query)
 	if err != nil {
 		return counters, errors.Wrap(err, "couldn't get counters")
 	}
@@ -273,7 +286,8 @@ func (d *PostgresDatabase) GetCounters() (Counters, error) {
 	if err != nil {
 		return counters, errors.Wrap(err, "couldn't scan counters")
 	}
-	rows, err = d.db.Query(totalResources)
+
+	rows, err = d.db.Query(totalResourcesQuery)
 	if err != nil {
 		return counters, errors.Wrap(err, "couldn't query total resources")
 	}
