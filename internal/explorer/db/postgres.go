@@ -195,7 +195,7 @@ const (
 	(SELECT count(id) AS access_nodes FROM node %[1]s AND (node.public_config::json->'ipv4' #>> '{}' != '' OR node.public_config::json->'ipv4' #>> '{}' != '')),
 	(SELECT count(id) AS gateways FROM node %[1]s AND node.public_config::json->'domain' #>> '{}' != '' AND (node.public_config::json->'ipv4' #>> '{}' != '' OR node.public_config::json->'ipv6' #>> '{}' != '')),
 	(SELECT count(id) AS contracts FROM node_contract),
-	(SELECT count(id) AS nodes FROM node %s),
+	(SELECT count(id) AS nodes FROM node %[1]s),
 	(SELECT count(id) AS farms FROM farm),
 	(SELECT count(DISTINCT country) AS countries FROM node)
 	`
@@ -253,15 +253,15 @@ func (d *PostgresDatabase) GetCounters(filter StatsFilter) (Counters, error) {
 	var counters Counters
 	query := countersQuery
 	totalResourcesQuery := totalResources
-	nodeUpInterval := time.Now().Unix() - nodeStateFactor*int64(noded.ReportInterval/time.Second)
-	condition := fmt.Sprintf(`LEFT JOIN node_pulled ON node.node_id = node_pulled.node_id
-	WHERE node_pulled.proxy_updated_at >= %d`, nodeUpInterval)
 
 	if filter.Status != nil && *filter.Status == "up" {
-		query = fmt.Sprintf(query, condition, condition, condition)
+		nodeUpInterval := time.Now().Unix() - nodeStateFactor*int64(noded.ReportInterval/time.Second)
+		condition := fmt.Sprintf(`LEFT JOIN node_pulled ON node.node_id = node_pulled.node_id
+			WHERE node_pulled.proxy_updated_at >= %d`, nodeUpInterval)
+		query = fmt.Sprintf(query, condition)
 		totalResourcesQuery = fmt.Sprintf(`%s %s`, totalResourcesQuery, condition)
 	} else {
-		query = fmt.Sprintf(query, "where TRUE", "")
+		query = fmt.Sprintf(query, "where TRUE")
 	}
 
 	rows, err := d.db.Query(query)
