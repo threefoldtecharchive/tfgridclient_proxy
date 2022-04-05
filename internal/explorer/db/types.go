@@ -53,7 +53,6 @@ type PublicConfig struct {
 
 // NodeData data about nodes which is calculated from the chain
 type NodeData struct {
-	Version           int                `json:"version"`
 	ID                string             `json:"id"`
 	FarmID            int                `json:"farmId"`
 	NodeID            int                `json:"nodeId"`
@@ -64,7 +63,6 @@ type NodeData struct {
 	Uptime            int64              `json:"uptime"`
 	Created           int64              `json:"created"`
 	FarmingPolicyID   int                `json:"farmingPolicyId"`
-	UpdatedAt         string             `json:"updatedAt"`
 	CertificationType string             `json:"certificationType"`
 	TotalResources    gridtypes.Capacity `json:"total_resources"`
 	PublicConfig      PublicConfig       `json:"publicConfig"`
@@ -92,7 +90,6 @@ type Farm struct {
 	Name            string     `json:"name"`
 	FarmID          int        `json:"farmId"`
 	TwinID          int        `json:"twinId"`
-	Version         int        `json:"version"`
 	PricingPolicyID int        `json:"pricingPolicyId"`
 	StellarAddress  string     `json:"stellarAddress"`
 	PublicIps       []PublicIP `json:"publicIps"`

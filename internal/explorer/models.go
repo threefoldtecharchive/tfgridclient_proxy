@@ -101,7 +101,6 @@ func roundTotalMemory(cap *gridtypes.Capacity) gridtypes.Capacity {
 
 // Node is a struct holding the data for a node for the nodes view
 type node struct {
-	Version           int                `json:"version"`
 	ID                string             `json:"id"`
 	NodeID            int                `json:"nodeId"`
 	FarmID            int                `json:"farmId"`
@@ -112,7 +111,6 @@ type node struct {
 	Uptime            int64              `json:"uptime"`
 	Created           int64              `json:"created"`
 	FarmingPolicyID   int                `json:"farmingPolicyId"`
-	UpdatedAt         string             `json:"updatedAt"`
 	TotalResources    gridtypes.Capacity `json:"total_resources"`
 	UsedResources     gridtypes.Capacity `json:"used_resources"`
 	Location          location           `json:"location"`
@@ -127,7 +125,6 @@ type node struct {
 func nodeFromDBNode(info db.AllNodeData) node {
 	total := roundTotalMemory(&info.NodeData.TotalResources)
 	return node{
-		Version:         info.NodeData.Version,
 		ID:              info.NodeData.ID,
 		NodeID:          info.NodeID,
 		FarmID:          info.NodeData.FarmID,
@@ -138,7 +135,6 @@ func nodeFromDBNode(info db.AllNodeData) node {
 		Uptime:          info.NodeData.Uptime,
 		Created:         info.NodeData.Created,
 		FarmingPolicyID: info.NodeData.FarmingPolicyID,
-		UpdatedAt:       info.NodeData.UpdatedAt,
 		TotalResources:  total,
 		UsedResources: gridtypes.Capacity{
 			CRU:   info.PulledNodeData.Resources.UsedCRU,
@@ -163,7 +159,6 @@ func nodeFromDBNode(info db.AllNodeData) node {
 
 // Node to be compatible with old view
 type nodeWithNestedCapacity struct {
-	Version           int             `json:"version"`
 	ID                string          `json:"id"`
 	NodeID            int             `json:"nodeId"`
 	FarmID            int             `json:"farmId"`
@@ -174,7 +169,6 @@ type nodeWithNestedCapacity struct {
 	Uptime            int64           `json:"uptime"`
 	Created           int64           `json:"created"`
 	FarmingPolicyID   int             `json:"farmingPolicyId"`
-	UpdatedAt         string          `json:"updatedAt"`
 	Capacity          capacityResult  `json:"capacity"`
 	Location          location        `json:"location"`
 	PublicConfig      db.PublicConfig `json:"publicConfig"`
@@ -188,7 +182,6 @@ type nodeWithNestedCapacity struct {
 func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacity {
 	total := roundTotalMemory(&info.NodeData.TotalResources)
 	return nodeWithNestedCapacity{
-		Version:         info.NodeData.Version,
 		ID:              info.NodeData.ID,
 		NodeID:          info.NodeID,
 		FarmID:          info.NodeData.FarmID,
@@ -199,7 +192,6 @@ func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacit
 		Uptime:          info.NodeData.Uptime,
 		Created:         info.NodeData.Created,
 		FarmingPolicyID: info.NodeData.FarmingPolicyID,
-		UpdatedAt:       info.NodeData.UpdatedAt,
 		Capacity: capacityResult{
 			Total: total,
 			Used: gridtypes.Capacity{

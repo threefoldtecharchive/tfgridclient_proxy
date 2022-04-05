@@ -109,7 +109,6 @@ const (
 		farm_id,
 		COALESCE(name, ''),
 		COALESCE(twin_id, 0),
-		COALESCE(version, 0),
 		COALESCE(pricing_policy_id, 0),
 		COALESCE(stellar_address, ''),
 		(
@@ -125,7 +124,6 @@ const (
 	`
 	selectNodesWithFilter = `
 	SELECT
-		COALESCE(node.version, 0),
 		node.id,
 		COALESCE(node.node_id, 0),
 		COALESCE(node.farm_id, 0),
@@ -136,34 +134,34 @@ const (
 		COALESCE(node.uptime, 0),
 		COALESCE(node.created, 0),
 		COALESCE(node.farming_policy_id, 0),
-		COALESCE(node.updated_at, DATE '0001-01-01'),
-		COALESCE(node.cru, 0),
-		COALESCE(node.sru, 0),
-		COALESCE(node.hru, 0),
-		COALESCE(node.mru, 0),
+		COALESCE(node_resources_total.cru, 0),
+		COALESCE(node_resources_total.sru, 0),
+		COALESCE(node_resources_total.hru, 0),
+		COALESCE(node_resources_total.mru, 0),
 		COALESCE(node_pulled.used_cru, 0),
 		COALESCE(node_pulled.free_sru, 0),
 		COALESCE(node_pulled.free_hru, 0),
 		COALESCE(node_pulled.free_mru, 0),
 		COALESCE(node_pulled.used_ipv4, 0),
-		COALESCE(node.public_config::json->'domain' #>> '{}', ''),
-		COALESCE(node.public_config::json->'gw4' #>> '{}', ''),
-		COALESCE(node.public_config::json->'gw6' #>> '{}', ''),
-		COALESCE(node.public_config::json->'ipv4' #>> '{}', ''),
-		COALESCE(node.public_config::json->'ipv6' #>> '{}', ''),
+		COALESCE(public_config.domain, ''),
+		COALESCE(public_config.gw4, ''),
+		COALESCE(public_config.gw6, ''),
+		COALESCE(public_config.ipv4, ''),
+		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
 		COALESCE(node_pulled.zos_version, ''),
 		COALESCE(node_pulled.hypervisor, ''),
 		COALESCE(node_pulled.proxy_updated_at, 0)
 	FROM node
 	LEFT JOIN node_pulled ON node.node_id = node_pulled.node_id
+	LEFT JOIN node_resources_total ON node.id = node_resources_total.id
+	LEFT JOIN public_config ON node.id = public_config.id
 	`
 	selectFarmsWithFilter = `
 	SELECT 
 		farm_id,
 		COALESCE(name, ''),
 		COALESCE(twin_id, 0),
-		COALESCE(version, 0),
 		COALESCE(pricing_policy_id, 0),
 		COALESCE(stellar_address, ''),
 		(
@@ -182,18 +180,23 @@ const (
 	`
 	totalResources = `
 	SELECT
-		COALESCE(sum(cru),0) AS total_cru,
-		COALESCE(sum(sru),0) AS total_sru,
-		COALESCE(sum(hru),0) AS total_hru,
-		COALESCE(sum(mru),0) AS total_mru
+		COALESCE(sum(node_resources_total.cru),0) AS total_cru,
+		COALESCE(sum(node_resources_total.sru),0) AS total_sru,
+		COALESCE(sum(node_resources_total.hru),0) AS total_hru,
+		COALESCE(sum(node_resources_total.mru),0) AS total_mru
 	FROM node
+	LEFT JOIN node_resources_total ON node.id = node_resources_total.id
 	`
 	countersQuery = `
 	SELECT
 	(SELECT count(id) AS twins FROM twin),
 	(SELECT count(id) AS public_ips FROM public_ip),
-	(SELECT count(id) AS access_nodes FROM node %[1]s AND (node.public_config::json->'ipv4' #>> '{}' != '' OR node.public_config::json->'ipv4' #>> '{}' != '')),
-	(SELECT count(id) AS gateways FROM node %[1]s AND node.public_config::json->'domain' #>> '{}' != '' AND (node.public_config::json->'ipv4' #>> '{}' != '' OR node.public_config::json->'ipv6' #>> '{}' != '')),
+	(SELECT count(node.id) AS access_nodes FROM node 
+		RIGHT JOIN public_config ON node.id = public_config.id 
+		%[1]s AND (COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv4, '') != '')),
+	(SELECT count(node.id) AS gateways FROM node 
+	 	RIGHT JOIN public_config ON node.id = public_config.id 
+	 	%[1]s AND COALESCE(public_config.domain, '') != '' AND (COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv6, '') != '')),
 	(SELECT count(id) AS contracts FROM node_contract),
 	(SELECT count(id) AS nodes FROM node %[1]s),
 	(SELECT count(id) AS farms FROM farm),
@@ -256,7 +259,7 @@ func (d *PostgresDatabase) GetCounters(filter StatsFilter) (Counters, error) {
 
 	if filter.Status != nil && *filter.Status == "up" {
 		nodeUpInterval := time.Now().Unix() - nodeStateFactor*int64(noded.ReportInterval/time.Second)
-		condition := fmt.Sprintf(`LEFT JOIN node_pulled ON node.node_id = node_pulled.node_id
+		condition := fmt.Sprintf(`RIGHT JOIN node_pulled ON node.node_id = node_pulled.node_id
 			WHERE node_pulled.proxy_updated_at >= %d`, nodeUpInterval)
 		query = fmt.Sprintf(query, condition)
 		totalResourcesQuery = fmt.Sprintf(`%s %s`, totalResourcesQuery, condition)
@@ -342,7 +345,6 @@ func (d *PostgresDatabase) UpdateNodeDataByTwin(twinID uint32, nodeInfo PulledNo
 
 func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 	err := rows.Scan(
-		&node.NodeData.Version,
 		&node.NodeData.ID,
 		&node.NodeID,
 		&node.NodeData.FarmID,
@@ -353,7 +355,6 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.Uptime,
 		&node.NodeData.Created,
 		&node.NodeData.FarmingPolicyID,
-		&node.NodeData.UpdatedAt,
 		&node.NodeData.TotalResources.CRU,
 		&node.NodeData.TotalResources.SRU,
 		&node.NodeData.TotalResources.HRU,
@@ -390,7 +391,6 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 		&farm.FarmID,
 		&farm.Name,
 		&farm.TwinID,
-		&farm.Version,
 		&farm.PricingPolicyID,
 		&farm.StellarAddress,
 		&publicIPStr,
@@ -526,13 +526,13 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 		args = append(args, *filter.FreeIPs)
 	}
 	if filter.IPv4 != nil {
-		query = fmt.Sprintf(`%s AND COALESCE(node.public_config::json->'ipv4' #>> '{}', '') != ''`, query)
+		query = fmt.Sprintf(`%s AND COALESCE(public_config.ipv4, '') != ''`, query)
 	}
 	if filter.IPv6 != nil {
-		query = fmt.Sprintf(`%s AND COALESCE(node.public_config::json->'ipv6' #>> '{}', '') != ''`, query)
+		query = fmt.Sprintf(`%s AND COALESCE(public_config.ipv6, '') != ''`, query)
 	}
 	if filter.Domain != nil {
-		query = fmt.Sprintf(`%s AND COALESCE(node.public_config::json->'domain' #>> '{}', '') != ''`, query)
+		query = fmt.Sprintf(`%s AND COALESCE(public_config.domain, '') != ''`, query)
 	}
 	query = fmt.Sprintf("%s ORDER BY node.node_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
