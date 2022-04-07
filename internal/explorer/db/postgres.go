@@ -155,7 +155,7 @@ const (
 	FROM node
 	LEFT JOIN node_pulled ON node.node_id = node_pulled.node_id
 	LEFT JOIN node_resources_total ON node.id = node_resources_total.id
-	LEFT JOIN public_config ON node.id = public_config.id
+	LEFT JOIN public_config ON node.id = public_config.node_id
 	`
 	selectFarmsWithFilter = `
 	SELECT 
@@ -192,10 +192,10 @@ const (
 	(SELECT count(id) AS twins FROM twin),
 	(SELECT count(id) AS public_ips FROM public_ip),
 	(SELECT count(node.id) AS access_nodes FROM node 
-		RIGHT JOIN public_config ON node.id = public_config.id 
+		RIGHT JOIN public_config ON node.id = public_config.node_id 
 		%[1]s AND (COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv4, '') != '')),
 	(SELECT count(node.id) AS gateways FROM node 
-	 	RIGHT JOIN public_config ON node.id = public_config.id 
+	 	RIGHT JOIN public_config ON node.id = public_config.node_id 
 	 	%[1]s AND COALESCE(public_config.domain, '') != '' AND (COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv6, '') != '')),
 	(SELECT count(id) AS contracts FROM node_contract),
 	(SELECT count(id) AS nodes FROM node %[1]s),
