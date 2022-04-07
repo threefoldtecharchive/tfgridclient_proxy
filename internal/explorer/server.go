@@ -1,8 +1,6 @@
 package explorer
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -18,7 +16,6 @@ import (
 	_ "github.com/threefoldtech/grid_proxy_server/docs"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
-	"github.com/threefoldtech/zos/client"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
@@ -171,30 +168,6 @@ func (a *App) version(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("{\"version\": \"%s\"}", a.releaseVersion)))
 }
 
-func (a *App) setupRMBHandler(bus *rmb.MessageBus) {
-	bus.WithHandler("proxy.status.report", func(ctx context.Context, payload []byte) (interface{}, error) {
-
-		var report client.NodeStatus
-		if err := json.Unmarshal(payload, &report); err != nil {
-			return nil, errors.Wrap(err, "couldn't unmarshal stats report")
-		}
-		twin := rmb.GetTwinID(ctx)
-		log.Debug().Uint32("twin", twin).Msg("received a report")
-		nodeInfo := db.PulledNodeData{
-			Resources: db.CapacityInfo{
-				UsedCRU:   report.Current.CRU,
-				FreeSRU:   report.Total.SRU*SSDOverProvisionFactor - report.Current.SRU,
-				FreeHRU:   report.Total.HRU - report.Current.HRU,
-				FreeMRU:   report.Total.MRU - report.Current.MRU,
-				UsedIPV4U: report.Current.IPV4U,
-			},
-			Hypervisor: report.Hypervisor,
-			ZosVersion: report.ZosVersion,
-		}
-		return nil, a.db.UpdateNodeDataByTwin(twin, nodeInfo)
-	})
-}
-
 // Setup is the server and do initial configurations
 // @title Grid Proxy Server API
 // @version 1.0
@@ -202,7 +175,7 @@ func (a *App) setupRMBHandler(bus *rmb.MessageBus) {
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @BasePath /
-func Setup(router *mux.Router, redisServer string, gitCommit string, database db.Database, bus *rmb.MessageBus) error {
+func Setup(router *mux.Router, redisServer string, gitCommit string, database db.Database) error {
 	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
 
 	rmbClient, err := rmb.NewClient(redisServer, 500)
@@ -228,6 +201,5 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 	router.HandleFunc("/", a.indexPage)
 	router.HandleFunc("/version", a.version)
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
-	a.setupRMBHandler(bus)
 	return nil
 }

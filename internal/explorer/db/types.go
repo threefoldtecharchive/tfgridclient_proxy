@@ -53,36 +53,31 @@ type PublicConfig struct {
 
 // NodeData data about nodes which is calculated from the chain
 type NodeData struct {
-	ID                string             `json:"id"`
-	FarmID            int                `json:"farmId"`
-	NodeID            int                `json:"nodeId"`
-	TwinID            int                `json:"twinId"`
-	Country           string             `json:"country"`
-	GridVersion       int                `json:"gridVersion"`
-	City              string             `json:"city"`
-	Uptime            int64              `json:"uptime"`
-	Created           int64              `json:"created"`
-	FarmingPolicyID   int                `json:"farmingPolicyId"`
-	CertificationType string             `json:"certificationType"`
-	TotalResources    gridtypes.Capacity `json:"total_resources"`
-	PublicConfig      PublicConfig       `json:"publicConfig"`
+	ID                string       `json:"id"`
+	FarmID            int          `json:"farmId"`
+	NodeID            int          `json:"nodeId"`
+	TwinID            int          `json:"twinId"`
+	Country           string       `json:"country"`
+	GridVersion       int          `json:"gridVersion"`
+	City              string       `json:"city"`
+	Uptime            int64        `json:"uptime"`
+	Created           int64        `json:"created"`
+	FarmingPolicyID   int          `json:"farmingPolicyId"`
+	UpdatedAt         int64        `json:"updatedAt"`
+	CertificationType string       `json:"certificationType"`
+	TotalResources    Capacity     `json:"total_resources"`
+	UsedResources     Capacity     `json:"used_resources"`
+	PublicConfig      PublicConfig `json:"publicConfig"`
+	Status            string       `json:"status"` // added node status field for up or down
+
 }
 
-// CapacityInfo capacity info about the node
-type CapacityInfo struct {
-	UsedCRU   uint64         `json:"cru"`
-	FreeSRU   gridtypes.Unit `json:"sru"`
-	FreeHRU   gridtypes.Unit `json:"hru"`
-	FreeMRU   gridtypes.Unit `json:"mru"`
-	UsedIPV4U uint64         `json:"ipv4u"`
-}
-
-// PulledNodeData data about nodes which is calculated from communicting with the node
-type PulledNodeData struct {
-	Resources  CapacityInfo `json:"resources_info"`
-	Status     string       `json:"status"` // added node status field for up or down
-	Hypervisor string       `json:"hypervisor"`
-	ZosVersion string       `json:"zosVersion"`
+//Capacity is the resources needed for workload(cpu, memory, SSD disk, HDD disks)
+type Capacity struct {
+	CRU uint64         `json:"cru"`
+	SRU gridtypes.Unit `json:"sru"`
+	HRU gridtypes.Unit `json:"hru"`
+	MRU gridtypes.Unit `json:"mru"`
 }
 
 // Farm farm info
@@ -104,17 +99,10 @@ type PublicIP struct {
 	Gateway    string `json:"gateway"`
 }
 
-// ConnectionInfo info about connections to the nodes
-type ConnectionInfo struct {
-	ProxyUpdateAt uint64 `json:"proxyUpdatedAt"`
-}
-
 // AllNodeData contains info from the chain, the node, connection info
 type AllNodeData struct {
-	NodeID         int `json:"nodeId"`
-	NodeData       NodeData
-	PulledNodeData PulledNodeData
-	ProxyUpdatedAt uint64
+	NodeID   int `json:"nodeId"`
+	NodeData NodeData
 }
 
 // Counters contains aggregate info about the grid
@@ -137,8 +125,6 @@ type Counters struct {
 type Database interface {
 	GetCounters(filter StatsFilter) (Counters, error)
 	CountNodes() (int, error)
-	UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData) error
-	UpdateNodeDataByTwin(twinID uint32, nodeInfo PulledNodeData) error
 	GetNode(nodeID uint32) (AllNodeData, error)
 	GetFarm(farmID uint32) (Farm, error)
 	GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error)

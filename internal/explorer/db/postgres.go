@@ -9,7 +9,6 @@ import (
 
 	// to use for database/sql
 	_ "github.com/lib/pq"
-	"github.com/threefoldtech/zos/cmds/modules/noded"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 
 	"github.com/pkg/errors"
@@ -24,86 +23,13 @@ var (
 )
 
 const (
-	nodeStateFactor = 2
+	nodeStateFactor = 3
+	reportInterval  = time.Hour
 	// the number of missed reports to mark the node down
 	// if node reports every 5 mins, it's marked down if the last report is more than 15 mins in the past
 )
 
 const (
-	setupPostgresql = `
-	CREATE TABLE IF NOT EXISTS node_pulled (
-		node_id INTEGER PRIMARY KEY,
-		used_cru INTEGER,
-		free_sru BIGINT,
-		free_hru BIGINT,
-		free_mru BIGINT,
-		used_ipv4 INTEGER,
-		zos_version TEXT,
-		hypervisor TEXT,
-		proxy_updated_at BIGINT /* epoch of last update inside the proxy */
-	);
-	CREATE INDEX IF NOT EXISTS node_pulled_sru ON node_pulled (
-		free_sru
-	);
-	CREATE INDEX IF NOT EXISTS node_pulled_mru ON node_pulled (
-		free_mru
-	);
-	CREATE INDEX IF NOT EXISTS node_pulled_hru ON node_pulled (
-		free_hru
-	);
-	CREATE INDEX IF NOT EXISTS node_pulled_proxy_updated_at ON node_pulled (
-		proxy_updated_at
-	);
-	`
-	updateNodeData = `
-	INSERT INTO node_pulled
-		VALUES (
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6,
-			$7,
-			$8,
-			$9
-		)
-	ON CONFLICT (node_id) DO UPDATE
-	SET	used_cru = $2,
-		free_sru = $3,
-		free_hru = $4,
-		free_mru = $5,
-		used_ipv4 = $6,
-		zos_version = $7,
-		hypervisor = $8,
-		proxy_updated_at = $9
-	WHERE node_pulled.node_id = $1
-	`
-	updateNodeDataByTwin = `
-	INSERT INTO node_pulled
-		VALUES (
-			(select node_id from node where twin_id = $1),
-			$2,
-			$3,
-			$4,
-			$5,
-			$6,
-			$7,
-			$8,
-			$9
-		)
-	ON CONFLICT (node_id) DO UPDATE
-	SET	used_cru = $2,
-		free_sru = $3,
-		free_hru = $4,
-		free_mru = $5,
-		used_ipv4 = $6,
-		zos_version = $7,
-		hypervisor = $8,
-		proxy_updated_at = $9
-	WHERE node_pulled.node_id = (select node_id from node where twin_id = $1)
-	`
-
 	selectFarm = `
 	SELECT 
 		farm_id,
@@ -134,27 +60,24 @@ const (
 		COALESCE(node.uptime, 0),
 		COALESCE(node.created, 0),
 		COALESCE(node.farming_policy_id, 0),
+		COALESCE(CAST(updated_at / 1000 AS int), 0),
 		COALESCE(node_resources_total.cru, 0),
 		COALESCE(node_resources_total.sru, 0),
 		COALESCE(node_resources_total.hru, 0),
 		COALESCE(node_resources_total.mru, 0),
-		COALESCE(node_pulled.used_cru, 0),
-		COALESCE(node_pulled.free_sru, 0),
-		COALESCE(node_pulled.free_hru, 0),
-		COALESCE(node_pulled.free_mru, 0),
-		COALESCE(node_pulled.used_ipv4, 0),
+		COALESCE(node_resources_used.cru, 0),
+		COALESCE(node_resources_used.sru, 0),
+		COALESCE(node_resources_used.hru, 0),
+		COALESCE(node_resources_used.mru, 0),
 		COALESCE(public_config.domain, ''),
 		COALESCE(public_config.gw4, ''),
 		COALESCE(public_config.gw6, ''),
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
-		COALESCE(node.certification_type, ''),
-		COALESCE(node_pulled.zos_version, ''),
-		COALESCE(node_pulled.hypervisor, ''),
-		COALESCE(node_pulled.proxy_updated_at, 0)
+		COALESCE(node.certification_type, '')
 	FROM node
-	LEFT JOIN node_pulled ON node.node_id = node_pulled.node_id
 	LEFT JOIN node_resources_total ON node.id = node_resources_total.id
+	LEFT JOIN node_resources_used ON node.id = node_resources_used.id
 	LEFT JOIN public_config ON node.id = public_config.node_id
 	`
 	selectFarmsWithFilter = `
@@ -219,15 +142,7 @@ func NewPostgresDatabase(host string, port int, user, password, dbname string) (
 		return nil, errors.Wrap(err, "failed to initialize db")
 	}
 	res := PostgresDatabase{db}
-	if err := res.initialize(); err != nil {
-		return nil, errors.Wrap(err, "failed to setup tables")
-	}
 	return &res, nil
-}
-
-func (d *PostgresDatabase) initialize() error {
-	_, err := d.db.Exec(setupPostgresql)
-	return err
 }
 
 // Close the db connection
@@ -258,9 +173,8 @@ func (d *PostgresDatabase) GetCounters(filter StatsFilter) (Counters, error) {
 	totalResourcesQuery := totalResources
 
 	if filter.Status != nil && *filter.Status == "up" {
-		nodeUpInterval := time.Now().Unix() - nodeStateFactor*int64(noded.ReportInterval/time.Second)
-		condition := fmt.Sprintf(`RIGHT JOIN node_pulled ON node.node_id = node_pulled.node_id
-			WHERE node_pulled.proxy_updated_at >= %d`, nodeUpInterval)
+		nodeUpInterval := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
+		condition := fmt.Sprintf(`WHERE node.updated_at >= %d`, nodeUpInterval)
 		query = fmt.Sprintf(query, condition)
 		totalResourcesQuery = fmt.Sprintf(`%s %s`, totalResourcesQuery, condition)
 	} else {
@@ -311,38 +225,6 @@ func (d *PostgresDatabase) GetCounters(filter StatsFilter) (Counters, error) {
 	return counters, nil
 }
 
-// UpdateNodeData update the database by the pulled data from the node
-func (d *PostgresDatabase) UpdateNodeData(nodeID uint32, nodeInfo PulledNodeData) error {
-	_, err := d.db.Exec(updateNodeData,
-		nodeID,
-		nodeInfo.Resources.UsedCRU,
-		nodeInfo.Resources.FreeSRU,
-		nodeInfo.Resources.FreeHRU,
-		nodeInfo.Resources.FreeMRU,
-		nodeInfo.Resources.UsedIPV4U,
-		nodeInfo.ZosVersion,
-		nodeInfo.Hypervisor,
-		time.Now().Unix(),
-	)
-	return err
-}
-
-// UpdateNodeDataByTwin update the database by the pulled data from the node given its twin id
-func (d *PostgresDatabase) UpdateNodeDataByTwin(twinID uint32, nodeInfo PulledNodeData) error {
-	_, err := d.db.Exec(updateNodeDataByTwin,
-		twinID,
-		nodeInfo.Resources.UsedCRU,
-		nodeInfo.Resources.FreeSRU,
-		nodeInfo.Resources.FreeHRU,
-		nodeInfo.Resources.FreeMRU,
-		nodeInfo.Resources.UsedIPV4U,
-		nodeInfo.ZosVersion,
-		nodeInfo.Hypervisor,
-		time.Now().Unix(),
-	)
-	return err
-}
-
 func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 	err := rows.Scan(
 		&node.NodeData.ID,
@@ -355,32 +237,29 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.Uptime,
 		&node.NodeData.Created,
 		&node.NodeData.FarmingPolicyID,
+		&node.NodeData.UpdatedAt,
 		&node.NodeData.TotalResources.CRU,
 		&node.NodeData.TotalResources.SRU,
 		&node.NodeData.TotalResources.HRU,
 		&node.NodeData.TotalResources.MRU,
-		&node.PulledNodeData.Resources.UsedCRU,
-		&node.PulledNodeData.Resources.FreeSRU,
-		&node.PulledNodeData.Resources.FreeHRU,
-		&node.PulledNodeData.Resources.FreeMRU,
-		&node.PulledNodeData.Resources.UsedIPV4U,
+		&node.NodeData.UsedResources.CRU,
+		&node.NodeData.UsedResources.SRU,
+		&node.NodeData.UsedResources.HRU,
+		&node.NodeData.UsedResources.MRU,
 		&node.NodeData.PublicConfig.Domain,
 		&node.NodeData.PublicConfig.Gw4,
 		&node.NodeData.PublicConfig.Gw6,
 		&node.NodeData.PublicConfig.Ipv4,
 		&node.NodeData.PublicConfig.Ipv6,
 		&node.NodeData.CertificationType,
-		&node.PulledNodeData.ZosVersion,
-		&node.PulledNodeData.Hypervisor,
-		&node.ProxyUpdatedAt,
 	)
 	if err != nil {
 		return err
 	}
-	if int64(node.ProxyUpdatedAt) >= time.Now().Unix()-nodeStateFactor*int64(noded.ReportInterval/time.Second) {
-		node.PulledNodeData.Status = "up"
+	if int64(node.NodeData.UpdatedAt) >= time.Now().Unix()*1000-nodeStateFactor*int64(reportInterval/time.Millisecond) {
+		node.NodeData.Status = "up"
 	} else {
-		node.PulledNodeData.Status = "down"
+		node.NodeData.Status = "down"
 	}
 	return nil
 }
@@ -439,6 +318,10 @@ func requiresFarmJoin(filter NodeFilter) bool {
 	return filter.FarmName != nil || filter.FreeIPs != nil
 }
 
+func requiresFreeCapacityJoin(filter NodeFilter) bool {
+	return filter.FreeMRU != nil || filter.FreeHRU != nil
+}
+
 func convertParam(p interface{}) string {
 	if v, ok := p.(string); ok {
 		return fmt.Sprintf("'%s'", v)
@@ -470,29 +353,32 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	if requiresFarmJoin(filter) {
 		query = fmt.Sprintf("%s JOIN farm ON node.farm_id = farm.farm_id", query)
 	}
+	if requiresFreeCapacityJoin(filter) {
+		query = fmt.Sprintf("%s LEFT JOIN node_resources_free ON node.id = node_resources_free.id", query)
+	}
 	idx := 1
 	query = fmt.Sprintf("%s WHERE TRUE", query)
 	if filter.Status != nil {
 		if *filter.Status == "down" {
-			query = fmt.Sprintf("%s AND (node_pulled.proxy_updated_at < $%d OR node_pulled.proxy_updated_at IS NULL)", query, idx)
+			query = fmt.Sprintf("%s AND (node.updated_at < $%d OR node.updated_at IS NULL)", query, idx)
 		} else {
-			query = fmt.Sprintf("%s AND node_pulled.proxy_updated_at >= $%d", query, idx)
+			query = fmt.Sprintf("%s AND node.updated_at >= $%d", query, idx)
 		}
 		idx++
-		args = append(args, time.Now().Unix()-nodeStateFactor*int64(noded.ReportInterval/time.Second))
+		args = append(args, time.Now().Unix()*1000-nodeStateFactor*int64(reportInterval/time.Millisecond))
 	}
 	if filter.FreeMRU != nil {
-		query = fmt.Sprintf("%s AND node_pulled.free_mru >= $%d", query, idx)
+		query = fmt.Sprintf("%s AND node_resources_free.mru >= $%d", query, idx)
 		idx++
-		args = append(args, *filter.FreeMRU)
+		args = append(args, *filter.FreeMRU+2*uint64(gridtypes.Gigabyte))
 	}
 	if filter.FreeHRU != nil {
-		query = fmt.Sprintf("%s AND node_pulled.free_hru >= $%d", query, idx)
+		query = fmt.Sprintf("%s AND node_resources_free.hru >= $%d", query, idx)
 		idx++
 		args = append(args, *filter.FreeHRU)
 	}
 	if filter.FreeSRU != nil {
-		query = fmt.Sprintf("%s AND node_pulled.free_sru >= $%d", query, idx)
+		query = fmt.Sprintf("%s AND node_resources_total.sru * 2 - node_resources_used.sru >= $%d", query, idx)
 		idx++
 		args = append(args, *filter.FreeSRU)
 	}
