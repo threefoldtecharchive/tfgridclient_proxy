@@ -27,7 +27,7 @@ RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.1.10/msgbu
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.6/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
-RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/1.3.0/server -O server \
+RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/1.3.1/server -O server \
     && chmod +x server \
     && mv server /usr/bin/server
 
