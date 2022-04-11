@@ -530,6 +530,23 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "db.Capacity": {
+            "type": "object",
+            "properties": {
+                "cru": {
+                    "type": "integer"
+                },
+                "hru": {
+                    "type": "integer"
+                },
+                "mru": {
+                    "type": "integer"
+                },
+                "sru": {
+                    "type": "integer"
+                }
+            }
+        },
         "db.Counters": {
             "type": "object",
             "properties": {
@@ -593,9 +610,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "twinId": {
-                    "type": "integer"
-                },
-                "version": {
                     "type": "integer"
                 }
             }
@@ -675,9 +689,6 @@ const docTemplate = `{
                 "gridVersion": {
                     "type": "integer"
                 },
-                "hypervisor": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -685,9 +696,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/explorer.location"
                 },
                 "nodeId": {
-                    "type": "integer"
-                },
-                "proxyUpdatedAt": {
                     "type": "integer"
                 },
                 "publicConfig": {
@@ -698,45 +706,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "total_resources": {
-                    "$ref": "#/definitions/gridtypes.Capacity"
+                    "$ref": "#/definitions/db.Capacity"
                 },
                 "twinId": {
                     "type": "integer"
                 },
                 "updatedAt": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "uptime": {
                     "type": "integer"
                 },
                 "used_resources": {
-                    "$ref": "#/definitions/gridtypes.Capacity"
-                },
-                "version": {
-                    "type": "integer"
-                },
-                "zosVersion": {
-                    "type": "string"
-                }
-            }
-        },
-        "gridtypes.Capacity": {
-            "type": "object",
-            "properties": {
-                "cru": {
-                    "type": "integer"
-                },
-                "hru": {
-                    "type": "integer"
-                },
-                "ipv4u": {
-                    "type": "integer"
-                },
-                "mru": {
-                    "type": "integer"
-                },
-                "sru": {
-                    "type": "integer"
+                    "$ref": "#/definitions/db.Capacity"
                 }
             }
         },
