@@ -1,5 +1,16 @@
 basePath: /
 definitions:
+  db.Capacity:
+    properties:
+      cru:
+        type: integer
+      hru:
+        type: integer
+      mru:
+        type: integer
+      sru:
+        type: integer
+    type: object
   db.Counters:
     properties:
       accessNodes:
@@ -42,8 +53,6 @@ definitions:
       stellarAddress:
         type: string
       twinId:
-        type: integer
-      version:
         type: integer
     type: object
   db.PublicConfig:
@@ -95,15 +104,11 @@ definitions:
         type: integer
       gridVersion:
         type: integer
-      hypervisor:
-        type: string
       id:
         type: string
       location:
         $ref: '#/definitions/explorer.location'
       nodeId:
-        type: integer
-      proxyUpdatedAt:
         type: integer
       publicConfig:
         $ref: '#/definitions/db.PublicConfig'
@@ -111,32 +116,15 @@ definitions:
         description: added node status field for up or down
         type: string
       total_resources:
-        $ref: '#/definitions/gridtypes.Capacity'
+        $ref: '#/definitions/db.Capacity'
       twinId:
         type: integer
       updatedAt:
-        type: string
+        type: integer
       uptime:
         type: integer
       used_resources:
-        $ref: '#/definitions/gridtypes.Capacity'
-      version:
-        type: integer
-      zosVersion:
-        type: string
-    type: object
-  gridtypes.Capacity:
-    properties:
-      cru:
-        type: integer
-      hru:
-        type: integer
-      ipv4u:
-        type: integer
-      mru:
-        type: integer
-      sru:
-        type: integer
+        $ref: '#/definitions/db.Capacity'
     type: object
   rmbproxy.Message:
     properties:

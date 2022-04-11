@@ -256,7 +256,7 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 	if err != nil {
 		return err
 	}
-	if int64(node.NodeData.UpdatedAt) >= time.Now().Unix()*1000-nodeStateFactor*int64(reportInterval/time.Millisecond) {
+	if int64(node.NodeData.UpdatedAt) >= time.Now().Unix()-nodeStateFactor*int64(reportInterval/time.Second) {
 		node.NodeData.Status = "up"
 	} else {
 		node.NodeData.Status = "down"
