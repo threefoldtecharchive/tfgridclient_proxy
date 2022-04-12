@@ -30,6 +30,60 @@ const (
 )
 
 const (
+	setupPostgresql = `
+	CREATE OR REPLACE VIEW nodes_resources_view AS SELECT
+		node.node_id,
+		COALESCE(sum(contract_resources.cru), 0) as used_cru,
+		COALESCE(sum(contract_resources.mru), 0) + 2147483648 as used_mru,
+		COALESCE(sum(contract_resources.hru), 0) as used_hru,
+		COALESCE(sum(contract_resources.sru), 0) as used_sru,
+		node_resources_total.mru - COALESCE(sum(contract_resources.mru), 0) - 2147483648 as free_mru,
+		node_resources_total.hru - COALESCE(sum(contract_resources.hru), 0) as free_hru,
+		2 * node_resources_total.sru - COALESCE(sum(contract_resources.sru), 0) as free_sru,
+		COALESCE(node_resources_total.cru, 0) as total_cru,
+		COALESCE(node_resources_total.mru, 0) as total_mru,
+		COALESCE(node_resources_total.hru, 0) as total_hru,
+		COALESCE(node_resources_total.sru, 0) as total_sru
+	FROM contract_resources
+	JOIN node_contract as node_contract
+	ON node_contract.id = contract_resources.contract_id
+	RIGHT JOIN node as node
+	ON node.node_id = node_contract.node_id
+	JOIN node_resources_total AS node_resources_total
+	ON node_resources_total.node_id = node.id
+	WHERE node_contract.state = 'Created' OR node_contract.state IS NULL 
+	GROUP BY node.node_id, node_resources_total.mru, node_resources_total.sru, node_resources_total.hru, node_resources_total.cru;
+
+	CREATE OR REPLACE function node_resources(query_node_id INTEGER)
+	returns table (node_id INTEGER, used_cru BIGINT, used_mru BIGINT, used_hru BIGINT, used_sru BIGINT, free_mru BIGINT, free_hru BIGINT, free_sru BIGINT, total_cru BIGINT, total_mru BIGINT, total_hru BIGINT, total_sru BIGINT)
+	as
+	$body$
+	SELECT
+		node.node_id,
+		COALESCE(sum(contract_resources.cru), 0) as used_cru,
+		COALESCE(sum(contract_resources.mru), 0) + 2147483648 as used_mru,
+		COALESCE(sum(contract_resources.hru), 0) as used_hru,
+		COALESCE(sum(contract_resources.sru), 0) as used_sru,
+		node_resources_total.mru - COALESCE(sum(contract_resources.mru), 0) - 2147483648 as free_mru,
+		node_resources_total.hru - COALESCE(sum(contract_resources.hru), 0) as free_hru,
+		2 * node_resources_total.sru - COALESCE(sum(contract_resources.sru), 0) as free_sru,
+		COALESCE(node_resources_total.cru, 0) as total_cru,
+		COALESCE(node_resources_total.mru, 0) as total_mru,
+		COALESCE(node_resources_total.hru, 0) as total_hru,
+		COALESCE(node_resources_total.sru, 0) as total_sru
+	FROM contract_resources
+	JOIN node_contract as node_contract
+	ON node_contract.id = contract_resources.contract_id
+	RIGHT JOIN node as node
+	ON node.node_id = node_contract.node_id
+	JOIN node_resources_total AS node_resources_total
+	ON node_resources_total.node_id = node.id
+	WHERE (node_contract.state = 'Created' OR node_contract.state IS NULL) AND node.node_id = query_node_id
+	GROUP BY node.node_id, node_resources_total.mru, node_resources_total.sru, node_resources_total.hru, node_resources_total.cru;
+	$body$
+	language sql;
+	`
+
 	selectFarm = `
 	SELECT 
 		farm_id,
@@ -48,6 +102,38 @@ const (
 	JOIN 
 	WHERE farm.farm_id = $1
 	`
+
+	selectSingleNode = `
+	SELECT
+		node.id,
+		COALESCE(node.node_id, 0),
+		COALESCE(node.farm_id, 0),
+		COALESCE(node.twin_id, 0),
+		COALESCE(node.country, ''),
+		COALESCE(node.grid_version, 0),
+		COALESCE(node.city, ''),
+		COALESCE(node.uptime, 0),
+		COALESCE(node.created, 0),
+		COALESCE(node.farming_policy_id, 0),
+		COALESCE(CAST(updated_at / 1000 AS int), 0),
+		COALESCE(node_resources.total_cru, 0),
+		COALESCE(node_resources.total_sru, 0),
+		COALESCE(node_resources.total_hru, 0),
+		COALESCE(node_resources.total_mru, 0),
+		COALESCE(node_resources.used_cru, 0),
+		COALESCE(node_resources.used_sru, 0),
+		COALESCE(node_resources.used_hru, 0),
+		COALESCE(node_resources.used_mru, 0),
+		COALESCE(public_config.domain, ''),
+		COALESCE(public_config.gw4, ''),
+		COALESCE(public_config.gw6, ''),
+		COALESCE(public_config.ipv4, ''),
+		COALESCE(public_config.ipv6, ''),
+		COALESCE(node.certification_type, '')
+	FROM node
+	LEFT JOIN node_resources($1) ON node.node_id = node_resources.node_id
+	LEFT JOIN public_config ON node.id = public_config.node_id
+	`
 	selectNodesWithFilter = `
 	SELECT
 		node.id,
@@ -61,14 +147,14 @@ const (
 		COALESCE(node.created, 0),
 		COALESCE(node.farming_policy_id, 0),
 		COALESCE(CAST(updated_at / 1000 AS int), 0),
-		COALESCE(node_resources_total.cru, 0),
-		COALESCE(node_resources_total.sru, 0),
-		COALESCE(node_resources_total.hru, 0),
-		COALESCE(node_resources_total.mru, 0),
-		COALESCE(node_resources_used.cru, 0),
-		COALESCE(node_resources_used.sru, 0),
-		COALESCE(node_resources_used.hru, 0),
-		COALESCE(node_resources_used.mru, 0),
+		COALESCE(nodes_resources_view.total_cru, 0),
+		COALESCE(nodes_resources_view.total_sru, 0),
+		COALESCE(nodes_resources_view.total_hru, 0),
+		COALESCE(nodes_resources_view.total_mru, 0),
+		COALESCE(nodes_resources_view.used_cru, 0),
+		COALESCE(nodes_resources_view.used_sru, 0),
+		COALESCE(nodes_resources_view.used_hru, 0),
+		COALESCE(nodes_resources_view.used_mru, 0),
 		COALESCE(public_config.domain, ''),
 		COALESCE(public_config.gw4, ''),
 		COALESCE(public_config.gw6, ''),
@@ -76,8 +162,7 @@ const (
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, '')
 	FROM node
-	LEFT JOIN node_resources_total ON node.id = node_resources_total.id
-	LEFT JOIN node_resources_used ON node.id = node_resources_used.id
+	LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
 	`
 	selectFarmsWithFilter = `
@@ -142,12 +227,20 @@ func NewPostgresDatabase(host string, port int, user, password, dbname string) (
 		return nil, errors.Wrap(err, "failed to initialize db")
 	}
 	res := PostgresDatabase{db}
+	if err := res.initialize(); err != nil {
+		return nil, errors.Wrap(err, "failed to setup tables")
+	}
 	return &res, nil
 }
 
 // Close the db connection
 func (d *PostgresDatabase) Close() error {
 	return d.db.Close()
+}
+
+func (d *PostgresDatabase) initialize() error {
+	_, err := d.db.Exec(setupPostgresql)
+	return err
 }
 
 // CountNodes returns the total number of nodes
@@ -286,8 +379,7 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 // GetNode returns node info
 func (d *PostgresDatabase) GetNode(nodeID uint32) (AllNodeData, error) {
 	var node AllNodeData
-	query := fmt.Sprintf("%s WHERE node.node_id = $1", selectNodesWithFilter)
-	rows, err := d.db.Query(query, nodeID)
+	rows, err := d.db.Query(selectSingleNode, nodeID)
 	if err != nil {
 		return node, err
 	}
@@ -316,10 +408,6 @@ func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
 
 func requiresFarmJoin(filter NodeFilter) bool {
 	return filter.FarmName != nil || filter.FreeIPs != nil
-}
-
-func requiresFreeCapacityJoin(filter NodeFilter) bool {
-	return filter.FreeMRU != nil || filter.FreeHRU != nil
 }
 
 func convertParam(p interface{}) string {
@@ -353,9 +441,6 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	if requiresFarmJoin(filter) {
 		query = fmt.Sprintf("%s JOIN farm ON node.farm_id = farm.farm_id", query)
 	}
-	if requiresFreeCapacityJoin(filter) {
-		query = fmt.Sprintf("%s LEFT JOIN node_resources_free ON node.id = node_resources_free.id", query)
-	}
 	idx := 1
 	query = fmt.Sprintf("%s WHERE TRUE", query)
 	if filter.Status != nil {
@@ -368,17 +453,17 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 		args = append(args, time.Now().Unix()*1000-nodeStateFactor*int64(reportInterval/time.Millisecond))
 	}
 	if filter.FreeMRU != nil {
-		query = fmt.Sprintf("%s AND node_resources_free.mru >= $%d", query, idx)
+		query = fmt.Sprintf("%s AND nodes_resources_view.free_mru >= $%d", query, idx)
 		idx++
-		args = append(args, *filter.FreeMRU+2*uint64(gridtypes.Gigabyte))
+		args = append(args, *filter.FreeMRU)
 	}
 	if filter.FreeHRU != nil {
-		query = fmt.Sprintf("%s AND node_resources_free.hru >= $%d", query, idx)
+		query = fmt.Sprintf("%s AND nodes_resources_view.free_hru >= $%d", query, idx)
 		idx++
 		args = append(args, *filter.FreeHRU)
 	}
 	if filter.FreeSRU != nil {
-		query = fmt.Sprintf("%s AND node_resources_total.sru * 2 - node_resources_used.sru >= $%d", query, idx)
+		query = fmt.Sprintf("%s AND nodes_resources_view.free_sru >= $%d", query, idx)
 		idx++
 		args = append(args, *filter.FreeSRU)
 	}

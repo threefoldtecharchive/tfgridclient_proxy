@@ -6,7 +6,6 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
-	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
@@ -88,16 +87,6 @@ type location struct {
 	City    string `json:"city"`
 }
 
-// assume that the node has 2 GB memory reserved for the node itself
-func addReservedMemory(cap *db.Capacity) db.Capacity {
-	return db.Capacity{
-		CRU: cap.CRU,
-		SRU: cap.SRU,
-		HRU: cap.HRU,
-		MRU: cap.MRU + 2*gridtypes.Gigabyte,
-	}
-}
-
 // Node is a struct holding the data for a node for the nodes view
 type node struct {
 	ID                string          `json:"id"`
@@ -120,7 +109,6 @@ type node struct {
 }
 
 func nodeFromDBNode(info db.AllNodeData) node {
-	used := addReservedMemory(&info.NodeData.UsedResources)
 	return node{
 		ID:              info.NodeData.ID,
 		NodeID:          info.NodeID,
@@ -134,7 +122,7 @@ func nodeFromDBNode(info db.AllNodeData) node {
 		FarmingPolicyID: info.NodeData.FarmingPolicyID,
 		UpdatedAt:       info.NodeData.UpdatedAt,
 		TotalResources:  info.NodeData.TotalResources,
-		UsedResources:   used,
+		UsedResources:   info.NodeData.UsedResources,
 		Location: location{
 			Country: info.NodeData.Country,
 			City:    info.NodeData.City,
@@ -167,7 +155,6 @@ type nodeWithNestedCapacity struct {
 }
 
 func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacity {
-	used := addReservedMemory(&info.NodeData.UsedResources)
 	return nodeWithNestedCapacity{
 		ID:              info.NodeData.ID,
 		NodeID:          info.NodeID,
@@ -182,7 +169,7 @@ func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacit
 		UpdatedAt:       info.NodeData.UpdatedAt,
 		Capacity: capacityResult{
 			Total: info.NodeData.TotalResources,
-			Used:  used,
+			Used:  info.NodeData.UsedResources,
 		},
 		Location: location{
 			Country: info.NodeData.Country,
