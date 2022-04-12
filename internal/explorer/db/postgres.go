@@ -55,7 +55,7 @@ const (
 	GROUP BY node.node_id, node_resources_total.mru, node_resources_total.sru, node_resources_total.hru, node_resources_total.cru;
 
 	CREATE OR REPLACE function node_resources(query_node_id INTEGER)
-	returns table (node_id INTEGER, used_cru BIGINT, used_mru BIGINT, used_hru BIGINT, used_sru BIGINT, free_mru BIGINT, free_hru BIGINT, free_sru BIGINT, total_cru BIGINT, total_mru BIGINT, total_hru BIGINT, total_sru BIGINT)
+	returns table (node_id INTEGER, used_cru NUMERIC, used_mru NUMERIC, used_hru NUMERIC, used_sru NUMERIC, free_mru NUMERIC, free_hru NUMERIC, free_sru NUMERIC, total_cru NUMERIC, total_mru NUMERIC, total_hru NUMERIC, total_sru NUMERIC)
 	as
 	$body$
 	SELECT
