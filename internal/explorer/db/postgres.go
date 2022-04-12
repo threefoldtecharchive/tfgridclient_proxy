@@ -133,6 +133,7 @@ const (
 	FROM node
 	LEFT JOIN node_resources($1) ON node.node_id = node_resources.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
+	WHERE node.node_id = $1;
 	`
 	selectNodesWithFilter = `
 	SELECT
