@@ -46,12 +46,11 @@ const (
 		COALESCE(node_resources_total.sru, 0) as total_sru
 	FROM contract_resources
 	JOIN node_contract as node_contract
-	ON node_contract.id = contract_resources.contract_id
+	ON node_contract.id = contract_resources.contract_id AND node_contract.state = 'Created'
 	RIGHT JOIN node as node
 	ON node.node_id = node_contract.node_id
 	JOIN node_resources_total AS node_resources_total
 	ON node_resources_total.node_id = node.id
-	WHERE node_contract.state = 'Created' OR node_contract.state IS NULL 
 	GROUP BY node.node_id, node_resources_total.mru, node_resources_total.sru, node_resources_total.hru, node_resources_total.cru;
 
 	CREATE OR REPLACE function node_resources(query_node_id INTEGER)
@@ -73,12 +72,12 @@ const (
 		COALESCE(node_resources_total.sru, 0) as total_sru
 	FROM contract_resources
 	JOIN node_contract as node_contract
-	ON node_contract.id = contract_resources.contract_id
+	ON node_contract.id = contract_resources.contract_id AND node_contract.state = 'Created'
 	RIGHT JOIN node as node
 	ON node.node_id = node_contract.node_id
 	JOIN node_resources_total AS node_resources_total
 	ON node_resources_total.node_id = node.id
-	WHERE (node_contract.state = 'Created' OR node_contract.state IS NULL) AND node.node_id = query_node_id
+	WHERE node.node_id = query_node_id
 	GROUP BY node.node_id, node_resources_total.mru, node_resources_total.sru, node_resources_total.hru, node_resources_total.cru;
 	$body$
 	language sql;
