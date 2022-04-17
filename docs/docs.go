@@ -60,6 +60,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
+                        "description": "Min number of total ips in the farm",
+                        "name": "total_ips",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
                         "description": "Pricing policy id",
                         "name": "pricing_policy_id",
                         "in": "query"

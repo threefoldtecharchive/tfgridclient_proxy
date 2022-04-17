@@ -553,6 +553,11 @@ func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, err
 		idx++
 		args = append(args, *filter.FreeIPs)
 	}
+	if filter.TotalIPs != nil {
+		query = fmt.Sprintf("%s AND (SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id) >= $%d", query, idx)
+		idx++
+		args = append(args, *filter.TotalIPs)
+	}
 
 	if filter.StellarAddress != nil {
 		query = fmt.Sprintf("%s AND stellar_address = $%d", query, idx)

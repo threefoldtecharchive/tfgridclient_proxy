@@ -206,6 +206,10 @@ paths:
         in: query
         name: free_ips
         type: integer
+      - description: Min number of total ips in the farm
+        in: query
+        name: total_ips
+        type: integer
       - description: Pricing policy id
         in: query
         name: pricing_policy_id

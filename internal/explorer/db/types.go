@@ -30,6 +30,7 @@ type NodeFilter struct {
 // FarmFilter farm filters
 type FarmFilter struct {
 	FreeIPs           *uint64
+	TotalIPs          *uint64
 	StellarAddress    *string
 	PricingPolicyID   *uint64
 	Version           *uint64

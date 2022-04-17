@@ -34,6 +34,7 @@ const (
 // @Param size query int false "Max result per page"
 // @Param ret_count query string false "Set farms' count on headers based on filter"
 // @Param free_ips query int false "Min number of free ips in the farm"
+// @Param total_ips query int false "Min number of total ips in the farm"
 // @Param pricing_policy_id query int false "Pricing policy id"
 // @Param version query int false "farm version"
 // @Param farm_id query int false "farm id"

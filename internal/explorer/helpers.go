@@ -163,6 +163,7 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 
 	ints := map[string]**uint64{
 		"free_ips":          &filter.FreeIPs,
+		"total_ips":         &filter.TotalIPs,
 		"pricing_policy_id": &filter.PricingPolicyID,
 		"version":           &filter.Version,
 		"farm_id":           &filter.FarmID,
