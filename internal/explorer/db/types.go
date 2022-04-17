@@ -36,6 +36,7 @@ type FarmFilter struct {
 	FarmID          *uint64
 	TwinID          *uint64
 	Name            *string
+	NameContains    *string
 }
 
 // StatsFilter statistics filters

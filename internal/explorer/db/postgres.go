@@ -209,8 +209,8 @@ const (
 	 	%[1]s AND COALESCE(public_config.domain, '') != '' AND (COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv6, '') != '')),
 	(SELECT count(id) AS contracts FROM node_contract),
 	(SELECT count(id) AS nodes FROM node %[1]s),
-	(SELECT count(id) AS farms FROM farm),
-	(SELECT count(DISTINCT country) AS countries FROM node)
+	(SELECT count(DISTINCT farm_id) AS farm FROM node %[1]s),
+	(SELECT count(DISTINCT country) AS countries FROM node %[1]s)
 	`
 )
 
@@ -580,6 +580,11 @@ func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, err
 		query = fmt.Sprintf("%s AND name = $%d", query, idx)
 		idx++
 		args = append(args, *filter.Name)
+	}
+	if filter.NameContains != nil {
+		query = fmt.Sprintf("%s AND name LIKE $%d", query, idx)
+		idx++
+		args = append(args, fmt.Sprintf("%[1]s%s%[1]s", "%", *filter.NameContains))
 	}
 	query = fmt.Sprintf("%s ORDER BY farm.farm_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)

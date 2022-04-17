@@ -39,8 +39,9 @@ const (
 // @Param farm_id query int false "farm id"
 // @Param twin_id query int false "twin id associated with the farm"
 // @Param name query string false "farm name"
+// @Param name_contains query string false "farm name contains"
 // @Param stellar_address query string false "farm stellar_address"
-// @Success 200 {object} []db.Farm
+// @Success 200 {object} []farm
 // @Router /farms [get]
 func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleFarmRequestsQueryParams(r)

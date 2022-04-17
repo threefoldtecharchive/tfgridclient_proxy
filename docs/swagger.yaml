@@ -38,25 +38,6 @@ definitions:
       twins:
         type: integer
     type: object
-  db.Farm:
-    properties:
-      count:
-        type: integer
-      farmId:
-        type: integer
-      name:
-        type: string
-      pricingPolicyId:
-        type: integer
-      publicIps:
-        items:
-          $ref: '#/definitions/db.PublicIP'
-        type: array
-      stellarAddress:
-        type: string
-      twinId:
-        type: integer
-    type: object
   db.PublicConfig:
     properties:
       domain:
@@ -82,6 +63,23 @@ definitions:
         type: string
       ip:
         type: string
+    type: object
+  explorer.farm:
+    properties:
+      farmId:
+        type: integer
+      name:
+        type: string
+      pricingPolicyId:
+        type: integer
+      publicIps:
+        items:
+          $ref: '#/definitions/db.PublicIP'
+        type: array
+      stellarAddress:
+        type: string
+      twinId:
+        type: integer
     type: object
   explorer.location:
     properties:
@@ -226,6 +224,10 @@ paths:
         in: query
         name: name
         type: string
+      - description: farm name contains
+        in: query
+        name: name_contains
+        type: string
       - description: farm stellar_address
         in: query
         name: stellar_address
@@ -237,7 +239,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/db.Farm'
+              $ref: '#/definitions/explorer.farm'
             type: array
       summary: Show farms on the grid
       tags:

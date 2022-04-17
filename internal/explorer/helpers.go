@@ -170,6 +170,7 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 	}
 	strs := map[string]**string{
 		"name":            &filter.Name,
+		"name_contains":   &filter.NameContains,
 		"stellar_address": &filter.StellarAddress,
 	}
 	if err := parseParams(r, ints, strs, nil, nil); err != nil {

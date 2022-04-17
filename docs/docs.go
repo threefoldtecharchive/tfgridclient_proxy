@@ -90,6 +90,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "farm name contains",
+                        "name": "name_contains",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "farm stellar_address",
                         "name": "stellar_address",
                         "in": "query"
@@ -101,7 +107,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/db.Farm"
+                                "$ref": "#/definitions/explorer.farm"
                             }
                         }
                     }
@@ -606,35 +612,6 @@ const docTemplate = `{
                 }
             }
         },
-        "db.Farm": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                },
-                "farmId": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pricingPolicyId": {
-                    "type": "integer"
-                },
-                "publicIps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.PublicIP"
-                    }
-                },
-                "stellarAddress": {
-                    "type": "string"
-                },
-                "twinId": {
-                    "type": "integer"
-                }
-            }
-        },
         "db.PublicConfig": {
             "type": "object",
             "properties": {
@@ -672,6 +649,32 @@ const docTemplate = `{
                 },
                 "ip": {
                     "type": "string"
+                }
+            }
+        },
+        "explorer.farm": {
+            "type": "object",
+            "properties": {
+                "farmId": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pricingPolicyId": {
+                    "type": "integer"
+                },
+                "publicIps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/db.PublicIP"
+                    }
+                },
+                "stellarAddress": {
+                    "type": "string"
+                },
+                "twinId": {
+                    "type": "integer"
                 }
             }
         },
