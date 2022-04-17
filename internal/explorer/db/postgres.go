@@ -160,7 +160,8 @@ const (
 		COALESCE(public_config.gw6, ''),
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
-		COALESCE(node.certification_type, '')
+		COALESCE(node.certification_type, ''),
+		%s
 	FROM node
 	LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
@@ -178,7 +179,8 @@ const (
 			FROM
 				public_ip
 			WHERE farm.id = public_ip.farm_id
-		) as public_ips
+		) as public_ips,
+		%s
 	FROM farm
 	`
 	countNodes = `
@@ -244,8 +246,8 @@ func (d *PostgresDatabase) initialize() error {
 }
 
 // CountNodes returns the total number of nodes
-func (d *PostgresDatabase) CountNodes() (int, error) {
-	var count int
+func (d *PostgresDatabase) CountNodes() (uint, error) {
+	var count uint
 	rows, err := d.db.Query(countNodes)
 	if err != nil {
 		return 0, err
@@ -345,6 +347,7 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.PublicConfig.Ipv4,
 		&node.NodeData.PublicConfig.Ipv6,
 		&node.NodeData.CertificationType,
+		&node.Count,
 	)
 	if err != nil {
 		return err
@@ -366,6 +369,7 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 		&farm.PricingPolicyID,
 		&farm.StellarAddress,
 		&publicIPStr,
+		&farm.Count,
 	)
 	if err != nil {
 		return err
@@ -438,6 +442,11 @@ func printQuery(query string, args ...interface{}) {
 func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error) {
 	query := selectNodesWithFilter
 	args := make([]interface{}, 0)
+	if limit.RetCount {
+		query = fmt.Sprintf(query, "COUNT(*) OVER()")
+	} else {
+		query = fmt.Sprintf(query, "0")
+	}
 	if requiresFarmJoin(filter) {
 		query = fmt.Sprintf("%s JOIN farm ON node.farm_id = farm.farm_id", query)
 	}
@@ -528,6 +537,11 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 // GetFarms return farms filtered and paginated
 func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, error) {
 	query := selectFarmsWithFilter
+	if limit.RetCount {
+		query = fmt.Sprintf(query, "COUNT(*) OVER()")
+	} else {
+		query = fmt.Sprintf(query, "0")
+	}
 	query = fmt.Sprintf("%s WHERE TRUE", query)
 	args := make([]interface{}, 0)
 	idx := 1

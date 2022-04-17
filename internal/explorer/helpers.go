@@ -34,6 +34,7 @@ func getLimit(r *http.Request) (db.Limit, error) {
 
 	page := r.URL.Query().Get("page")
 	size := r.URL.Query().Get("size")
+	retCount := r.URL.Query().Get("ret_count")
 	if page == "" {
 		page = "1"
 	}
@@ -51,6 +52,13 @@ func getLimit(r *http.Request) (db.Limit, error) {
 		return limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse size %s", err.Error()))
 	}
 	limit.Size = parsed
+
+	returnCount := false
+	if retCount == "true" {
+		returnCount = true
+	}
+	limit.RetCount = returnCount
+
 	// TODO: readd the check once clients are updated
 	// if limit.Size > maxPageSize {
 	// 	return limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
@@ -188,7 +196,7 @@ func (a *App) handleStatsRequestsQueryParams(r *http.Request) (db.StatsFilter, e
 	return filter, nil
 }
 
-func (a *App) getTotalCount() (int, error) {
+func (a *App) getTotalCount() (uint, error) {
 	return a.db.CountNodes()
 }
 

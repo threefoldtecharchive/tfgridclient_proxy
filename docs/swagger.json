@@ -39,6 +39,12 @@
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "Set farms' count on headers based on filter",
+                        "name": "ret_count",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Min number of free ips in the farm",
                         "name": "free_ips",
@@ -118,6 +124,12 @@
                         "type": "integer",
                         "description": "Max result per page",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set nodes' count on headers based on filter",
+                        "name": "ret_count",
                         "in": "query"
                     },
                     {
@@ -261,6 +273,12 @@
                         "type": "integer",
                         "description": "Max result per page",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set nodes' count on headers based on filter",
+                        "name": "ret_count",
                         "in": "query"
                     },
                     {
@@ -583,6 +601,9 @@
         "db.Farm": {
             "type": "object",
             "properties": {
+                "count": {
+                    "type": "integer"
+                },
                 "farmId": {
                     "type": "integer"
                 },

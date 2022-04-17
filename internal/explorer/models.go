@@ -108,8 +108,8 @@ type node struct {
 	CertificationType string          `json:"certificationType"`
 }
 
-func nodeFromDBNode(info db.AllNodeData) node {
-	return node{
+func nodeFromDBNode(info db.AllNodeData) (uint, node) {
+	return info.Count, node{
 		ID:              info.NodeData.ID,
 		NodeID:          info.NodeID,
 		FarmID:          info.NodeData.FarmID,
@@ -189,4 +189,24 @@ type farmData struct {
 // FarmResult is to unmarshal json in it
 type FarmResult struct {
 	Data farmData `json:"data"`
+}
+
+type farm struct {
+	Name            string        `json:"name"`
+	FarmID          int           `json:"farmId"`
+	TwinID          int           `json:"twinId"`
+	PricingPolicyID int           `json:"pricingPolicyId"`
+	StellarAddress  string        `json:"stellarAddress"`
+	PublicIps       []db.PublicIP `json:"publicIps"`
+}
+
+func farmFromDBFarm(info db.Farm) (uint, farm) {
+	return info.Count, farm{
+		Name:            info.Name,
+		FarmID:          info.FarmID,
+		TwinID:          info.TwinID,
+		PricingPolicyID: info.PricingPolicyID,
+		StellarAddress:  info.StellarAddress,
+		PublicIps:       info.PublicIps,
+	}
 }

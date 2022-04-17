@@ -32,6 +32,7 @@ const (
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
+// @Param ret_count query string false "Set farms' count on headers based on filter"
 // @Param free_ips query int false "Min number of free ips in the farm"
 // @Param pricing_policy_id query int false "Pricing policy id"
 // @Param version query int false "farm version"
@@ -46,12 +47,28 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, mw.BadRequest(err)
 	}
-	farms, err := a.db.GetFarms(filter, limit)
+	dbFarms, err := a.db.GetFarms(filter, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query farm")
 		return nil, mw.Error(err)
 	}
-	return farms, nil
+
+	var farmsCount uint
+	farms := make([]farm, len(dbFarms))
+	for idx, farm := range dbFarms {
+		farmsCount, farms[idx] = farmFromDBFarm(farm)
+
+	}
+	resp := mw.Ok()
+
+	// return the number of pages and totalCount in the response headers
+	if limit.RetCount {
+		pages := math.Ceil(float64(farmsCount) / float64(limit.Size))
+		resp = resp.WithHeader("count", fmt.Sprintf("%d", farmsCount)).
+			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
+			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+	}
+	return farms, resp
 }
 
 // getStats godoc
@@ -80,6 +97,7 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
+// @Param ret_count query string false "Set nodes' count on headers based on filter"
 // @Param free_mru query int false "Min free reservable mru in bytes"
 // @Param free_hru query int false "Min free reservable hru in bytes"
 // @Param free_sru query int false "Min free reservable sru in bytes"
@@ -104,23 +122,26 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, mw.Error(err)
 	}
+	var nodesCount uint
 	nodes := make([]node, len(dbNodes))
 	for idx, node := range dbNodes {
-		nodes[idx] = nodeFromDBNode(node)
+		nodesCount, nodes[idx] = nodeFromDBNode(node)
 
 	}
 	resp := mw.Ok()
 
 	// return the number of pages and totalCount in the response headers
-	nodesCount, err := a.getTotalCount()
-	if err != nil {
-		log.Error().Err(err).Msg("error fetching pages")
-	} else {
-		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
-		resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
-			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
-			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+	if !limit.RetCount {
+		nodesCount, err = a.getTotalCount()
+		if err != nil {
+			log.Error().Err(err).Msg("error fetching pages")
+		}
 	}
+	pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
+	resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
+		WithHeader("size", fmt.Sprintf("%d", limit.Size)).
+		WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+
 	return nodes, resp
 }
 

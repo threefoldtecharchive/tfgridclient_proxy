@@ -6,8 +6,9 @@ import (
 
 // Limit used for pagination
 type Limit struct {
-	Size uint64
-	Page uint64
+	Size     uint64
+	Page     uint64
+	RetCount bool
 }
 
 // NodeFilter node filters
@@ -88,6 +89,7 @@ type Farm struct {
 	PricingPolicyID int        `json:"pricingPolicyId"`
 	StellarAddress  string     `json:"stellarAddress"`
 	PublicIps       []PublicIP `json:"publicIps"`
+	Count           uint       `json:"count"`
 }
 
 // PublicIP info about public ip in the farm
@@ -103,6 +105,7 @@ type PublicIP struct {
 type AllNodeData struct {
 	NodeID   int `json:"nodeId"`
 	NodeData NodeData
+	Count    uint `json:"count"`
 }
 
 // Counters contains aggregate info about the grid
@@ -124,7 +127,7 @@ type Counters struct {
 // Database interface for storing and fetching grid info
 type Database interface {
 	GetCounters(filter StatsFilter) (Counters, error)
-	CountNodes() (int, error)
+	CountNodes() (uint, error)
 	GetNode(nodeID uint32) (AllNodeData, error)
 	GetFarm(farmID uint32) (Farm, error)
 	GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error)

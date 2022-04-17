@@ -47,6 +47,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "Set farms' count on headers based on filter",
+                        "name": "ret_count",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Min number of free ips in the farm",
                         "name": "free_ips",
@@ -126,6 +132,12 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Max result per page",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set nodes' count on headers based on filter",
+                        "name": "ret_count",
                         "in": "query"
                     },
                     {
@@ -269,6 +281,12 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Max result per page",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set nodes' count on headers based on filter",
+                        "name": "ret_count",
                         "in": "query"
                     },
                     {
@@ -591,6 +609,9 @@ const docTemplate = `{
         "db.Farm": {
             "type": "object",
             "properties": {
+                "count": {
+                    "type": "integer"
+                },
                 "farmId": {
                     "type": "integer"
                 },
