@@ -169,9 +169,10 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 		"twin_id":           &filter.TwinID,
 	}
 	strs := map[string]**string{
-		"name":            &filter.Name,
-		"name_contains":   &filter.NameContains,
-		"stellar_address": &filter.StellarAddress,
+		"name":               &filter.Name,
+		"name_contains":      &filter.NameContains,
+		"certification_type": &filter.CertificationType,
+		"stellar_address":    &filter.StellarAddress,
 	}
 	if err := parseParams(r, ints, strs, nil, nil); err != nil {
 		return filter, limit, err

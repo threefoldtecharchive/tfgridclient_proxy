@@ -192,21 +192,23 @@ type FarmResult struct {
 }
 
 type farm struct {
-	Name            string        `json:"name"`
-	FarmID          int           `json:"farmId"`
-	TwinID          int           `json:"twinId"`
-	PricingPolicyID int           `json:"pricingPolicyId"`
-	StellarAddress  string        `json:"stellarAddress"`
-	PublicIps       []db.PublicIP `json:"publicIps"`
+	Name              string        `json:"name"`
+	FarmID            int           `json:"farmId"`
+	TwinID            int           `json:"twinId"`
+	PricingPolicyID   int           `json:"pricingPolicyId"`
+	CertificationType string        `json:"Certification_type"`
+	StellarAddress    string        `json:"stellarAddress"`
+	PublicIps         []db.PublicIP `json:"publicIps"`
 }
 
 func farmFromDBFarm(info db.Farm) (uint, farm) {
 	return info.Count, farm{
-		Name:            info.Name,
-		FarmID:          info.FarmID,
-		TwinID:          info.TwinID,
-		PricingPolicyID: info.PricingPolicyID,
-		StellarAddress:  info.StellarAddress,
-		PublicIps:       info.PublicIps,
+		Name:              info.Name,
+		FarmID:            info.FarmID,
+		TwinID:            info.TwinID,
+		PricingPolicyID:   info.PricingPolicyID,
+		CertificationType: info.CertificationType,
+		StellarAddress:    info.StellarAddress,
+		PublicIps:         info.PublicIps,
 	}
 }

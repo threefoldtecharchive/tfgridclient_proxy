@@ -40,6 +40,7 @@ const (
 // @Param twin_id query int false "twin id associated with the farm"
 // @Param name query string false "farm name"
 // @Param name_contains query string false "farm name contains"
+// @Param certification_type query string false "certificate type DIY or Certified"
 // @Param stellar_address query string false "farm stellar_address"
 // @Success 200 {object} []farm
 // @Router /farms [get]

@@ -89,6 +89,7 @@ const (
 		COALESCE(name, ''),
 		COALESCE(twin_id, 0),
 		COALESCE(pricing_policy_id, 0),
+		COALESCE(certification_type, ''),
 		COALESCE(stellar_address, ''),
 		(
 			SELECT 
@@ -172,6 +173,7 @@ const (
 		COALESCE(name, ''),
 		COALESCE(twin_id, 0),
 		COALESCE(pricing_policy_id, 0),
+		COALESCE(certification_type, ''),
 		COALESCE(stellar_address, ''),
 		(
 			SELECT 
@@ -367,6 +369,7 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 		&farm.Name,
 		&farm.TwinID,
 		&farm.PricingPolicyID,
+		&farm.CertificationType,
 		&farm.StellarAddress,
 		&publicIPStr,
 		&farm.Count,
@@ -585,6 +588,12 @@ func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, err
 		query = fmt.Sprintf("%s AND name LIKE $%d", query, idx)
 		idx++
 		args = append(args, fmt.Sprintf("%[1]s%s%[1]s", "%", *filter.NameContains))
+	}
+
+	if filter.CertificationType != nil {
+		query = fmt.Sprintf("%s AND certification_type = $%d", query, idx)
+		idx++
+		args = append(args, *filter.CertificationType)
 	}
 	query = fmt.Sprintf("%s ORDER BY farm.farm_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)

@@ -29,14 +29,15 @@ type NodeFilter struct {
 
 // FarmFilter farm filters
 type FarmFilter struct {
-	FreeIPs         *uint64
-	StellarAddress  *string
-	PricingPolicyID *uint64
-	Version         *uint64
-	FarmID          *uint64
-	TwinID          *uint64
-	Name            *string
-	NameContains    *string
+	FreeIPs           *uint64
+	StellarAddress    *string
+	PricingPolicyID   *uint64
+	Version           *uint64
+	FarmID            *uint64
+	TwinID            *uint64
+	Name              *string
+	NameContains      *string
+	CertificationType *string
 }
 
 // StatsFilter statistics filters
@@ -84,13 +85,14 @@ type Capacity struct {
 
 // Farm farm info
 type Farm struct {
-	Name            string     `json:"name"`
-	FarmID          int        `json:"farmId"`
-	TwinID          int        `json:"twinId"`
-	PricingPolicyID int        `json:"pricingPolicyId"`
-	StellarAddress  string     `json:"stellarAddress"`
-	PublicIps       []PublicIP `json:"publicIps"`
-	Count           uint       `json:"count"`
+	Name              string     `json:"name"`
+	FarmID            int        `json:"farmId"`
+	TwinID            int        `json:"twinId"`
+	PricingPolicyID   int        `json:"pricingPolicyId"`
+	StellarAddress    string     `json:"stellarAddress"`
+	CertificationType string     `json:"Certification_type"`
+	PublicIps         []PublicIP `json:"publicIps"`
+	Count             uint       `json:"count"`
 }
 
 // PublicIP info about public ip in the farm

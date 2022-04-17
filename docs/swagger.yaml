@@ -66,6 +66,8 @@ definitions:
     type: object
   explorer.farm:
     properties:
+      Certification_type:
+        type: string
       farmId:
         type: integer
       name:
@@ -227,6 +229,10 @@ paths:
       - description: farm name contains
         in: query
         name: name_contains
+        type: string
+      - description: certificate type DIY or Certified
+        in: query
+        name: certification_type
         type: string
       - description: farm stellar_address
         in: query

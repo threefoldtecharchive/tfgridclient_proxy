@@ -96,6 +96,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "certificate type DIY or Certified",
+                        "name": "certification_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "farm stellar_address",
                         "name": "stellar_address",
                         "in": "query"
@@ -655,6 +661,9 @@ const docTemplate = `{
         "explorer.farm": {
             "type": "object",
             "properties": {
+                "Certification_type": {
+                    "type": "string"
+                },
                 "farmId": {
                     "type": "integer"
                 },
