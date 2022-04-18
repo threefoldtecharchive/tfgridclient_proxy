@@ -69,7 +69,8 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 		pages := math.Ceil(float64(farmsCount) / float64(limit.Size))
 		resp = resp.WithHeader("count", fmt.Sprintf("%d", farmsCount)).
 			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
-			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+			WithHeader("pages", fmt.Sprintf("%d", int(pages))).
+			WithHeader("Access-Control-Expose-Headers", "*")
 	}
 	return farms, resp
 }
@@ -134,17 +135,13 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	resp := mw.Ok()
 
 	// return the number of pages and totalCount in the response headers
-	if !limit.RetCount {
-		nodesCount, err = a.getTotalCount()
-		if err != nil {
-			log.Error().Err(err).Msg("error fetching pages")
-		}
+	if limit.RetCount {
+		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
+		resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
+			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
+			WithHeader("pages", fmt.Sprintf("%d", int(pages))).
+			WithHeader("Access-Control-Expose-Headers", "*")
 	}
-	pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
-	resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
-		WithHeader("size", fmt.Sprintf("%d", limit.Size)).
-		WithHeader("pages", fmt.Sprintf("%d", int(pages)))
-
 	return nodes, resp
 }
 
