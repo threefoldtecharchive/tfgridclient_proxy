@@ -129,7 +129,8 @@ const (
 		COALESCE(public_config.gw6, ''),
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
-		COALESCE(node.certification_type, '')
+		COALESCE(node.certification_type, ''),
+		0
 	FROM node
 	LEFT JOIN node_resources($1) ON node.node_id = node_resources.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
