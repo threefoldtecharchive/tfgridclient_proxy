@@ -171,7 +171,10 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 		"certification_type": &filter.CertificationType,
 		"stellar_address":    &filter.StellarAddress,
 	}
-	if err := parseParams(r, ints, strs, nil, nil); err != nil {
+	bools := map[string]**bool{
+		"dedicated": &filter.Dedicated,
+	}
+	if err := parseParams(r, ints, strs, bools, nil); err != nil {
 		return filter, limit, err
 	}
 

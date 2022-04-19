@@ -91,6 +91,7 @@ const (
 		COALESCE(pricing_policy_id, 0),
 		COALESCE(certification_type, ''),
 		COALESCE(stellar_address, ''),
+		COALESCE(dedicated_farm, 'f'),
 		(
 			SELECT 
 				COALESCE(json_agg(json_build_object('id', id, 'ip', ip, 'contractId', contract_id, 'gateway', gateway)), '[]')
@@ -176,6 +177,7 @@ const (
 		COALESCE(pricing_policy_id, 0),
 		COALESCE(certification_type, ''),
 		COALESCE(stellar_address, ''),
+		COALESCE(dedicated_farm, 'f'),
 		(
 			SELECT 
 				COALESCE(json_agg(json_build_object('id', id, 'ip', ip, 'contractId', contract_id, 'gateway', gateway)), '[]')
@@ -372,6 +374,7 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 		&farm.PricingPolicyID,
 		&farm.CertificationType,
 		&farm.StellarAddress,
+		&farm.Dedicated,
 		&publicIPStr,
 		&farm.Count,
 	)
@@ -600,6 +603,12 @@ func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, err
 		query = fmt.Sprintf("%s AND certification_type = $%d", query, idx)
 		idx++
 		args = append(args, *filter.CertificationType)
+	}
+
+	if filter.Dedicated != nil {
+		query = fmt.Sprintf("%s AND dedicated_farm = $%d", query, idx)
+		idx++
+		args = append(args, *filter.Dedicated)
 	}
 	query = fmt.Sprintf("%s ORDER BY farm.farm_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)

@@ -39,6 +39,7 @@ type FarmFilter struct {
 	Name              *string
 	NameContains      *string
 	CertificationType *string
+	Dedicated         *bool
 }
 
 // StatsFilter statistics filters
@@ -91,7 +92,8 @@ type Farm struct {
 	TwinID            int        `json:"twinId"`
 	PricingPolicyID   int        `json:"pricingPolicyId"`
 	StellarAddress    string     `json:"stellarAddress"`
-	CertificationType string     `json:"Certification_type"`
+	Dedicated         bool       `json:"dedicated"`
+	CertificationType string     `json:"certificationType"`
 	PublicIps         []PublicIP `json:"publicIps"`
 	Count             uint       `json:"count"`
 }

@@ -196,8 +196,9 @@ type farm struct {
 	FarmID            int           `json:"farmId"`
 	TwinID            int           `json:"twinId"`
 	PricingPolicyID   int           `json:"pricingPolicyId"`
-	CertificationType string        `json:"Certification_type"`
+	CertificationType string        `json:"certificationType"`
 	StellarAddress    string        `json:"stellarAddress"`
+	Dedicated         bool          `json:"dedicated"`
 	PublicIps         []db.PublicIP `json:"publicIps"`
 }
 
@@ -209,6 +210,7 @@ func farmFromDBFarm(info db.Farm) (uint, farm) {
 		PricingPolicyID:   info.PricingPolicyID,
 		CertificationType: info.CertificationType,
 		StellarAddress:    info.StellarAddress,
+		Dedicated:         info.Dedicated,
 		PublicIps:         info.PublicIps,
 	}
 }
