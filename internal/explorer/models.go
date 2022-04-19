@@ -212,3 +212,7 @@ func farmFromDBFarm(info db.Farm) (uint, farm) {
 		PublicIps:         info.PublicIps,
 	}
 }
+
+type version struct {
+	Version string `json:"version"`
+}

@@ -69,8 +69,7 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 		pages := math.Ceil(float64(farmsCount) / float64(limit.Size))
 		resp = resp.WithHeader("count", fmt.Sprintf("%d", farmsCount)).
 			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
-			WithHeader("pages", fmt.Sprintf("%d", int(pages))).
-			WithHeader("Access-Control-Expose-Headers", "*")
+			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
 	}
 	return farms, resp
 }
@@ -139,8 +138,7 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
 		resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
 			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
-			WithHeader("pages", fmt.Sprintf("%d", int(pages))).
-			WithHeader("Access-Control-Expose-Headers", "*")
+			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
 	}
 	return nodes, resp
 }
@@ -176,17 +174,15 @@ func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
 	return response, nil
 }
 
-func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"))
+func (a *App) indexPage(r *http.Request) (interface{}, mw.Response) {
+	response := mw.Ok()
+	message := "welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"
+	return message, response
 }
 
-func (a *App) version(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("{\"version\": \"%s\"}", a.releaseVersion)))
+func (a *App) version(r *http.Request) (interface{}, mw.Response) {
+	response := mw.Ok()
+	return version{a.releaseVersion}, response
 }
 
 // Setup is the server and do initial configurations
@@ -219,8 +215,8 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
-	router.HandleFunc("/", a.indexPage)
-	router.HandleFunc("/version", a.version)
+	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage))
+	router.HandleFunc("/version", mw.AsHandlerFunc(a.version))
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 	return nil
 }

@@ -15,10 +15,6 @@ const (
 	maxPageSize = 100
 )
 
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
 func errorReply(err error) mw.Response {
 	if errors.Is(err, ErrNodeNotFound) {
 		return mw.NotFound(err)
