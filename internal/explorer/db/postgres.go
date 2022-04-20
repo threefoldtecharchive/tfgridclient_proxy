@@ -131,10 +131,19 @@ const (
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
+		COALESCE(rent.contract_id, 0),
 		0
 	FROM node
 	LEFT JOIN node_resources($1) ON node.node_id = node_resources.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
+	LEFT JOIN (
+		SELECT rent.* 
+		FROM (SELECT rent_contract.*,
+			   row_number() over (partition by node_id order by contract_id DESC) as seqnum
+			FROM rent_contract 
+		  ) rent 
+		  WHERE seqnum = 1 AND state = 'Created'
+	  ) rent ON rent.node_id = node.node_id
 	WHERE node.node_id = $1;
 	`
 	selectNodesWithFilter = `
@@ -164,10 +173,19 @@ const (
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
+		COALESCE(rent.contract_id, 0),
 		%s
 	FROM node
 	LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
+	LEFT JOIN (
+		SELECT rent.* 
+		FROM (SELECT rent_contract.*,
+			   row_number() over (partition by node_id order by contract_id DESC) as seqnum
+			FROM rent_contract 
+		  ) rent 
+		  WHERE seqnum = 1 AND state = 'Created'
+	  ) rent ON rent.node_id = node.node_id
 	`
 	selectFarmsWithFilter = `
 	SELECT 
@@ -352,6 +370,7 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.PublicConfig.Ipv4,
 		&node.NodeData.PublicConfig.Ipv6,
 		&node.NodeData.CertificationType,
+		&node.NodeData.RentContract,
 		&node.Count,
 	)
 	if err != nil {
