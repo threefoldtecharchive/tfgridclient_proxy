@@ -113,6 +113,7 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Param ipv4 query string false "Set to true to filter nodes with ipv4"
 // @Param ipv6 query string false "Set to true to filter nodes with ipv6"
 // @Param domain query string false "Set to true to filter nodes with domain"
+// @Param rentable query bool false "Set to true to filter the available nodes for renting"
 // @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
 // @Success 200 {object} []node
 // @Router /nodes [get]

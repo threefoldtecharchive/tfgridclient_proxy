@@ -106,7 +106,7 @@ type node struct {
 	PublicConfig      db.PublicConfig `json:"publicConfig"`
 	Status            string          `json:"status"` // added node status field for up or down
 	CertificationType string          `json:"certificationType"`
-	RentContract      uint            `json:"rentContract"`
+	RentContractId    uint            `json:"rentContractId"`
 }
 
 func nodeFromDBNode(info db.AllNodeData) (uint, node) {
@@ -131,7 +131,7 @@ func nodeFromDBNode(info db.AllNodeData) (uint, node) {
 		PublicConfig:      info.NodeData.PublicConfig,
 		Status:            info.NodeData.Status,
 		CertificationType: info.NodeData.CertificationType,
-		RentContract:      info.NodeData.RentContract,
+		RentContractId:    info.NodeData.RentContractId,
 	}
 
 }
@@ -154,7 +154,7 @@ type nodeWithNestedCapacity struct {
 	PublicConfig      db.PublicConfig `json:"publicConfig"`
 	Status            string          `json:"status"` // added node status field for up or down
 	CertificationType string          `json:"certificationType"`
-	RentContract      uint            `json:"rentContract"`
+	RentContractId    uint            `json:"rentContractId"`
 }
 
 func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacity {
@@ -181,7 +181,7 @@ func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacit
 		PublicConfig:      info.NodeData.PublicConfig,
 		Status:            info.NodeData.Status,
 		CertificationType: info.NodeData.CertificationType,
-		RentContract:      info.NodeData.RentContract,
+		RentContractId:    info.NodeData.RentContractId,
 	}
 
 }

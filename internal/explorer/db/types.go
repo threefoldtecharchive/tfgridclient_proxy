@@ -25,6 +25,7 @@ type NodeFilter struct {
 	IPv4     *bool
 	IPv6     *bool
 	Domain   *bool
+	Rentable *bool
 }
 
 // FarmFilter farm filters
@@ -74,7 +75,7 @@ type NodeData struct {
 	UsedResources     Capacity     `json:"used_resources"`
 	PublicConfig      PublicConfig `json:"publicConfig"`
 	Status            string       `json:"status"` // added node status field for up or down
-	RentContract      uint         `json:"rentContract"`
+	RentContractId    uint         `json:"rentContractId"`
 }
 
 //Capacity is the resources needed for workload(cpu, memory, SSD disk, HDD disks)

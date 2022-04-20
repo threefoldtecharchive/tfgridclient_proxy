@@ -132,6 +132,7 @@ const (
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
 		COALESCE(rent.contract_id, 0),
+
 		0
 	FROM node
 	LEFT JOIN node_resources($1) ON node.node_id = node_resources.node_id
@@ -370,7 +371,7 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.PublicConfig.Ipv4,
 		&node.NodeData.PublicConfig.Ipv6,
 		&node.NodeData.CertificationType,
-		&node.NodeData.RentContract,
+		&node.NodeData.RentContractId,
 		&node.Count,
 	)
 	if err != nil {
@@ -437,7 +438,7 @@ func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
 }
 
 func requiresFarmJoin(filter NodeFilter) bool {
-	return filter.FarmName != nil || filter.FreeIPs != nil
+	return filter.FarmName != nil || filter.FreeIPs != nil || filter.Rentable != nil
 }
 
 func convertParam(p interface{}) string {
@@ -539,6 +540,15 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	}
 	if filter.Domain != nil {
 		query = fmt.Sprintf(`%s AND COALESCE(public_config.domain, '') != ''`, query)
+	}
+	if filter.Rentable != nil {
+		query = fmt.Sprintf(`%s AND node.farm_id = farm.farm_id AND farm.dedicated_farm = $%d AND COALESCE(rent.contract_id, 0) = 0 AND 
+		COALESCE(nodes_resources_view.used_cru, 0) = 0 AND
+		COALESCE(nodes_resources_view.used_sru, 0) = 0 AND
+		COALESCE(nodes_resources_view.used_hru, 0) = 0 AND
+		COALESCE(nodes_resources_view.used_mru, 0) - 2147483648 = 0`, query, idx)
+		idx++
+		args = append(args, *filter.Rentable)
 	}
 	query = fmt.Sprintf("%s ORDER BY node.node_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)

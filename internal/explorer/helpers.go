@@ -129,9 +129,10 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 		"farm_name": &filter.FarmName,
 	}
 	bools := map[string]**bool{
-		"ipv4":   &filter.IPv4,
-		"ipv6":   &filter.IPv6,
-		"domain": &filter.Domain,
+		"ipv4":     &filter.IPv4,
+		"ipv6":     &filter.IPv6,
+		"domain":   &filter.Domain,
+		"rentable": &filter.Rentable,
 	}
 	listOfInts := map[string]*[]uint64{
 		"farm_ids": &filter.FarmIDs,
