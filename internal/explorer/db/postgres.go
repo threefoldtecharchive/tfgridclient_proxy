@@ -132,7 +132,7 @@ const (
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
 		COALESCE(rent.contract_id, 0),
-
+		COALESCE(rent.twin_id, 0),
 		0
 	FROM node
 	LEFT JOIN node_resources($1) ON node.node_id = node_resources.node_id
@@ -175,6 +175,7 @@ const (
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
 		COALESCE(rent.contract_id, 0),
+		COALESCE(rent.twin_id, 0),
 		%s
 	FROM node
 	LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id
@@ -372,6 +373,7 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.PublicConfig.Ipv6,
 		&node.NodeData.CertificationType,
 		&node.NodeData.RentContractId,
+		&node.NodeData.RentedByTwinId,
 		&node.Count,
 	)
 	if err != nil {
@@ -549,6 +551,16 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 		COALESCE(nodes_resources_view.used_mru, 0) - 2147483648 = 0`, query, idx)
 		idx++
 		args = append(args, *filter.Rentable)
+	}
+	if filter.RentedBy != nil {
+		query = fmt.Sprintf("%s AND COALESCE(rent.twin_id, 0) = $%d ", query, idx)
+		idx++
+		args = append(args, *filter.RentedBy)
+	}
+	if filter.AvailableFor != nil {
+		query = fmt.Sprintf("%s AND (COALESCE(rent.twin_id, 0) = $%d OR COALESCE(rent.contract_id, 0) = 0) ", query, idx)
+		idx++
+		args = append(args, *filter.AvailableFor)
 	}
 	query = fmt.Sprintf("%s ORDER BY node.node_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)

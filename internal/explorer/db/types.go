@@ -13,19 +13,21 @@ type Limit struct {
 
 // NodeFilter node filters
 type NodeFilter struct {
-	Status   *string
-	FreeMRU  *uint64
-	FreeHRU  *uint64
-	FreeSRU  *uint64
-	Country  *string
-	City     *string
-	FarmName *string
-	FarmIDs  []uint64
-	FreeIPs  *uint64
-	IPv4     *bool
-	IPv6     *bool
-	Domain   *bool
-	Rentable *bool
+	Status       *string
+	FreeMRU      *uint64
+	FreeHRU      *uint64
+	FreeSRU      *uint64
+	Country      *string
+	City         *string
+	FarmName     *string
+	FarmIDs      []uint64
+	FreeIPs      *uint64
+	IPv4         *bool
+	IPv6         *bool
+	Domain       *bool
+	Rentable     *bool
+	RentedBy     *uint64
+	AvailableFor *uint64
 }
 
 // FarmFilter farm filters
@@ -76,6 +78,7 @@ type NodeData struct {
 	PublicConfig      PublicConfig `json:"publicConfig"`
 	Status            string       `json:"status"` // added node status field for up or down
 	RentContractId    uint         `json:"rentContractId"`
+	RentedByTwinId    uint         `json:"rentedByTwinId"`
 }
 
 //Capacity is the resources needed for workload(cpu, memory, SSD disk, HDD disks)

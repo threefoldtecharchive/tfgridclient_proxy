@@ -117,10 +117,12 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 	var filter db.NodeFilter
 	var limit db.Limit
 	ints := map[string]**uint64{
-		"free_mru": &filter.FreeMRU,
-		"free_hru": &filter.FreeHRU,
-		"free_sru": &filter.FreeSRU,
-		"free_ips": &filter.FreeIPs,
+		"free_mru":      &filter.FreeMRU,
+		"free_hru":      &filter.FreeHRU,
+		"free_sru":      &filter.FreeSRU,
+		"free_ips":      &filter.FreeIPs,
+		"rented_by":     &filter.RentedBy,
+		"available_for": &filter.AvailableFor,
 	}
 	strs := map[string]**string{
 		"status":    &filter.Status,
