@@ -66,8 +66,10 @@ definitions:
     type: object
   explorer.farm:
     properties:
-      Certification_type:
+      certificationType:
         type: string
+      dedicated:
+        type: boolean
       farmId:
         type: integer
       name:
@@ -114,6 +116,10 @@ definitions:
         type: integer
       publicConfig:
         $ref: '#/definitions/db.PublicConfig'
+      rentContractId:
+        type: integer
+      rentedByTwinId:
+        type: integer
       status:
         description: added node status field for up or down
         type: string
@@ -238,6 +244,10 @@ paths:
         in: query
         name: certification_type
         type: string
+      - description: farm is dedicated
+        in: query
+        name: dedicated
+        type: boolean
       - description: farm stellar_address
         in: query
         name: stellar_address
@@ -316,6 +326,18 @@ paths:
         in: query
         name: domain
         type: string
+      - description: Set to true to filter the available nodes for renting
+        in: query
+        name: rentable
+        type: boolean
+      - description: rented by twin id
+        in: query
+        name: rented_by
+        type: integer
+      - description: available for twin id
+        in: query
+        name: available_for
+        type: integer
       - description: List of farms separated by comma to fetch nodes from (e.g. '1,2,3')
         in: query
         name: farm_ids
@@ -414,6 +436,18 @@ paths:
         in: query
         name: domain
         type: string
+      - description: Set to true to filter the available nodes for renting
+        in: query
+        name: rentable
+        type: boolean
+      - description: rented by twin id
+        in: query
+        name: rented_by
+        type: integer
+      - description: available for twin id
+        in: query
+        name: available_for
+        type: integer
       - description: List of farms separated by comma to fetch nodes from (e.g. '1,2,3')
         in: query
         name: farm_ids
