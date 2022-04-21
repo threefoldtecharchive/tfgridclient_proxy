@@ -77,8 +77,8 @@ type NodeData struct {
 	UsedResources     Capacity     `json:"used_resources"`
 	PublicConfig      PublicConfig `json:"publicConfig"`
 	Status            string       `json:"status"` // added node status field for up or down
-	RentContractId    uint         `json:"rentContractId"`
-	RentedByTwinId    uint         `json:"rentedByTwinId"`
+	RentContractID    uint         `json:"rentContractId"`
+	RentedByTwinID    uint         `json:"rentedByTwinId"`
 }
 
 //Capacity is the resources needed for workload(cpu, memory, SSD disk, HDD disks)

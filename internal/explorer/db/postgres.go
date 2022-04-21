@@ -358,8 +358,8 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.PublicConfig.Ipv4,
 		&node.NodeData.PublicConfig.Ipv6,
 		&node.NodeData.CertificationType,
-		&node.NodeData.RentContractId,
-		&node.NodeData.RentedByTwinId,
+		&node.NodeData.RentContractID,
+		&node.NodeData.RentedByTwinID,
 		&node.Count,
 	)
 	if err != nil {
