@@ -6,35 +6,43 @@ import (
 
 // Limit used for pagination
 type Limit struct {
-	Size uint64
-	Page uint64
+	Size     uint64
+	Page     uint64
+	RetCount bool
 }
 
 // NodeFilter node filters
 type NodeFilter struct {
-	Status   *string
-	FreeMRU  *uint64
-	FreeHRU  *uint64
-	FreeSRU  *uint64
-	Country  *string
-	City     *string
-	FarmName *string
-	FarmIDs  []uint64
-	FreeIPs  *uint64
-	IPv4     *bool
-	IPv6     *bool
-	Domain   *bool
+	Status       *string
+	FreeMRU      *uint64
+	FreeHRU      *uint64
+	FreeSRU      *uint64
+	Country      *string
+	City         *string
+	FarmName     *string
+	FarmIDs      []uint64
+	FreeIPs      *uint64
+	IPv4         *bool
+	IPv6         *bool
+	Domain       *bool
+	Rentable     *bool
+	RentedBy     *uint64
+	AvailableFor *uint64
 }
 
 // FarmFilter farm filters
 type FarmFilter struct {
-	FreeIPs         *uint64
-	StellarAddress  *string
-	PricingPolicyID *uint64
-	Version         *uint64
-	FarmID          *uint64
-	TwinID          *uint64
-	Name            *string
+	FreeIPs           *uint64
+	TotalIPs          *uint64
+	StellarAddress    *string
+	PricingPolicyID   *uint64
+	Version           *uint64
+	FarmID            *uint64
+	TwinID            *uint64
+	Name              *string
+	NameContains      *string
+	CertificationType *string
+	Dedicated         *bool
 }
 
 // StatsFilter statistics filters
@@ -69,7 +77,8 @@ type NodeData struct {
 	UsedResources     Capacity     `json:"used_resources"`
 	PublicConfig      PublicConfig `json:"publicConfig"`
 	Status            string       `json:"status"` // added node status field for up or down
-
+	RentContractID    uint         `json:"rentContractId"`
+	RentedByTwinID    uint         `json:"rentedByTwinId"`
 }
 
 //Capacity is the resources needed for workload(cpu, memory, SSD disk, HDD disks)
@@ -82,12 +91,15 @@ type Capacity struct {
 
 // Farm farm info
 type Farm struct {
-	Name            string     `json:"name"`
-	FarmID          int        `json:"farmId"`
-	TwinID          int        `json:"twinId"`
-	PricingPolicyID int        `json:"pricingPolicyId"`
-	StellarAddress  string     `json:"stellarAddress"`
-	PublicIps       []PublicIP `json:"publicIps"`
+	Name              string     `json:"name"`
+	FarmID            int        `json:"farmId"`
+	TwinID            int        `json:"twinId"`
+	PricingPolicyID   int        `json:"pricingPolicyId"`
+	StellarAddress    string     `json:"stellarAddress"`
+	Dedicated         bool       `json:"dedicated"`
+	CertificationType string     `json:"certificationType"`
+	PublicIps         []PublicIP `json:"publicIps"`
+	Count             uint       `json:"count"`
 }
 
 // PublicIP info about public ip in the farm
@@ -103,6 +115,7 @@ type PublicIP struct {
 type AllNodeData struct {
 	NodeID   int `json:"nodeId"`
 	NodeData NodeData
+	Count    uint `json:"count"`
 }
 
 // Counters contains aggregate info about the grid
@@ -124,7 +137,7 @@ type Counters struct {
 // Database interface for storing and fetching grid info
 type Database interface {
 	GetCounters(filter StatsFilter) (Counters, error)
-	CountNodes() (int, error)
+	CountNodes() (uint, error)
 	GetNode(nodeID uint32) (AllNodeData, error)
 	GetFarm(farmID uint32) (Farm, error)
 	GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error)

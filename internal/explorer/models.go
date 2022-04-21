@@ -106,10 +106,12 @@ type node struct {
 	PublicConfig      db.PublicConfig `json:"publicConfig"`
 	Status            string          `json:"status"` // added node status field for up or down
 	CertificationType string          `json:"certificationType"`
+	RentContractID    uint            `json:"rentContractId"`
+	RentedByTwinID    uint            `json:"rentedByTwinId"`
 }
 
-func nodeFromDBNode(info db.AllNodeData) node {
-	return node{
+func nodeFromDBNode(info db.AllNodeData) (uint, node) {
+	return info.Count, node{
 		ID:              info.NodeData.ID,
 		NodeID:          info.NodeID,
 		FarmID:          info.NodeData.FarmID,
@@ -130,6 +132,8 @@ func nodeFromDBNode(info db.AllNodeData) node {
 		PublicConfig:      info.NodeData.PublicConfig,
 		Status:            info.NodeData.Status,
 		CertificationType: info.NodeData.CertificationType,
+		RentContractID:    info.NodeData.RentContractID,
+		RentedByTwinID:    info.NodeData.RentedByTwinID,
 	}
 
 }
@@ -152,6 +156,8 @@ type nodeWithNestedCapacity struct {
 	PublicConfig      db.PublicConfig `json:"publicConfig"`
 	Status            string          `json:"status"` // added node status field for up or down
 	CertificationType string          `json:"certificationType"`
+	RentContractID    uint            `json:"rentContractId"`
+	RentedByTwinID    uint            `json:"rentedByTwinId"`
 }
 
 func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacity {
@@ -178,6 +184,8 @@ func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacit
 		PublicConfig:      info.NodeData.PublicConfig,
 		Status:            info.NodeData.Status,
 		CertificationType: info.NodeData.CertificationType,
+		RentContractID:    info.NodeData.RentContractID,
+		RentedByTwinID:    info.NodeData.RentedByTwinID,
 	}
 
 }
@@ -189,4 +197,32 @@ type farmData struct {
 // FarmResult is to unmarshal json in it
 type FarmResult struct {
 	Data farmData `json:"data"`
+}
+
+type farm struct {
+	Name              string        `json:"name"`
+	FarmID            int           `json:"farmId"`
+	TwinID            int           `json:"twinId"`
+	PricingPolicyID   int           `json:"pricingPolicyId"`
+	CertificationType string        `json:"certificationType"`
+	StellarAddress    string        `json:"stellarAddress"`
+	Dedicated         bool          `json:"dedicated"`
+	PublicIps         []db.PublicIP `json:"publicIps"`
+}
+
+func farmFromDBFarm(info db.Farm) (uint, farm) {
+	return info.Count, farm{
+		Name:              info.Name,
+		FarmID:            info.FarmID,
+		TwinID:            info.TwinID,
+		PricingPolicyID:   info.PricingPolicyID,
+		CertificationType: info.CertificationType,
+		StellarAddress:    info.StellarAddress,
+		Dedicated:         info.Dedicated,
+		PublicIps:         info.PublicIps,
+	}
+}
+
+type version struct {
+	Version string `json:"version"`
 }

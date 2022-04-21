@@ -38,23 +38,6 @@ definitions:
       twins:
         type: integer
     type: object
-  db.Farm:
-    properties:
-      farmId:
-        type: integer
-      name:
-        type: string
-      pricingPolicyId:
-        type: integer
-      publicIps:
-        items:
-          $ref: '#/definitions/db.PublicIP'
-        type: array
-      stellarAddress:
-        type: string
-      twinId:
-        type: integer
-    type: object
   db.PublicConfig:
     properties:
       domain:
@@ -80,6 +63,27 @@ definitions:
         type: string
       ip:
         type: string
+    type: object
+  explorer.farm:
+    properties:
+      certificationType:
+        type: string
+      dedicated:
+        type: boolean
+      farmId:
+        type: integer
+      name:
+        type: string
+      pricingPolicyId:
+        type: integer
+      publicIps:
+        items:
+          $ref: '#/definitions/db.PublicIP'
+        type: array
+      stellarAddress:
+        type: string
+      twinId:
+        type: integer
     type: object
   explorer.location:
     properties:
@@ -112,6 +116,10 @@ definitions:
         type: integer
       publicConfig:
         $ref: '#/definitions/db.PublicConfig'
+      rentContractId:
+        type: integer
+      rentedByTwinId:
+        type: integer
       status:
         description: added node status field for up or down
         type: string
@@ -196,9 +204,17 @@ paths:
         in: query
         name: size
         type: integer
+      - description: Set farms' count on headers based on filter
+        in: query
+        name: ret_count
+        type: string
       - description: Min number of free ips in the farm
         in: query
         name: free_ips
+        type: integer
+      - description: Min number of total ips in the farm
+        in: query
+        name: total_ips
         type: integer
       - description: Pricing policy id
         in: query
@@ -220,6 +236,18 @@ paths:
         in: query
         name: name
         type: string
+      - description: farm name contains
+        in: query
+        name: name_contains
+        type: string
+      - description: certificate type DIY or Certified
+        in: query
+        name: certification_type
+        type: string
+      - description: farm is dedicated
+        in: query
+        name: dedicated
+        type: boolean
       - description: farm stellar_address
         in: query
         name: stellar_address
@@ -231,7 +259,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/db.Farm'
+              $ref: '#/definitions/explorer.farm'
             type: array
       summary: Show farms on the grid
       tags:
@@ -250,6 +278,10 @@ paths:
         in: query
         name: size
         type: integer
+      - description: Set nodes' count on headers based on filter
+        in: query
+        name: ret_count
+        type: string
       - description: Min free reservable mru in bytes
         in: query
         name: free_mru
@@ -294,6 +326,18 @@ paths:
         in: query
         name: domain
         type: string
+      - description: Set to true to filter the available nodes for renting
+        in: query
+        name: rentable
+        type: boolean
+      - description: rented by twin id
+        in: query
+        name: rented_by
+        type: integer
+      - description: available for twin id
+        in: query
+        name: available_for
+        type: integer
       - description: List of farms separated by comma to fetch nodes from (e.g. '1,2,3')
         in: query
         name: farm_ids
@@ -344,6 +388,10 @@ paths:
         in: query
         name: size
         type: integer
+      - description: Set nodes' count on headers based on filter
+        in: query
+        name: ret_count
+        type: string
       - description: Min free reservable mru in bytes
         in: query
         name: free_mru
@@ -388,6 +436,18 @@ paths:
         in: query
         name: domain
         type: string
+      - description: Set to true to filter the available nodes for renting
+        in: query
+        name: rentable
+        type: boolean
+      - description: rented by twin id
+        in: query
+        name: rented_by
+        type: integer
+      - description: available for twin id
+        in: query
+        name: available_for
+        type: integer
       - description: List of farms separated by comma to fetch nodes from (e.g. '1,2,3')
         in: query
         name: farm_ids

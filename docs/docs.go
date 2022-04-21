@@ -47,9 +47,21 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "Set farms' count on headers based on filter",
+                        "name": "ret_count",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Min number of free ips in the farm",
                         "name": "free_ips",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min number of total ips in the farm",
+                        "name": "total_ips",
                         "in": "query"
                     },
                     {
@@ -84,6 +96,24 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "farm name contains",
+                        "name": "name_contains",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "certificate type DIY or Certified",
+                        "name": "certification_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "farm is dedicated",
+                        "name": "dedicated",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "farm stellar_address",
                         "name": "stellar_address",
                         "in": "query"
@@ -95,7 +125,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/db.Farm"
+                                "$ref": "#/definitions/explorer.farm"
                             }
                         }
                     }
@@ -126,6 +156,12 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Max result per page",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set nodes' count on headers based on filter",
+                        "name": "ret_count",
                         "in": "query"
                     },
                     {
@@ -192,6 +228,24 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Set to true to filter nodes with domain",
                         "name": "domain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Set to true to filter the available nodes for renting",
+                        "name": "rentable",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "rented by twin id",
+                        "name": "rented_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "available for twin id",
+                        "name": "available_for",
                         "in": "query"
                     },
                     {
@@ -272,6 +326,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "Set nodes' count on headers based on filter",
+                        "name": "ret_count",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Min free reservable mru in bytes",
                         "name": "free_mru",
@@ -335,6 +395,24 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Set to true to filter nodes with domain",
                         "name": "domain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Set to true to filter the available nodes for renting",
+                        "name": "rentable",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "rented by twin id",
+                        "name": "rented_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "available for twin id",
+                        "name": "available_for",
                         "in": "query"
                     },
                     {
@@ -588,32 +666,6 @@ const docTemplate = `{
                 }
             }
         },
-        "db.Farm": {
-            "type": "object",
-            "properties": {
-                "farmId": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pricingPolicyId": {
-                    "type": "integer"
-                },
-                "publicIps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.PublicIP"
-                    }
-                },
-                "stellarAddress": {
-                    "type": "string"
-                },
-                "twinId": {
-                    "type": "integer"
-                }
-            }
-        },
         "db.PublicConfig": {
             "type": "object",
             "properties": {
@@ -651,6 +703,38 @@ const docTemplate = `{
                 },
                 "ip": {
                     "type": "string"
+                }
+            }
+        },
+        "explorer.farm": {
+            "type": "object",
+            "properties": {
+                "certificationType": {
+                    "type": "string"
+                },
+                "dedicated": {
+                    "type": "boolean"
+                },
+                "farmId": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pricingPolicyId": {
+                    "type": "integer"
+                },
+                "publicIps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/db.PublicIP"
+                    }
+                },
+                "stellarAddress": {
+                    "type": "string"
+                },
+                "twinId": {
+                    "type": "integer"
                 }
             }
         },
@@ -700,6 +784,12 @@ const docTemplate = `{
                 },
                 "publicConfig": {
                     "$ref": "#/definitions/db.PublicConfig"
+                },
+                "rentContractId": {
+                    "type": "integer"
+                },
+                "rentedByTwinId": {
+                    "type": "integer"
                 },
                 "status": {
                     "description": "added node status field for up or down",

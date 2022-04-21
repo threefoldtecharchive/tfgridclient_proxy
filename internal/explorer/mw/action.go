@@ -27,6 +27,10 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
+func exposeHeaders(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Expose-Headers", "*")
+}
+
 // AsHandlerFunc is a helper wrapper to make implementing actions easier
 func AsHandlerFunc(a Action) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -35,6 +39,7 @@ func AsHandlerFunc(a Action) http.HandlerFunc {
 			_ = r.Body.Close()
 		}()
 		enableCors(&w)
+		exposeHeaders(&w)
 
 		object, result := a(r)
 

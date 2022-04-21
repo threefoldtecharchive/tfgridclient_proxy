@@ -32,26 +32,47 @@ const (
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
+// @Param ret_count query string false "Set farms' count on headers based on filter"
 // @Param free_ips query int false "Min number of free ips in the farm"
+// @Param total_ips query int false "Min number of total ips in the farm"
 // @Param pricing_policy_id query int false "Pricing policy id"
 // @Param version query int false "farm version"
 // @Param farm_id query int false "farm id"
 // @Param twin_id query int false "twin id associated with the farm"
 // @Param name query string false "farm name"
+// @Param name_contains query string false "farm name contains"
+// @Param certification_type query string false "certificate type DIY or Certified"
+// @Param dedicated query bool false "farm is dedicated"
 // @Param stellar_address query string false "farm stellar_address"
-// @Success 200 {object} []db.Farm
+// @Success 200 {object} []farm
 // @Router /farms [get]
 func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleFarmRequestsQueryParams(r)
 	if err != nil {
 		return nil, mw.BadRequest(err)
 	}
-	farms, err := a.db.GetFarms(filter, limit)
+	dbFarms, err := a.db.GetFarms(filter, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query farm")
 		return nil, mw.Error(err)
 	}
-	return farms, nil
+
+	var farmsCount uint
+	farms := make([]farm, len(dbFarms))
+	for idx, farm := range dbFarms {
+		farmsCount, farms[idx] = farmFromDBFarm(farm)
+
+	}
+	resp := mw.Ok()
+
+	// return the number of pages and totalCount in the response headers
+	if limit.RetCount {
+		pages := math.Ceil(float64(farmsCount) / float64(limit.Size))
+		resp = resp.WithHeader("count", fmt.Sprintf("%d", farmsCount)).
+			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
+			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+	}
+	return farms, resp
 }
 
 // getStats godoc
@@ -80,6 +101,7 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
+// @Param ret_count query string false "Set nodes' count on headers based on filter"
 // @Param free_mru query int false "Min free reservable mru in bytes"
 // @Param free_hru query int false "Min free reservable hru in bytes"
 // @Param free_sru query int false "Min free reservable sru in bytes"
@@ -91,6 +113,9 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Param ipv4 query string false "Set to true to filter nodes with ipv4"
 // @Param ipv6 query string false "Set to true to filter nodes with ipv6"
 // @Param domain query string false "Set to true to filter nodes with domain"
+// @Param rentable query bool false "Set to true to filter the available nodes for renting"
+// @Param rented_by query int false "rented by twin id"
+// @Param available_for query int false "available for twin id"
 // @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
 // @Success 200 {object} []node
 // @Router /nodes [get]
@@ -104,18 +129,16 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, mw.Error(err)
 	}
+	var nodesCount uint
 	nodes := make([]node, len(dbNodes))
 	for idx, node := range dbNodes {
-		nodes[idx] = nodeFromDBNode(node)
+		nodesCount, nodes[idx] = nodeFromDBNode(node)
 
 	}
 	resp := mw.Ok()
 
 	// return the number of pages and totalCount in the response headers
-	nodesCount, err := a.getTotalCount()
-	if err != nil {
-		log.Error().Err(err).Msg("error fetching pages")
-	} else {
+	if limit.RetCount {
 		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
 		resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
 			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
@@ -155,17 +178,15 @@ func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
 	return response, nil
 }
 
-func (a *App) indexPage(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"))
+func (a *App) indexPage(r *http.Request) (interface{}, mw.Response) {
+	response := mw.Ok()
+	message := "welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"
+	return message, response
 }
 
-func (a *App) version(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("{\"version\": \"%s\"}", a.releaseVersion)))
+func (a *App) version(r *http.Request) (interface{}, mw.Response) {
+	response := mw.Ok()
+	return version{a.releaseVersion}, response
 }
 
 // Setup is the server and do initial configurations
@@ -198,8 +219,8 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
-	router.HandleFunc("/", a.indexPage)
-	router.HandleFunc("/version", a.version)
+	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage))
+	router.HandleFunc("/version", mw.AsHandlerFunc(a.version))
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 	return nil
 }

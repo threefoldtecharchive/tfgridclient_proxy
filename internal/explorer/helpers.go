@@ -15,10 +15,6 @@ const (
 	maxPageSize = 100
 )
 
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
 func errorReply(err error) mw.Response {
 	if errors.Is(err, ErrNodeNotFound) {
 		return mw.NotFound(err)
@@ -34,6 +30,7 @@ func getLimit(r *http.Request) (db.Limit, error) {
 
 	page := r.URL.Query().Get("page")
 	size := r.URL.Query().Get("size")
+	retCount := r.URL.Query().Get("ret_count")
 	if page == "" {
 		page = "1"
 	}
@@ -51,6 +48,13 @@ func getLimit(r *http.Request) (db.Limit, error) {
 		return limit, errors.Wrap(ErrBadRequest, fmt.Sprintf("couldn't parse size %s", err.Error()))
 	}
 	limit.Size = parsed
+
+	returnCount := false
+	if retCount == "true" {
+		returnCount = true
+	}
+	limit.RetCount = returnCount
+
 	// TODO: readd the check once clients are updated
 	// if limit.Size > maxPageSize {
 	// 	return limit, errors.Wrapf(ErrBadRequest, "max page size is %d", maxPageSize)
@@ -82,10 +86,14 @@ func parseParams(
 		}
 	}
 	trueVal := true
+	falseVal := false
 	for param, prop := range bools {
 		value := r.URL.Query().Get(param)
 		if value == "true" {
 			*prop = &trueVal
+		}
+		if value == "false" {
+			*prop = &falseVal
 		}
 	}
 	for param, prop := range listOfInts {
@@ -113,10 +121,12 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 	var filter db.NodeFilter
 	var limit db.Limit
 	ints := map[string]**uint64{
-		"free_mru": &filter.FreeMRU,
-		"free_hru": &filter.FreeHRU,
-		"free_sru": &filter.FreeSRU,
-		"free_ips": &filter.FreeIPs,
+		"free_mru":      &filter.FreeMRU,
+		"free_hru":      &filter.FreeHRU,
+		"free_sru":      &filter.FreeSRU,
+		"free_ips":      &filter.FreeIPs,
+		"rented_by":     &filter.RentedBy,
+		"available_for": &filter.AvailableFor,
 	}
 	strs := map[string]**string{
 		"status":    &filter.Status,
@@ -125,9 +135,10 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 		"farm_name": &filter.FarmName,
 	}
 	bools := map[string]**bool{
-		"ipv4":   &filter.IPv4,
-		"ipv6":   &filter.IPv6,
-		"domain": &filter.Domain,
+		"ipv4":     &filter.IPv4,
+		"ipv6":     &filter.IPv6,
+		"domain":   &filter.Domain,
+		"rentable": &filter.Rentable,
 	}
 	listOfInts := map[string]*[]uint64{
 		"farm_ids": &filter.FarmIDs,
@@ -155,16 +166,22 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 
 	ints := map[string]**uint64{
 		"free_ips":          &filter.FreeIPs,
+		"total_ips":         &filter.TotalIPs,
 		"pricing_policy_id": &filter.PricingPolicyID,
 		"version":           &filter.Version,
 		"farm_id":           &filter.FarmID,
 		"twin_id":           &filter.TwinID,
 	}
 	strs := map[string]**string{
-		"name":            &filter.Name,
-		"stellar_address": &filter.StellarAddress,
+		"name":               &filter.Name,
+		"name_contains":      &filter.NameContains,
+		"certification_type": &filter.CertificationType,
+		"stellar_address":    &filter.StellarAddress,
 	}
-	if err := parseParams(r, ints, strs, nil, nil); err != nil {
+	bools := map[string]**bool{
+		"dedicated": &filter.Dedicated,
+	}
+	if err := parseParams(r, ints, strs, bools, nil); err != nil {
 		return filter, limit, err
 	}
 
@@ -188,7 +205,7 @@ func (a *App) handleStatsRequestsQueryParams(r *http.Request) (db.StatsFilter, e
 	return filter, nil
 }
 
-func (a *App) getTotalCount() (int, error) {
+func (a *App) getTotalCount() (uint, error) {
 	return a.db.CountNodes()
 }
 
