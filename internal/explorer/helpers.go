@@ -86,10 +86,14 @@ func parseParams(
 		}
 	}
 	trueVal := true
+	falseVal := false
 	for param, prop := range bools {
 		value := r.URL.Query().Get(param)
 		if value == "true" {
 			*prop = &trueVal
+		}
+		if value == "false" {
+			*prop = &falseVal
 		}
 	}
 	for param, prop := range listOfInts {
@@ -117,10 +121,12 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 	var filter db.NodeFilter
 	var limit db.Limit
 	ints := map[string]**uint64{
-		"free_mru": &filter.FreeMRU,
-		"free_hru": &filter.FreeHRU,
-		"free_sru": &filter.FreeSRU,
-		"free_ips": &filter.FreeIPs,
+		"free_mru":      &filter.FreeMRU,
+		"free_hru":      &filter.FreeHRU,
+		"free_sru":      &filter.FreeSRU,
+		"free_ips":      &filter.FreeIPs,
+		"rented_by":     &filter.RentedBy,
+		"available_for": &filter.AvailableFor,
 	}
 	strs := map[string]**string{
 		"status":    &filter.Status,
@@ -129,9 +135,10 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 		"farm_name": &filter.FarmName,
 	}
 	bools := map[string]**bool{
-		"ipv4":   &filter.IPv4,
-		"ipv6":   &filter.IPv6,
-		"domain": &filter.Domain,
+		"ipv4":     &filter.IPv4,
+		"ipv6":     &filter.IPv6,
+		"domain":   &filter.Domain,
+		"rentable": &filter.Rentable,
 	}
 	listOfInts := map[string]*[]uint64{
 		"farm_ids": &filter.FarmIDs,
@@ -171,7 +178,10 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 		"certification_type": &filter.CertificationType,
 		"stellar_address":    &filter.StellarAddress,
 	}
-	if err := parseParams(r, ints, strs, nil, nil); err != nil {
+	bools := map[string]**bool{
+		"dedicated": &filter.Dedicated,
+	}
+	if err := parseParams(r, ints, strs, bools, nil); err != nil {
 		return filter, limit, err
 	}
 

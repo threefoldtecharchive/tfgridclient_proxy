@@ -42,6 +42,7 @@ const (
 // @Param name query string false "farm name"
 // @Param name_contains query string false "farm name contains"
 // @Param certification_type query string false "certificate type DIY or Certified"
+// @Param dedicated query bool false "farm is dedicated"
 // @Param stellar_address query string false "farm stellar_address"
 // @Success 200 {object} []farm
 // @Router /farms [get]
@@ -112,6 +113,9 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Param ipv4 query string false "Set to true to filter nodes with ipv4"
 // @Param ipv6 query string false "Set to true to filter nodes with ipv6"
 // @Param domain query string false "Set to true to filter nodes with domain"
+// @Param rentable query bool false "Set to true to filter the available nodes for renting"
+// @Param rented_by query int false "rented by twin id"
+// @Param available_for query int false "available for twin id"
 // @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
 // @Success 200 {object} []node
 // @Router /nodes [get]

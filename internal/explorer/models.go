@@ -106,6 +106,8 @@ type node struct {
 	PublicConfig      db.PublicConfig `json:"publicConfig"`
 	Status            string          `json:"status"` // added node status field for up or down
 	CertificationType string          `json:"certificationType"`
+	RentContractId    uint            `json:"rentContractId"`
+	RentedByTwinId    uint            `json:"rentedByTwinId"`
 }
 
 func nodeFromDBNode(info db.AllNodeData) (uint, node) {
@@ -130,6 +132,8 @@ func nodeFromDBNode(info db.AllNodeData) (uint, node) {
 		PublicConfig:      info.NodeData.PublicConfig,
 		Status:            info.NodeData.Status,
 		CertificationType: info.NodeData.CertificationType,
+		RentContractId:    info.NodeData.RentContractId,
+		RentedByTwinId:    info.NodeData.RentedByTwinId,
 	}
 
 }
@@ -152,6 +156,8 @@ type nodeWithNestedCapacity struct {
 	PublicConfig      db.PublicConfig `json:"publicConfig"`
 	Status            string          `json:"status"` // added node status field for up or down
 	CertificationType string          `json:"certificationType"`
+	RentContractId    uint            `json:"rentContractId"`
+	RentedByTwinId    uint            `json:"rentedByTwinId"`
 }
 
 func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacity {
@@ -178,6 +184,8 @@ func nodeWithNestedCapacityFromDBNode(info db.AllNodeData) nodeWithNestedCapacit
 		PublicConfig:      info.NodeData.PublicConfig,
 		Status:            info.NodeData.Status,
 		CertificationType: info.NodeData.CertificationType,
+		RentContractId:    info.NodeData.RentContractId,
+		RentedByTwinId:    info.NodeData.RentedByTwinId,
 	}
 
 }
@@ -196,8 +204,9 @@ type farm struct {
 	FarmID            int           `json:"farmId"`
 	TwinID            int           `json:"twinId"`
 	PricingPolicyID   int           `json:"pricingPolicyId"`
-	CertificationType string        `json:"Certification_type"`
+	CertificationType string        `json:"certificationType"`
 	StellarAddress    string        `json:"stellarAddress"`
+	Dedicated         bool          `json:"dedicated"`
 	PublicIps         []db.PublicIP `json:"publicIps"`
 }
 
@@ -209,6 +218,7 @@ func farmFromDBFarm(info db.Farm) (uint, farm) {
 		PricingPolicyID:   info.PricingPolicyID,
 		CertificationType: info.CertificationType,
 		StellarAddress:    info.StellarAddress,
+		Dedicated:         info.Dedicated,
 		PublicIps:         info.PublicIps,
 	}
 }

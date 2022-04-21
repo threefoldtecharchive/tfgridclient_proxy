@@ -91,6 +91,7 @@ const (
 		COALESCE(pricing_policy_id, 0),
 		COALESCE(certification_type, ''),
 		COALESCE(stellar_address, ''),
+		COALESCE(dedicated_farm, 'f'),
 		(
 			SELECT 
 				COALESCE(json_agg(json_build_object('id', id, 'ip', ip, 'contractId', contract_id, 'gateway', gateway)), '[]')
@@ -130,10 +131,13 @@ const (
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
+		COALESCE(rent_contract.contract_id, 0),
+		COALESCE(rent_contract.twin_id, 0),
 		0
 	FROM node
 	LEFT JOIN node_resources($1) ON node.node_id = node_resources.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
+	LEFT JOIN rent_contract ON rent_contract.state = 'Created' AND rent_contract.node_id = node.node_id
 	WHERE node.node_id = $1;
 	`
 	selectNodesWithFilter = `
@@ -163,10 +167,13 @@ const (
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
+		COALESCE(rent_contract.contract_id, 0),
+		COALESCE(rent_contract.twin_id, 0),
 		%s
 	FROM node
 	LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
+	LEFT JOIN rent_contract ON rent_contract.state = 'Created' AND rent_contract.node_id = node.node_id
 	`
 	selectFarmsWithFilter = `
 	SELECT 
@@ -176,6 +183,7 @@ const (
 		COALESCE(pricing_policy_id, 0),
 		COALESCE(certification_type, ''),
 		COALESCE(stellar_address, ''),
+		COALESCE(dedicated_farm, 'f'),
 		(
 			SELECT 
 				COALESCE(json_agg(json_build_object('id', id, 'ip', ip, 'contractId', contract_id, 'gateway', gateway)), '[]')
@@ -350,6 +358,8 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.PublicConfig.Ipv4,
 		&node.NodeData.PublicConfig.Ipv6,
 		&node.NodeData.CertificationType,
+		&node.NodeData.RentContractId,
+		&node.NodeData.RentedByTwinId,
 		&node.Count,
 	)
 	if err != nil {
@@ -372,6 +382,7 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 		&farm.PricingPolicyID,
 		&farm.CertificationType,
 		&farm.StellarAddress,
+		&farm.Dedicated,
 		&publicIPStr,
 		&farm.Count,
 	)
@@ -415,7 +426,7 @@ func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
 }
 
 func requiresFarmJoin(filter NodeFilter) bool {
-	return filter.FarmName != nil || filter.FreeIPs != nil
+	return filter.FarmName != nil || filter.FreeIPs != nil || filter.Rentable != nil || filter.AvailableFor != nil
 }
 
 func convertParam(p interface{}) string {
@@ -518,6 +529,22 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	if filter.Domain != nil {
 		query = fmt.Sprintf(`%s AND COALESCE(public_config.domain, '') != ''`, query)
 	}
+	if filter.Rentable != nil {
+		query = fmt.Sprintf(`%s AND ($%[2]d AND (farm.dedicated_farm = true AND COALESCE(rent_contract.contract_id, 0) = 0)
+		OR NOT $%[2]d AND (farm.dedicated_farm = false OR (farm.dedicated_farm = true AND COALESCE(rent_contract.contract_id, 0) > 0)))`, query, idx)
+		idx++
+		args = append(args, *filter.Rentable)
+	}
+	if filter.RentedBy != nil {
+		query = fmt.Sprintf("%s AND COALESCE(rent_contract.twin_id, 0) = $%d ", query, idx)
+		idx++
+		args = append(args, *filter.RentedBy)
+	}
+	if filter.AvailableFor != nil {
+		query = fmt.Sprintf("%s AND (COALESCE(rent_contract.twin_id, 0) = $%d OR farm.dedicated_farm = false)", query, idx)
+		idx++
+		args = append(args, *filter.AvailableFor)
+	}
 	query = fmt.Sprintf("%s ORDER BY node.node_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
@@ -600,6 +627,12 @@ func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, err
 		query = fmt.Sprintf("%s AND certification_type = $%d", query, idx)
 		idx++
 		args = append(args, *filter.CertificationType)
+	}
+
+	if filter.Dedicated != nil {
+		query = fmt.Sprintf("%s AND dedicated_farm = $%d", query, idx)
+		idx++
+		args = append(args, *filter.Dedicated)
 	}
 	query = fmt.Sprintf("%s ORDER BY farm.farm_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)

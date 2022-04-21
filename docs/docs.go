@@ -107,6 +107,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "farm is dedicated",
+                        "name": "dedicated",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "farm stellar_address",
                         "name": "stellar_address",
@@ -222,6 +228,24 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Set to true to filter nodes with domain",
                         "name": "domain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Set to true to filter the available nodes for renting",
+                        "name": "rentable",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "rented by twin id",
+                        "name": "rented_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "available for twin id",
+                        "name": "available_for",
                         "in": "query"
                     },
                     {
@@ -371,6 +395,24 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Set to true to filter nodes with domain",
                         "name": "domain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Set to true to filter the available nodes for renting",
+                        "name": "rentable",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "rented by twin id",
+                        "name": "rented_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "available for twin id",
+                        "name": "available_for",
                         "in": "query"
                     },
                     {
@@ -667,8 +709,11 @@ const docTemplate = `{
         "explorer.farm": {
             "type": "object",
             "properties": {
-                "Certification_type": {
+                "certificationType": {
                     "type": "string"
+                },
+                "dedicated": {
+                    "type": "boolean"
                 },
                 "farmId": {
                     "type": "integer"
@@ -739,6 +784,12 @@ const docTemplate = `{
                 },
                 "publicConfig": {
                     "$ref": "#/definitions/db.PublicConfig"
+                },
+                "rentContractId": {
+                    "type": "integer"
+                },
+                "rentedByTwinId": {
+                    "type": "integer"
                 },
                 "status": {
                     "description": "added node status field for up or down",
