@@ -131,20 +131,13 @@ const (
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
-		COALESCE(rent.contract_id, 0),
-		COALESCE(rent.twin_id, 0),
+		COALESCE(rent_contract.contract_id, 0),
+		COALESCE(rent_contract.twin_id, 0),
 		0
 	FROM node
 	LEFT JOIN node_resources($1) ON node.node_id = node_resources.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
-	LEFT JOIN (
-		SELECT rent.* 
-		FROM (SELECT rent_contract.*,
-			   row_number() over (partition by node_id order by contract_id DESC) as seqnum
-			FROM rent_contract 
-		  ) rent 
-		  WHERE seqnum = 1 AND state = 'Created'
-	  ) rent ON rent.node_id = node.node_id
+	LEFT JOIN rent_contract ON rent_contract.state = 'Created' AND rent_contract.node_id = node.node_id
 	WHERE node.node_id = $1;
 	`
 	selectNodesWithFilter = `
@@ -174,20 +167,13 @@ const (
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
-		COALESCE(rent.contract_id, 0),
-		COALESCE(rent.twin_id, 0),
+		COALESCE(rent_contract.contract_id, 0),
+		COALESCE(rent_contract.twin_id, 0),
 		%s
 	FROM node
 	LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
-	LEFT JOIN (
-		SELECT rent.* 
-		FROM (SELECT rent_contract.*,
-			   row_number() over (partition by node_id order by contract_id DESC) as seqnum
-			FROM rent_contract 
-		  ) rent 
-		  WHERE seqnum = 1 AND state = 'Created'
-	  ) rent ON rent.node_id = node.node_id
+	LEFT JOIN rent_contract ON rent_contract.state = 'Created' AND rent_contract.node_id = node.node_id
 	`
 	selectFarmsWithFilter = `
 	SELECT 
@@ -440,7 +426,7 @@ func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
 }
 
 func requiresFarmJoin(filter NodeFilter) bool {
-	return filter.FarmName != nil || filter.FreeIPs != nil || filter.Rentable != nil
+	return filter.FarmName != nil || filter.FreeIPs != nil || filter.Rentable != nil || filter.AvailableFor != nil
 }
 
 func convertParam(p interface{}) string {
@@ -544,21 +530,18 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 		query = fmt.Sprintf(`%s AND COALESCE(public_config.domain, '') != ''`, query)
 	}
 	if filter.Rentable != nil {
-		query = fmt.Sprintf(`%s AND node.farm_id = farm.farm_id AND farm.dedicated_farm = $%d AND COALESCE(rent.contract_id, 0) = 0 AND 
-		COALESCE(nodes_resources_view.used_cru, 0) = 0 AND
-		COALESCE(nodes_resources_view.used_sru, 0) = 0 AND
-		COALESCE(nodes_resources_view.used_hru, 0) = 0 AND
-		COALESCE(nodes_resources_view.used_mru, 0) - 2147483648 = 0`, query, idx)
+		query = fmt.Sprintf(`%s AND ($%[2]d AND (farm.dedicated_farm = true AND COALESCE(rent_contract.contract_id, 0) = 0)
+		OR NOT $%[2]d AND (farm.dedicated_farm = false OR (farm.dedicated_farm = true AND COALESCE(rent_contract.contract_id, 0) > 0)))`, query, idx)
 		idx++
 		args = append(args, *filter.Rentable)
 	}
 	if filter.RentedBy != nil {
-		query = fmt.Sprintf("%s AND COALESCE(rent.twin_id, 0) = $%d ", query, idx)
+		query = fmt.Sprintf("%s AND COALESCE(rent_contract.twin_id, 0) = $%d ", query, idx)
 		idx++
 		args = append(args, *filter.RentedBy)
 	}
 	if filter.AvailableFor != nil {
-		query = fmt.Sprintf("%s AND (COALESCE(rent.twin_id, 0) = $%d OR COALESCE(rent.contract_id, 0) = 0) ", query, idx)
+		query = fmt.Sprintf("%s AND (COALESCE(rent_contract.twin_id, 0) = $%d OR farm.dedicated_farm = false)", query, idx)
 		idx++
 		args = append(args, *filter.AvailableFor)
 	}
