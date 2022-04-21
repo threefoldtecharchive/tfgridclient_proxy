@@ -86,10 +86,14 @@ func parseParams(
 		}
 	}
 	trueVal := true
+	falseVal := false
 	for param, prop := range bools {
 		value := r.URL.Query().Get(param)
 		if value == "true" {
 			*prop = &trueVal
+		}
+		if value == "false" {
+			*prop = &falseVal
 		}
 	}
 	for param, prop := range listOfInts {
