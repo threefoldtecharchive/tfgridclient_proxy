@@ -58,7 +58,7 @@ func (a *App) sendMessage(r *http.Request) (*http.Response, mw.Response) {
 
 	response, err := c.SubmitMessage(*buffer)
 	if err != nil {
-		return nil, mw.Error(errors.Wrap(err, "failed to submit message"))
+		return nil, mw.BadGateway(errors.Wrap(err, "failed to submit message"))
 	}
 	return response, nil
 }
@@ -94,7 +94,7 @@ func (a *App) getResult(r *http.Request) (*http.Response, mw.Response) {
 
 	response, err := c.GetResult(reqBody)
 	if err != nil {
-		return nil, mw.Error(errors.Wrap(err, "failed to submit message"))
+		return nil, mw.BadGateway(errors.Wrap(err, "failed to submit message"))
 	}
 	return response, nil
 }
