@@ -2,6 +2,7 @@ package rmbproxy
 
 import (
 	"bytes"
+	"net/http"
 
 	"github.com/threefoldtech/substrate-client"
 )
@@ -38,6 +39,6 @@ type twinClient struct {
 
 // TwinClient interface
 type TwinClient interface {
-	SubmitMessage(msg bytes.Buffer) (string, error)
-	GetResult(msgID MessageIdentifier) (string, error)
+	SubmitMessage(msg bytes.Buffer) (*http.Response, error)
+	GetResult(msgID MessageIdentifier) (*http.Response, error)
 }
