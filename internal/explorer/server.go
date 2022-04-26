@@ -113,6 +113,7 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Param ipv4 query string false "Set to true to filter nodes with ipv4"
 // @Param ipv6 query string false "Set to true to filter nodes with ipv6"
 // @Param domain query string false "Set to true to filter nodes with domain"
+// @Param dedicated query bool false "Set to true to get the dedicated nodes only"
 // @Param rentable query bool false "Set to true to filter the available nodes for renting"
 // @Param rented_by query int false "rented by twin id"
 // @Param available_for query int false "available for twin id"

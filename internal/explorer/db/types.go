@@ -25,6 +25,7 @@ type NodeFilter struct {
 	IPv4         *bool
 	IPv6         *bool
 	Domain       *bool
+	Dedicated    *bool
 	Rentable     *bool
 	RentedBy     *uint64
 	AvailableFor *uint64

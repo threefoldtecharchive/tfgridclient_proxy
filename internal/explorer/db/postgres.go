@@ -426,7 +426,7 @@ func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
 }
 
 func requiresFarmJoin(filter NodeFilter) bool {
-	return filter.FarmName != nil || filter.FreeIPs != nil || filter.Rentable != nil || filter.AvailableFor != nil
+	return filter.FarmName != nil || filter.FreeIPs != nil || filter.Dedicated != nil || filter.Rentable != nil || filter.AvailableFor != nil
 }
 
 func convertParam(p interface{}) string {
@@ -528,6 +528,11 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	}
 	if filter.Domain != nil {
 		query = fmt.Sprintf(`%s AND COALESCE(public_config.domain, '') != ''`, query)
+	}
+	if filter.Dedicated != nil {
+		query = fmt.Sprintf(`%s AND farm.dedicated_farm = $%d`, query, idx)
+		idx++
+		args = append(args, *filter.Dedicated)
 	}
 	if filter.Rentable != nil {
 		query = fmt.Sprintf(`%s AND ($%[2]d AND (farm.dedicated_farm = true AND COALESCE(rent_contract.contract_id, 0) = 0)
