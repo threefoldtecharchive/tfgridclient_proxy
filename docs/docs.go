@@ -232,6 +232,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
+                        "description": "Set to true to get the dedicated nodes only",
+                        "name": "dedicated",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
                         "description": "Set to true to filter the available nodes for renting",
                         "name": "rentable",
                         "in": "query"
@@ -395,6 +401,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Set to true to filter nodes with domain",
                         "name": "domain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Set to true to get the dedicated nodes only",
+                        "name": "dedicated",
                         "in": "query"
                     },
                     {

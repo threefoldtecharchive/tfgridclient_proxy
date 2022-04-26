@@ -326,6 +326,10 @@ paths:
         in: query
         name: domain
         type: string
+      - description: Set to true to get the dedicated nodes only
+        in: query
+        name: dedicated
+        type: boolean
       - description: Set to true to filter the available nodes for renting
         in: query
         name: rentable
@@ -436,6 +440,10 @@ paths:
         in: query
         name: domain
         type: string
+      - description: Set to true to get the dedicated nodes only
+        in: query
+        name: dedicated
+        type: boolean
       - description: Set to true to filter the available nodes for renting
         in: query
         name: rentable
