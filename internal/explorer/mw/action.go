@@ -23,6 +23,8 @@ type Response interface {
 
 // Action interface
 type Action func(r *http.Request) (interface{}, Response)
+
+// ProxyAction interface
 type ProxyAction func(r *http.Request) (*http.Response, Response)
 
 func enableCors(w *http.ResponseWriter) {
