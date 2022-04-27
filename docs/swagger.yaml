@@ -102,6 +102,8 @@ definitions:
         type: string
       created:
         type: integer
+      dedicated:
+        type: boolean
       farmId:
         type: integer
       farmingPolicyId:
@@ -584,4 +586,42 @@ paths:
       summary: Get the message result
       tags:
       - RMB
+  /twins:
+    get:
+      consumes:
+      - application/json
+      description: Get all twins on the grid, It has pagination
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Max result per page
+        in: query
+        name: size
+        type: integer
+      - description: Set farms' count on headers based on filter
+        in: query
+        name: ret_count
+        type: string
+      - description: twin id
+        in: query
+        name: twin_id
+        type: integer
+      - description: account address
+        in: query
+        name: account_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/explorer.farm'
+            type: array
+      summary: Show twins on the grid
+      tags:
+      - GridProxy
 swagger: "2.0"

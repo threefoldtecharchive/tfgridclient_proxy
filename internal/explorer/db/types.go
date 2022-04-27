@@ -46,6 +46,11 @@ type FarmFilter struct {
 	Dedicated         *bool
 }
 
+type TwinFilter struct {
+	TwinID    *uint64
+	AccountID *string
+}
+
 // StatsFilter statistics filters
 type StatsFilter struct {
 	Status *string
@@ -144,6 +149,7 @@ type Database interface {
 	GetFarm(farmID uint32) (Farm, error)
 	GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error)
 	GetFarms(filter FarmFilter, limit Limit) ([]Farm, error)
+	GetTwins(filter TwinFilter, limit Limit) ([]Twin, error)
 }
 
 // NodeCursor for pagination
@@ -169,4 +175,12 @@ func (nc *NodeCursor) Next() ([]AllNodeData, error) {
 	}
 	nc.current++
 	return nodes, nil
+}
+
+// Twin is twin info
+type Twin struct {
+	TwinID    uint   `json:"twinId"`
+	AccountID string `json:"accountId"`
+	IP        string `json:"ip"`
+	Count     uint   `json:"count"`
 }

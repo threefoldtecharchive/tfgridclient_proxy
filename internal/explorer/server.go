@@ -179,6 +179,48 @@ func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
 	return response, nil
 }
 
+// listTwins godoc
+// @Summary Show twins on the grid
+// @Description Get all twins on the grid, It has pagination
+// @Tags GridProxy
+// @Accept  json
+// @Produce  json
+// @Param page query int false "Page number"
+// @Param size query int false "Max result per page"
+// @Param ret_count query string false "Set farms' count on headers based on filter"
+// @Param twin_id query int false "twin id"
+// @Param account_id query string false "account address"
+// @Success 200 {object} []farm
+// @Router /twins [get]
+func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
+	filter, limit, err := a.handleTwinRequestsQueryParams(r)
+	if err != nil {
+		return nil, mw.BadRequest(err)
+	}
+	dbTwins, err := a.db.GetTwins(filter, limit)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to query farm")
+		return nil, mw.Error(err)
+	}
+
+	var twinsCount uint
+	twins := make([]twin, len(dbTwins))
+	for idx, twin := range dbTwins {
+		twinsCount, twins[idx] = twinFromDBTwin(twin)
+
+	}
+	resp := mw.Ok()
+
+	// return the number of pages and totalCount in the response headers
+	if limit.RetCount {
+		pages := math.Ceil(float64(twinsCount) / float64(limit.Size))
+		resp = resp.WithHeader("count", fmt.Sprintf("%d", twinsCount)).
+			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
+			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+	}
+	return twins, resp
+}
+
 func (a *App) indexPage(r *http.Request) (interface{}, mw.Response) {
 	response := mw.Ok()
 	message := "welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"
@@ -216,6 +258,7 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 	router.HandleFunc("/stats", mw.AsHandlerFunc(a.getStats))
 	router.HandleFunc("/nodes", mw.AsHandlerFunc(a.listNodes))
 	router.HandleFunc("/gateways", mw.AsHandlerFunc(a.listNodes))
+	router.HandleFunc("/twins", mw.AsHandlerFunc(a.listTwins))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
 	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))

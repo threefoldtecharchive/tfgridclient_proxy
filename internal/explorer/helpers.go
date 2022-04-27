@@ -193,6 +193,28 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 	return filter, limit, nil
 }
 
+// test twins?twin_id=7
+// HandleTwinRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
+func (a *App) handleTwinRequestsQueryParams(r *http.Request) (db.TwinFilter, db.Limit, error) {
+	var filter db.TwinFilter
+	var limit db.Limit
+	ints := map[string]**uint64{
+		"twin_id": &filter.TwinID,
+	}
+	strs := map[string]**string{
+		"account_id": &filter.AccountID,
+	}
+
+	if err := parseParams(r, ints, strs, nil, nil); err != nil {
+		return filter, limit, err
+	}
+	limit, err := getLimit(r)
+	if err != nil {
+		return filter, limit, err
+	}
+	return filter, limit, nil
+}
+
 // test stats?status=up
 // HandleNodeRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
 func (a *App) handleStatsRequestsQueryParams(r *http.Request) (db.StatsFilter, error) {

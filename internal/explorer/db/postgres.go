@@ -187,7 +187,7 @@ const (
 		COALESCE(pricing_policy_id, 0),
 		COALESCE(certification_type, ''),
 		COALESCE(stellar_address, ''),
-		COALESCE(dedicated_farm, 'f'),
+		COALESCE(dedicated_farm, false),
 		(
 			SELECT 
 				COALESCE(json_agg(json_build_object('id', id, 'ip', ip, 'contractId', contract_id, 'gateway', gateway)), '[]')
@@ -198,6 +198,8 @@ const (
 		%s
 	FROM farm
 	`
+	selectTwins = "SELECT twin_id, account_id, ip, %s From twin"
+
 	countNodes = `
 	SELECT 
 		count(*)
@@ -395,6 +397,19 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 		return err
 	}
 	if err := json.Unmarshal([]byte(publicIPStr), &farm.PublicIps); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *PostgresDatabase) scanTwin(rows *sql.Rows, twin *Twin) error {
+	err := rows.Scan(
+		&twin.TwinID,
+		&twin.AccountID,
+		&twin.IP,
+		&twin.Count,
+	)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -655,4 +670,45 @@ func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, err
 		farms = append(farms, farm)
 	}
 	return farms, nil
+}
+
+// GetTwins returns twins filtered and paginated
+func (d *PostgresDatabase) GetTwins(filter TwinFilter, limit Limit) ([]Twin, error) {
+	query := selectTwins
+	args := make([]interface{}, 0)
+	if limit.RetCount {
+		query = fmt.Sprintf(query, "COUNT(*) OVER()")
+	} else {
+		query = fmt.Sprintf(query, "0")
+	}
+	idx := 1
+	query = fmt.Sprintf("%s WHERE TRUE", query)
+	if filter.TwinID != nil {
+		query = fmt.Sprintf("%s AND twin_id = $%d", query, idx)
+		idx++
+		args = append(args, *filter.TwinID)
+	}
+	if filter.AccountID != nil {
+		query = fmt.Sprintf("%s AND account_id = $%d", query, idx)
+		idx++
+		args = append(args, *filter.AccountID)
+	}
+	query = fmt.Sprintf("%s ORDER BY twin_id", query)
+	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
+	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
+	rows, err := d.db.Query(query, args...)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query twins")
+	}
+	defer rows.Close()
+	twins := make([]Twin, 0)
+	for rows.Next() {
+		var twin Twin
+		if err := d.scanTwin(rows, &twin); err != nil {
+			log.Error().Err(err).Msg("failed to scan returned twin from database")
+			continue
+		}
+		twins = append(twins, twin)
+	}
+	return twins, nil
 }

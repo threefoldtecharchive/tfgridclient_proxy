@@ -617,6 +617,64 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/twins": {
+            "get": {
+                "description": "Get all twins on the grid, It has pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show twins on the grid",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max result per page",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set farms' count on headers based on filter",
+                        "name": "ret_count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "twin id",
+                        "name": "twin_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "account address",
+                        "name": "account_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/explorer.farm"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -775,6 +833,9 @@ const docTemplate = `{
                 },
                 "created": {
                     "type": "integer"
+                },
+                "dedicated": {
+                    "type": "boolean"
                 },
                 "farmId": {
                     "type": "integer"

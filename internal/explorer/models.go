@@ -227,6 +227,20 @@ func farmFromDBFarm(info db.Farm) (uint, farm) {
 	}
 }
 
+type twin struct {
+	TwinID    uint   `json:"twinId"`
+	AccountID string `json:"accountId"`
+	IP        string `json:"ip"`
+}
+
+func twinFromDBTwin(info db.Twin) (uint, twin) {
+	return info.Count, twin{
+		TwinID:    info.TwinID,
+		AccountID: info.AccountID,
+		IP:        info.IP,
+	}
+}
+
 type version struct {
 	Version string `json:"version"`
 }
