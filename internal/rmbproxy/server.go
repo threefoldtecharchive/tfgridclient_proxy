@@ -2,27 +2,17 @@ package rmbproxy
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
 	// swagger configuration
 	"github.com/pkg/errors"
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
-
-func errorReply(w http.ResponseWriter, status int, message string) {
-	w.WriteHeader(status)
-	fmt.Fprintf(w, "{\"status\": \"error\", \"message\": \"%s\"}", message)
-}
-
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
 
 // NewTwinClient : create new TwinClient
 func (a *App) NewTwinClient(twinID int) (TwinClient, error) {
@@ -49,8 +39,7 @@ func (a *App) NewTwinClient(twinID int) (TwinClient, error) {
 // @Param twin_id path int true "twin id"
 // @Success 200 {object} MessageIdentifier
 // @Router /twin/{twin_id} [post]
-func (a *App) sendMessage(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
+func (a *App) sendMessage(r *http.Request) (*http.Response, mw.Response) {
 	twinIDString := mux.Vars(r)["twin_id"]
 
 	buffer := new(bytes.Buffer)
@@ -58,26 +47,20 @@ func (a *App) sendMessage(w http.ResponseWriter, r *http.Request) {
 
 	twinID, err := strconv.Atoi(twinIDString)
 	if err != nil {
-		errorReply(w, http.StatusBadRequest, "Invalid twinId")
-		return
+		return nil, mw.BadRequest(errors.Wrap(err, "invalid twin_id"))
 	}
 
 	c, err := a.NewTwinClient(twinID)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create TwinClient")
-		errorReply(w, http.StatusInternalServerError, "failed to create TwinClient")
-		return
+		log.Error().Err(err).Msg("failed to create twin client")
+		return nil, mw.Error(errors.Wrap(err, "failed to create twin client"))
 	}
 
-	data, err := c.SubmitMessage(*buffer)
+	response, err := c.SubmitMessage(*buffer)
 	if err != nil {
-		errorReply(w, http.StatusBadRequest, err.Error())
-		return
+		return nil, mw.BadGateway(errors.Wrap(err, "failed to submit message"))
 	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(data))
+	return response, nil
 }
 
 // getResult godoc
@@ -90,8 +73,7 @@ func (a *App) sendMessage(w http.ResponseWriter, r *http.Request) {
 // @Param retqueue path string true "message retqueue"
 // @Success 200 {array} Message
 // @Router /twin/{twin_id}/{retqueue} [get]
-func (a *App) getResult(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
+func (a *App) getResult(r *http.Request) (*http.Response, mw.Response) {
 	twinIDString := mux.Vars(r)["twin_id"]
 	retqueue := mux.Vars(r)["retqueue"]
 
@@ -101,27 +83,20 @@ func (a *App) getResult(w http.ResponseWriter, r *http.Request) {
 
 	twinID, err := strconv.Atoi(twinIDString)
 	if err != nil {
-		errorReply(w, http.StatusBadRequest, "Invalid twinId")
-		return
+		return nil, mw.BadRequest(errors.Wrap(err, "invalid twin_id"))
 	}
 
 	c, err := a.NewTwinClient(twinID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create twin client")
-		errorReply(w, http.StatusInternalServerError, "failed to create twin client")
-		return
+		return nil, mw.Error(errors.Wrap(err, "failed to create twin client"))
 	}
 
-	data, err := c.GetResult(reqBody)
+	response, err := c.GetResult(reqBody)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get result")
-		errorReply(w, http.StatusBadRequest, err.Error())
-		return
+		return nil, mw.BadGateway(errors.Wrap(err, "failed to submit message"))
 	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(data))
+	return response, nil
 }
 
 // ping godoc
@@ -132,15 +107,8 @@ func (a *App) getResult(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Success 200 {object} string "pong"
 // @Router /ping [get]
-func (a *App) ping(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	ret := map[string]string{"ping": "pong"}
-
-	data, _ := json.Marshal(ret)
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(data))
+func (a *App) ping(r *http.Request) (interface{}, mw.Response) {
+	return map[string]string{"ping": "pong"}, mw.Ok()
 }
 
 // Setup : sets rmb routes
@@ -165,9 +133,9 @@ func Setup(router *mux.Router, substrate string) error {
 		resolver: *resolver,
 	}
 
-	router.HandleFunc("/twin/{twin_id:[0-9]+}", a.sendMessage)
-	router.HandleFunc("/twin/{twin_id:[0-9]+}/{retqueue}", a.getResult)
-	router.HandleFunc("/ping", a.ping)
+	router.HandleFunc("/twin/{twin_id:[0-9]+}", mw.AsProxyHandlerFunc(a.sendMessage))
+	router.HandleFunc("/twin/{twin_id:[0-9]+}/{retqueue}", mw.AsProxyHandlerFunc(a.getResult))
+	router.HandleFunc("/ping", mw.AsHandlerFunc(a.ping))
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 
 	return nil

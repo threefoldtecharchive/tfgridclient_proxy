@@ -43,46 +43,26 @@ func (c *twinClient) readError(r io.Reader) string {
 	return body.Message
 }
 
-func (c *twinClient) SubmitMessage(msg bytes.Buffer) (string, error) {
+func (c *twinClient) SubmitMessage(msg bytes.Buffer) (*http.Response, error) {
 	resp, err := http.Post(submitURL(c.dstIP), "application/json", &msg)
 	// check on response for non-communication errors?
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to Submit the message: %s (%s)", resp.Status, c.readError(resp.Body))
-	}
-
-	buffer := new(bytes.Buffer)
-	buffer.ReadFrom(resp.Body)
-	response := buffer.String()
-
-	return response, nil
+	return resp, nil
 }
 
-func (c *twinClient) GetResult(msgIdentifier MessageIdentifier) (string, error) {
+func (c *twinClient) GetResult(msgIdentifier MessageIdentifier) (*http.Response, error) {
 	var buffer bytes.Buffer
 	if err := json.NewEncoder(&buffer).Encode(msgIdentifier); err != nil {
-		return "", err
+		return nil, err
 	}
 	resp, err := http.Post(resultURL(c.dstIP), "application/json", &buffer)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		// body
-		return "", fmt.Errorf("failed to send remote: %s (%s)", resp.Status, c.readError(resp.Body))
-	}
-
-	buffer.ReadFrom(resp.Body)
-	response := buffer.String()
-
-	return response, err
+	return resp, err
 }
