@@ -199,7 +199,7 @@ func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 	}
 	dbTwins, err := a.db.GetTwins(filter, limit)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to query farm")
+		log.Error().Err(err).Msg("failed to query twin")
 		return nil, mw.Error(err)
 	}
 
@@ -219,6 +219,55 @@ func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
 	}
 	return twins, resp
+}
+
+// listContracts godoc
+// @Summary Show twins on the grid
+// @Description Get all contracts on the grid, It has pagination
+// @Tags GridProxy
+// @Accept  json
+// @Produce  json
+// @Param page query int false "Page number"
+// @Param size query int false "Max result per page"
+// @Param ret_count query string false "Set farms' count on headers based on filter"
+// @Param contract_id_id query int false "contract id"
+// @Param twin_id query int false "twin id"
+// @Param node_id query int false "node id which contract is deployed on in case of ('rent' or 'node' contracts)"
+// @Param name query string false "contract name in case of 'name' contracts"
+// @Param type query string false "contract type 'node', 'name', or 'rent'"
+// @Param state query string false "contract state 'Created', or 'Deleted'"
+// @Param deployment_data query string false "contract deployment data in case of 'node' contracts"
+// @Param deployment_hash query string false "contract deployment hash in case of 'node' contracts"
+// @Param number_of_public_ips query int false "Min number of public ips in the 'node' contract"
+// @Success 200 {object} []contract
+// @Router /contracts [get]
+func (a *App) listContracts(r *http.Request) (interface{}, mw.Response) {
+	filter, limit, err := a.handleContractRequestsQueryParams(r)
+	if err != nil {
+		return nil, mw.BadRequest(err)
+	}
+	dbContracts, err := a.db.GetContracts(filter, limit)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to query contract")
+		return nil, mw.Error(err)
+	}
+
+	var contractsCount uint
+	contracts := make([]contract, len(dbContracts))
+	for idx, contract := range dbContracts {
+		contractsCount, contracts[idx] = contractFromDBContract(contract)
+
+	}
+	resp := mw.Ok()
+
+	// return the number of pages and totalCount in the response headers
+	if limit.RetCount {
+		pages := math.Ceil(float64(contractsCount) / float64(limit.Size))
+		resp = resp.WithHeader("count", fmt.Sprintf("%d", contractsCount)).
+			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
+			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+	}
+	return contracts, resp
 }
 
 func (a *App) indexPage(r *http.Request) (interface{}, mw.Response) {
@@ -259,6 +308,7 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 	router.HandleFunc("/nodes", mw.AsHandlerFunc(a.listNodes))
 	router.HandleFunc("/gateways", mw.AsHandlerFunc(a.listNodes))
 	router.HandleFunc("/twins", mw.AsHandlerFunc(a.listTwins))
+	router.HandleFunc("/contracts", mw.AsHandlerFunc(a.listContracts))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
 	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))

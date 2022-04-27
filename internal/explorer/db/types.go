@@ -46,9 +46,23 @@ type FarmFilter struct {
 	Dedicated         *bool
 }
 
+// TwinFilter twin filters
 type TwinFilter struct {
 	TwinID    *uint64
 	AccountID *string
+}
+
+// ContractFilter contract filters
+type ContractFilter struct {
+	ContractID        *uint64
+	TwinID            *uint64
+	NodeID            *uint64
+	Type              *string
+	State             *string
+	Name              *string
+	NumberOfPublicIps *uint64
+	DeploymentData    *string
+	DeploymentHash    *string
 }
 
 // StatsFilter statistics filters
@@ -150,6 +164,7 @@ type Database interface {
 	GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error)
 	GetFarms(filter FarmFilter, limit Limit) ([]Farm, error)
 	GetTwins(filter TwinFilter, limit Limit) ([]Twin, error)
+	GetContracts(filter ContractFilter, limit Limit) ([]Contract, error)
 }
 
 // NodeCursor for pagination
@@ -183,4 +198,18 @@ type Twin struct {
 	AccountID string `json:"accountId"`
 	IP        string `json:"ip"`
 	Count     uint   `json:"count"`
+}
+
+type Contract struct {
+	ContractID        uint   `json:"contractId"`
+	TwinID            uint   `json:"twinId"`
+	State             string `json:"state"`
+	CreatedAt         uint   `json:"created_at"`
+	Name              string `json:"name"`
+	NodeID            uint   `json:"nodeId"`
+	DeploymentData    string `json:"deployment_data"`
+	DeploymentHash    string `json:"deployment_hash"`
+	NumberOfPublicIps uint   `json:"number_of_public_ips"`
+	Type              string `json:"type"`
+	Count             uint   `json:"count"`
 }

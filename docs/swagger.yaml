@@ -64,6 +64,20 @@ definitions:
       ip:
         type: string
     type: object
+  explorer.contract:
+    properties:
+      contractId:
+        type: integer
+      created_at:
+        type: integer
+      details: {}
+      state:
+        type: string
+      twinId:
+        type: integer
+      type:
+        type: string
+    type: object
   explorer.farm:
     properties:
       certificationType:
@@ -192,6 +206,73 @@ info:
   title: Grid Proxy Server API
   version: "1.0"
 paths:
+  /contracts:
+    get:
+      consumes:
+      - application/json
+      description: Get all contracts on the grid, It has pagination
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Max result per page
+        in: query
+        name: size
+        type: integer
+      - description: Set farms' count on headers based on filter
+        in: query
+        name: ret_count
+        type: string
+      - description: contract id
+        in: query
+        name: contract_id_id
+        type: integer
+      - description: twin id
+        in: query
+        name: twin_id
+        type: integer
+      - description: node id which contract is deployed on in case of ('rent' or 'node'
+          contracts)
+        in: query
+        name: node_id
+        type: integer
+      - description: contract name in case of 'name' contracts
+        in: query
+        name: name
+        type: string
+      - description: contract type 'node', 'name', or 'rent'
+        in: query
+        name: type
+        type: string
+      - description: contract state 'Created', or 'Deleted'
+        in: query
+        name: state
+        type: string
+      - description: contract deployment data in case of 'node' contracts
+        in: query
+        name: deployment_data
+        type: string
+      - description: contract deployment hash in case of 'node' contracts
+        in: query
+        name: deployment_hash
+        type: string
+      - description: Min number of public ips in the 'node' contract
+        in: query
+        name: number_of_public_ips
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/explorer.contract'
+            type: array
+      summary: Show twins on the grid
+      tags:
+      - GridProxy
   /farms:
     get:
       consumes:

@@ -116,7 +116,7 @@ func parseParams(
 }
 
 // test nodes?status=up&free_ips=0&free_cru=1&free_mru=1&free_hru=1&country=Belgium&city=Unknown&ipv4=true&ipv6=true&domain=false
-// HandleNodeRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
+// handleNodeRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
 func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.Limit, error) {
 	var filter db.NodeFilter
 	var limit db.Limit
@@ -160,7 +160,7 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 }
 
 // test farms?free_ips=1&pricing_policy_id=1&version=4&farm_id=23&twin_id=291&name=Farm-1&stellar_address=13VrxhaBZh87ZP8nuYF4LtAhnDPWMfSrMUvHeRAFaqN43W1X
-// HandleFarmRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
+// handleFarmRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
 func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.Limit, error) {
 	var filter db.FarmFilter
 	var limit db.Limit
@@ -194,7 +194,7 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 }
 
 // test twins?twin_id=7
-// HandleTwinRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
+// handleTwinRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
 func (a *App) handleTwinRequestsQueryParams(r *http.Request) (db.TwinFilter, db.Limit, error) {
 	var filter db.TwinFilter
 	var limit db.Limit
@@ -203,6 +203,35 @@ func (a *App) handleTwinRequestsQueryParams(r *http.Request) (db.TwinFilter, db.
 	}
 	strs := map[string]**string{
 		"account_id": &filter.AccountID,
+	}
+
+	if err := parseParams(r, ints, strs, nil, nil); err != nil {
+		return filter, limit, err
+	}
+	limit, err := getLimit(r)
+	if err != nil {
+		return filter, limit, err
+	}
+	return filter, limit, nil
+}
+
+// test contracts?contract_id=7
+// HandleContractRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
+func (a *App) handleContractRequestsQueryParams(r *http.Request) (db.ContractFilter, db.Limit, error) {
+	var filter db.ContractFilter
+	var limit db.Limit
+	ints := map[string]**uint64{
+		"contract_id":          &filter.ContractID,
+		"twin_id":              &filter.TwinID,
+		"node_id":              &filter.NodeID,
+		"number_of_public_ips": &filter.NumberOfPublicIps,
+	}
+	strs := map[string]**string{
+		"name":            &filter.Name,
+		"deployment_data": &filter.DeploymentData,
+		"deployment_hash": &filter.DeploymentHash,
+		"type":            &filter.Type,
+		"state":           &filter.State,
 	}
 
 	if err := parseParams(r, ints, strs, nil, nil); err != nil {
