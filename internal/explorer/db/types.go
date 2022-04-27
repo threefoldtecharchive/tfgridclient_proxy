@@ -78,6 +78,7 @@ type NodeData struct {
 	UsedResources     Capacity     `json:"used_resources"`
 	PublicConfig      PublicConfig `json:"publicConfig"`
 	Status            string       `json:"status"` // added node status field for up or down
+	Dedicated         bool         `json:"dedicated"`
 	RentContractID    uint         `json:"rentContractId"`
 	RentedByTwinID    uint         `json:"rentedByTwinId"`
 }
