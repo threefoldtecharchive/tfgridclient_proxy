@@ -11,6 +11,15 @@ definitions:
       sru:
         type: integer
     type: object
+  db.ContractBilling:
+    properties:
+      amountBilled:
+        type: integer
+      discountReceived:
+        type: string
+      timestamp:
+        type: integer
+    type: object
   db.Counters:
     properties:
       accessNodes:
@@ -66,6 +75,10 @@ definitions:
     type: object
   explorer.contract:
     properties:
+      billing:
+        items:
+          $ref: '#/definitions/db.ContractBilling'
+        type: array
       contractId:
         type: integer
       created_at:

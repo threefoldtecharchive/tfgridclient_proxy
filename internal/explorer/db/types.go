@@ -200,16 +200,25 @@ type Twin struct {
 	Count     uint   `json:"count"`
 }
 
+// ContractBilling is contract billing info
+type ContractBilling struct {
+	AmountBilled     uint64 `json:"amountBilled"`
+	DiscountReceived string `json:"discountReceived"`
+	Timestamp        uint64 `json:"timestamp"`
+}
+
+// Contract is contract info
 type Contract struct {
-	ContractID        uint   `json:"contractId"`
-	TwinID            uint   `json:"twinId"`
-	State             string `json:"state"`
-	CreatedAt         uint   `json:"created_at"`
-	Name              string `json:"name"`
-	NodeID            uint   `json:"nodeId"`
-	DeploymentData    string `json:"deployment_data"`
-	DeploymentHash    string `json:"deployment_hash"`
-	NumberOfPublicIps uint   `json:"number_of_public_ips"`
-	Type              string `json:"type"`
-	Count             uint   `json:"count"`
+	ContractID        uint              `json:"contractId"`
+	TwinID            uint              `json:"twinId"`
+	State             string            `json:"state"`
+	CreatedAt         uint              `json:"created_at"`
+	Name              string            `json:"name"`
+	NodeID            uint              `json:"nodeId"`
+	DeploymentData    string            `json:"deployment_data"`
+	DeploymentHash    string            `json:"deployment_hash"`
+	NumberOfPublicIps uint              `json:"number_of_public_ips"`
+	Type              string            `json:"type"`
+	ContractBillings  []ContractBilling `json:"contract_billings"`
+	Count             uint              `json:"count"`
 }

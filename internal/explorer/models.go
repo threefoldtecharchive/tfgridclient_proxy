@@ -257,12 +257,13 @@ type rentContractDetails struct {
 }
 
 type contract struct {
-	ContractID uint        `json:"contractId"`
-	TwinID     uint        `json:"twinId"`
-	State      string      `json:"state"`
-	CreatedAt  uint        `json:"created_at"`
-	Type       string      `json:"type"`
-	Details    interface{} `json:"details"`
+	ContractID uint                 `json:"contractId"`
+	TwinID     uint                 `json:"twinId"`
+	State      string               `json:"state"`
+	CreatedAt  uint                 `json:"created_at"`
+	Type       string               `json:"type"`
+	Details    interface{}          `json:"details"`
+	Billing    []db.ContractBilling `json:"billing"`
 }
 
 func contractFromDBContract(info db.Contract) (uint, contract) {
@@ -291,6 +292,7 @@ func contractFromDBContract(info db.Contract) (uint, contract) {
 		CreatedAt:  info.CreatedAt,
 		Type:       info.Type,
 		Details:    details,
+		Billing:    info.ContractBillings,
 	}
 }
 

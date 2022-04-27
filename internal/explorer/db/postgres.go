@@ -200,7 +200,26 @@ const (
 	`
 	selectTwins = "SELECT twin_id, account_id, ip, %s From twin"
 
-	selectContracts = `SELECT contract_id, twin_id, state, CAST(created_at / 1000 AS int), name, node_id, deployment_data, deployment_hash, number_of_public_i_ps, type, %s 
+	selectContracts = `
+	SELECT 
+		contract_id,
+	 	twin_id,
+		state,
+		CAST(created_at / 1000 AS int),
+		name, 
+		node_id, 
+		deployment_data, 
+		deployment_hash, 
+		number_of_public_i_ps, 
+		type,
+		COALESCE((	SELECT 
+				COALESCE(json_agg(json_build_object('amountBilled', amount_billed, 'discountReceived', discount_received, 'timestamp', timestamp)), '[]')
+			FROM
+				contract_bill_report
+			WHERE contracts.contract_id = contract_bill_report.contract_id
+			GROUP BY contract_id
+		), '[]') as contract_billing, 
+		%s 
 	FROM (
 	SELECT contract_id, twin_id, state, created_at, ''AS name, node_id, deployment_data, deployment_hash, number_of_public_i_ps, 'node' AS type
 	FROM node_contract 
@@ -429,6 +448,7 @@ func (d *PostgresDatabase) scanTwin(rows *sql.Rows, twin *Twin) error {
 }
 
 func (d *PostgresDatabase) scanContract(rows *sql.Rows, contract *Contract) error {
+	var contractBilling string
 	err := rows.Scan(
 		&contract.ContractID,
 		&contract.TwinID,
@@ -440,9 +460,13 @@ func (d *PostgresDatabase) scanContract(rows *sql.Rows, contract *Contract) erro
 		&contract.DeploymentHash,
 		&contract.NumberOfPublicIps,
 		&contract.Type,
+		&contractBilling,
 		&contract.Count,
 	)
 	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal([]byte(contractBilling), &contract.ContractBillings); err != nil {
 		return err
 	}
 	return nil

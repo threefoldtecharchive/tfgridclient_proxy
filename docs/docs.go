@@ -795,6 +795,20 @@ const docTemplate = `{
                 }
             }
         },
+        "db.ContractBilling": {
+            "type": "object",
+            "properties": {
+                "amountBilled": {
+                    "type": "integer"
+                },
+                "discountReceived": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
         "db.Counters": {
             "type": "object",
             "properties": {
@@ -879,6 +893,12 @@ const docTemplate = `{
         "explorer.contract": {
             "type": "object",
             "properties": {
+                "billing": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/db.ContractBilling"
+                    }
+                },
                 "contractId": {
                     "type": "integer"
                 },
