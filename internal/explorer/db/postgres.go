@@ -91,7 +91,7 @@ const (
 		COALESCE(pricing_policy_id, 0),
 		COALESCE(certification_type, ''),
 		COALESCE(stellar_address, ''),
-		COALESCE(dedicated_farm, 'f'),
+		COALESCE(dedicated_farm, false),
 		(
 			SELECT 
 				COALESCE(json_agg(json_build_object('id', id, 'ip', ip, 'contractId', contract_id, 'gateway', gateway)), '[]')
@@ -131,6 +131,7 @@ const (
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
+		COALESCE(farm.dedicated_farm, false),
 		COALESCE(rent_contract.contract_id, 0),
 		COALESCE(rent_contract.twin_id, 0),
 		0
@@ -138,6 +139,7 @@ const (
 	LEFT JOIN node_resources($1) ON node.node_id = node_resources.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
 	LEFT JOIN rent_contract ON rent_contract.state = 'Created' AND rent_contract.node_id = node.node_id
+	LEFT JOIN farm ON node.farm_id = farm.farm_id
 	WHERE node.node_id = $1;
 	`
 	selectNodesWithFilter = `
@@ -167,6 +169,7 @@ const (
 		COALESCE(public_config.ipv4, ''),
 		COALESCE(public_config.ipv6, ''),
 		COALESCE(node.certification_type, ''),
+		COALESCE(farm.dedicated_farm, false),
 		COALESCE(rent_contract.contract_id, 0),
 		COALESCE(rent_contract.twin_id, 0),
 		%s
@@ -174,6 +177,7 @@ const (
 	LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id
 	LEFT JOIN public_config ON node.id = public_config.node_id
 	LEFT JOIN rent_contract ON rent_contract.state = 'Created' AND rent_contract.node_id = node.node_id
+	LEFT JOIN farm ON node.farm_id = farm.farm_id
 	`
 	selectFarmsWithFilter = `
 	SELECT 
@@ -358,6 +362,7 @@ func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
 		&node.NodeData.PublicConfig.Ipv4,
 		&node.NodeData.PublicConfig.Ipv6,
 		&node.NodeData.CertificationType,
+		&node.NodeData.Dedicated,
 		&node.NodeData.RentContractID,
 		&node.NodeData.RentedByTwinID,
 		&node.Count,
@@ -425,10 +430,6 @@ func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
 	return farm, err
 }
 
-func requiresFarmJoin(filter NodeFilter) bool {
-	return filter.FarmName != nil || filter.FreeIPs != nil || filter.Dedicated != nil || filter.Rentable != nil || filter.AvailableFor != nil
-}
-
 func convertParam(p interface{}) string {
 	if v, ok := p.(string); ok {
 		return fmt.Sprintf("'%s'", v)
@@ -461,9 +462,6 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 		query = fmt.Sprintf(query, "COUNT(*) OVER()")
 	} else {
 		query = fmt.Sprintf(query, "0")
-	}
-	if requiresFarmJoin(filter) {
-		query = fmt.Sprintf("%s JOIN farm ON node.farm_id = farm.farm_id", query)
 	}
 	idx := 1
 	query = fmt.Sprintf("%s WHERE TRUE", query)
