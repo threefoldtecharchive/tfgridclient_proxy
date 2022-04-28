@@ -222,7 +222,7 @@ func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 }
 
 // listContracts godoc
-// @Summary Show twins on the grid
+// @Summary Show contracts on the grid
 // @Description Get all contracts on the grid, It has pagination
 // @Tags GridProxy
 // @Accept  json

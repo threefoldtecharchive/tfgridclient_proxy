@@ -283,7 +283,7 @@ paths:
             items:
               $ref: '#/definitions/explorer.contract'
             type: array
-      summary: Show twins on the grid
+      summary: Show contracts on the grid
       tags:
       - GridProxy
   /farms:
