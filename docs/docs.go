@@ -32,7 +32,7 @@ const docTemplate = `{
                 "tags": [
                     "GridProxy"
                 ],
-                "summary": "Show twins on the grid",
+                "summary": "Show contracts on the grid",
                 "parameters": [
                     {
                         "type": "integer",
