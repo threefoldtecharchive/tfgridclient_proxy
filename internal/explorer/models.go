@@ -227,6 +227,75 @@ func farmFromDBFarm(info db.Farm) (uint, farm) {
 	}
 }
 
+type twin struct {
+	TwinID    uint   `json:"twinId"`
+	AccountID string `json:"accountId"`
+	IP        string `json:"ip"`
+}
+
+func twinFromDBTwin(info db.Twin) (uint, twin) {
+	return info.Count, twin{
+		TwinID:    info.TwinID,
+		AccountID: info.AccountID,
+		IP:        info.IP,
+	}
+}
+
+type nodeContractDetails struct {
+	NodeID            uint   `json:"nodeId"`
+	DeploymentData    string `json:"deployment_data"`
+	DeploymentHash    string `json:"deployment_hash"`
+	NumberOfPublicIps uint   `json:"number_of_public_ips"`
+}
+
+type nameContractDetails struct {
+	Name string `json:"name"`
+}
+
+type rentContractDetails struct {
+	NodeID uint `json:"nodeId"`
+}
+
+type contract struct {
+	ContractID uint                 `json:"contractId"`
+	TwinID     uint                 `json:"twinId"`
+	State      string               `json:"state"`
+	CreatedAt  uint                 `json:"created_at"`
+	Type       string               `json:"type"`
+	Details    interface{}          `json:"details"`
+	Billing    []db.ContractBilling `json:"billing"`
+}
+
+func contractFromDBContract(info db.Contract) (uint, contract) {
+	var details interface{}
+	switch info.Type {
+	case "node":
+		details = nodeContractDetails{
+			NodeID:            info.NodeID,
+			DeploymentData:    info.DeploymentData,
+			DeploymentHash:    info.DeploymentHash,
+			NumberOfPublicIps: info.NumberOfPublicIps,
+		}
+	case "name":
+		details = nameContractDetails{
+			Name: info.Name,
+		}
+	case "rent":
+		details = rentContractDetails{
+			NodeID: info.NodeID,
+		}
+	}
+	return info.Count, contract{
+		ContractID: info.ContractID,
+		TwinID:     info.TwinID,
+		State:      info.State,
+		CreatedAt:  info.CreatedAt,
+		Type:       info.Type,
+		Details:    details,
+		Billing:    info.ContractBillings,
+	}
+}
+
 type version struct {
 	Version string `json:"version"`
 }

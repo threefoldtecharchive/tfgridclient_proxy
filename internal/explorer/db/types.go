@@ -46,6 +46,25 @@ type FarmFilter struct {
 	Dedicated         *bool
 }
 
+// TwinFilter twin filters
+type TwinFilter struct {
+	TwinID    *uint64
+	AccountID *string
+}
+
+// ContractFilter contract filters
+type ContractFilter struct {
+	ContractID        *uint64
+	TwinID            *uint64
+	NodeID            *uint64
+	Type              *string
+	State             *string
+	Name              *string
+	NumberOfPublicIps *uint64
+	DeploymentData    *string
+	DeploymentHash    *string
+}
+
 // StatsFilter statistics filters
 type StatsFilter struct {
 	Status *string
@@ -144,6 +163,8 @@ type Database interface {
 	GetFarm(farmID uint32) (Farm, error)
 	GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error)
 	GetFarms(filter FarmFilter, limit Limit) ([]Farm, error)
+	GetTwins(filter TwinFilter, limit Limit) ([]Twin, error)
+	GetContracts(filter ContractFilter, limit Limit) ([]Contract, error)
 }
 
 // NodeCursor for pagination
@@ -169,4 +190,35 @@ func (nc *NodeCursor) Next() ([]AllNodeData, error) {
 	}
 	nc.current++
 	return nodes, nil
+}
+
+// Twin is twin info
+type Twin struct {
+	TwinID    uint   `json:"twinId"`
+	AccountID string `json:"accountId"`
+	IP        string `json:"ip"`
+	Count     uint   `json:"count"`
+}
+
+// ContractBilling is contract billing info
+type ContractBilling struct {
+	AmountBilled     uint64 `json:"amountBilled"`
+	DiscountReceived string `json:"discountReceived"`
+	Timestamp        uint64 `json:"timestamp"`
+}
+
+// Contract is contract info
+type Contract struct {
+	ContractID        uint              `json:"contractId"`
+	TwinID            uint              `json:"twinId"`
+	State             string            `json:"state"`
+	CreatedAt         uint              `json:"created_at"`
+	Name              string            `json:"name"`
+	NodeID            uint              `json:"nodeId"`
+	DeploymentData    string            `json:"deployment_data"`
+	DeploymentHash    string            `json:"deployment_hash"`
+	NumberOfPublicIps uint              `json:"number_of_public_ips"`
+	Type              string            `json:"type"`
+	ContractBillings  []ContractBilling `json:"contract_billings"`
+	Count             uint              `json:"count"`
 }

@@ -187,7 +187,7 @@ const (
 		COALESCE(pricing_policy_id, 0),
 		COALESCE(certification_type, ''),
 		COALESCE(stellar_address, ''),
-		COALESCE(dedicated_farm, 'f'),
+		COALESCE(dedicated_farm, false),
 		(
 			SELECT 
 				COALESCE(json_agg(json_build_object('id', id, 'ip', ip, 'contractId', contract_id, 'gateway', gateway)), '[]')
@@ -198,6 +198,40 @@ const (
 		%s
 	FROM farm
 	`
+	selectTwins = "SELECT twin_id, account_id, ip, %s From twin"
+
+	selectContracts = `
+	SELECT 
+		contract_id,
+	 	twin_id,
+		state,
+		CAST(created_at / 1000 AS int),
+		name, 
+		node_id, 
+		deployment_data, 
+		deployment_hash, 
+		number_of_public_i_ps, 
+		type,
+		COALESCE((	SELECT 
+				COALESCE(json_agg(json_build_object('amountBilled', amount_billed, 'discountReceived', discount_received, 'timestamp', timestamp)), '[]')
+			FROM
+				contract_bill_report
+			WHERE contracts.contract_id = contract_bill_report.contract_id
+			GROUP BY contract_id
+		), '[]') as contract_billing, 
+		%s 
+	FROM (
+	SELECT contract_id, twin_id, state, created_at, ''AS name, node_id, deployment_data, deployment_hash, number_of_public_i_ps, 'node' AS type
+	FROM node_contract 
+	UNION 
+	SELECT contract_id, twin_id, state, created_at, '' AS name, node_id, '', '', 0, 'rent' AS type
+	FROM rent_contract 
+	UNION 
+	SELECT contract_id, twin_id, state, created_at, name, 0, '', '', 0, 'name' AS type
+	FROM name_contract
+	) contracts	
+	`
+
 	countNodes = `
 	SELECT 
 		count(*)
@@ -395,6 +429,44 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 		return err
 	}
 	if err := json.Unmarshal([]byte(publicIPStr), &farm.PublicIps); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *PostgresDatabase) scanTwin(rows *sql.Rows, twin *Twin) error {
+	err := rows.Scan(
+		&twin.TwinID,
+		&twin.AccountID,
+		&twin.IP,
+		&twin.Count,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *PostgresDatabase) scanContract(rows *sql.Rows, contract *Contract) error {
+	var contractBilling string
+	err := rows.Scan(
+		&contract.ContractID,
+		&contract.TwinID,
+		&contract.State,
+		&contract.CreatedAt,
+		&contract.Name,
+		&contract.NodeID,
+		&contract.DeploymentData,
+		&contract.DeploymentHash,
+		&contract.NumberOfPublicIps,
+		&contract.Type,
+		&contractBilling,
+		&contract.Count,
+	)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal([]byte(contractBilling), &contract.ContractBillings); err != nil {
 		return err
 	}
 	return nil
@@ -655,4 +727,121 @@ func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, err
 		farms = append(farms, farm)
 	}
 	return farms, nil
+}
+
+// GetTwins returns twins filtered and paginated
+func (d *PostgresDatabase) GetTwins(filter TwinFilter, limit Limit) ([]Twin, error) {
+	query := selectTwins
+	args := make([]interface{}, 0)
+	if limit.RetCount {
+		query = fmt.Sprintf(query, "COUNT(*) OVER()")
+	} else {
+		query = fmt.Sprintf(query, "0")
+	}
+	idx := 1
+	query = fmt.Sprintf("%s WHERE TRUE", query)
+	if filter.TwinID != nil {
+		query = fmt.Sprintf("%s AND twin_id = $%d", query, idx)
+		idx++
+		args = append(args, *filter.TwinID)
+	}
+	if filter.AccountID != nil {
+		query = fmt.Sprintf("%s AND account_id = $%d", query, idx)
+		idx++
+		args = append(args, *filter.AccountID)
+	}
+	query = fmt.Sprintf("%s ORDER BY twin_id", query)
+	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
+	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
+	rows, err := d.db.Query(query, args...)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query twins")
+	}
+	defer rows.Close()
+	twins := make([]Twin, 0)
+	for rows.Next() {
+		var twin Twin
+		if err := d.scanTwin(rows, &twin); err != nil {
+			log.Error().Err(err).Msg("failed to scan returned twin from database")
+			continue
+		}
+		twins = append(twins, twin)
+	}
+	return twins, nil
+}
+
+// GetContracts returns contracts filtered and paginated
+func (d *PostgresDatabase) GetContracts(filter ContractFilter, limit Limit) ([]Contract, error) {
+	query := selectContracts
+	args := make([]interface{}, 0)
+	if limit.RetCount {
+		query = fmt.Sprintf(query, "COUNT(*) OVER()")
+	} else {
+		query = fmt.Sprintf(query, "0")
+	}
+	idx := 1
+	query = fmt.Sprintf("%s WHERE TRUE", query)
+	if filter.Type != nil {
+		query = fmt.Sprintf("%s AND type = $%d", query, idx)
+		idx++
+		args = append(args, *filter.Type)
+	}
+	if filter.State != nil {
+		query = fmt.Sprintf("%s AND state = $%d", query, idx)
+		idx++
+		args = append(args, *filter.State)
+	}
+	if filter.TwinID != nil {
+		query = fmt.Sprintf("%s AND twin_id = $%d", query, idx)
+		idx++
+		args = append(args, *filter.TwinID)
+	}
+	if filter.ContractID != nil {
+		query = fmt.Sprintf("%s AND contract_id = $%d", query, idx)
+		idx++
+		args = append(args, *filter.ContractID)
+	}
+	if filter.NodeID != nil {
+		query = fmt.Sprintf("%s AND node_id = $%d", query, idx)
+		idx++
+		args = append(args, *filter.NodeID)
+	}
+	if filter.NumberOfPublicIps != nil {
+		query = fmt.Sprintf("%s AND number_of_public_i_ps >= $%d", query, idx)
+		idx++
+		args = append(args, *filter.NumberOfPublicIps)
+	}
+	if filter.Name != nil {
+		query = fmt.Sprintf("%s AND name = $%d", query, idx)
+		idx++
+		args = append(args, *filter.Name)
+	}
+	if filter.DeploymentData != nil {
+		query = fmt.Sprintf("%s AND deployment_data = $%d", query, idx)
+		idx++
+		args = append(args, *filter.DeploymentData)
+	}
+	if filter.DeploymentHash != nil {
+		query = fmt.Sprintf("%s AND deployment_hash = $%d", query, idx)
+		idx++
+		args = append(args, *filter.DeploymentHash)
+	}
+	query = fmt.Sprintf("%s ORDER BY contract_id", query)
+	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
+	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
+	rows, err := d.db.Query(query, args...)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query contracts")
+	}
+	defer rows.Close()
+	contracts := make([]Contract, 0)
+	for rows.Next() {
+		var contract Contract
+		if err := d.scanContract(rows, &contract); err != nil {
+			log.Error().Err(err).Msg("failed to scan returned contract from database")
+			continue
+		}
+		contracts = append(contracts, contract)
+	}
+	return contracts, nil
 }

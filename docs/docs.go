@@ -20,6 +20,106 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/contracts": {
+            "get": {
+                "description": "Get all contracts on the grid, It has pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show twins on the grid",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max result per page",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set farms' count on headers based on filter",
+                        "name": "ret_count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "contract id",
+                        "name": "contract_id_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "twin id",
+                        "name": "twin_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "node id which contract is deployed on in case of ('rent' or 'node' contracts)",
+                        "name": "node_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract name in case of 'name' contracts",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract type 'node', 'name', or 'rent'",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract state 'Created', or 'Deleted'",
+                        "name": "state",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract deployment data in case of 'node' contracts",
+                        "name": "deployment_data",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract deployment hash in case of 'node' contracts",
+                        "name": "deployment_hash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min number of public ips in the 'node' contract",
+                        "name": "number_of_public_ips",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/explorer.contract"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/farms": {
             "get": {
                 "description": "Get all farms on the grid, It has pagination",
@@ -617,6 +717,64 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/twins": {
+            "get": {
+                "description": "Get all twins on the grid, It has pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show twins on the grid",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max result per page",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set farms' count on headers based on filter",
+                        "name": "ret_count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "twin id",
+                        "name": "twin_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "account address",
+                        "name": "account_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/explorer.farm"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -633,6 +791,20 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "sru": {
+                    "type": "integer"
+                }
+            }
+        },
+        "db.ContractBilling": {
+            "type": "object",
+            "properties": {
+                "amountBilled": {
+                    "type": "integer"
+                },
+                "discountReceived": {
+                    "type": "string"
+                },
+                "timestamp": {
                     "type": "integer"
                 }
             }
@@ -718,6 +890,33 @@ const docTemplate = `{
                 }
             }
         },
+        "explorer.contract": {
+            "type": "object",
+            "properties": {
+                "billing": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/db.ContractBilling"
+                    }
+                },
+                "contractId": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "details": {},
+                "state": {
+                    "type": "string"
+                },
+                "twinId": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "explorer.farm": {
             "type": "object",
             "properties": {
@@ -775,6 +974,9 @@ const docTemplate = `{
                 },
                 "created": {
                     "type": "integer"
+                },
+                "dedicated": {
+                    "type": "boolean"
                 },
                 "farmId": {
                     "type": "integer"
