@@ -1,4 +1,4 @@
-package gridproxy
+package client
 
 import (
 	"encoding/json"
@@ -8,26 +8,30 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+	"github.com/threefoldtech/grid_proxy_server/pkg/types"
 )
 
-type GridProxyClient interface {
+// Client a client to communicate with the grid proxy
+type Client interface {
 	Ping() error
-	Nodes(filter NodeFilter, pagination Limit) (res []Node, err error)
-	Farms(filter FarmFilter, pagination Limit) (res FarmResult, err error)
-	Contracts(filter ContractFilter, pagination Limit) (res []Contract, err error)
-	Node(nodeID uint32) (res NodeInfo, err error)
-	NodeStatus(nodeID uint32) (res NodeStatus, err error)
+	Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, err error)
+	Farms(filter types.FarmFilter, pagination types.Limit) (res []types.Farm, err error)
+	Contracts(filter types.ContractFilter, pagination types.Limit) (res []types.Contract, err error)
+	Node(nodeID uint32) (res types.NodeWithNestedCapacity, err error)
+	NodeStatus(nodeID uint32) (res types.NodeStatus, err error)
 }
 
-type GridProxyClientimpl struct {
+// Clientimpl concrete implementation of the client to communicate with the grid proxy
+type Clientimpl struct {
 	endpoint string
 }
 
-func NewGridProxyClient(endpoint string) GridProxyClient {
+// NewClient grid proxy client constructor
+func NewClient(endpoint string) Client {
 	if endpoint[len(endpoint)-1] != '/' {
 		endpoint += "/"
 	}
-	proxy := GridProxyClientimpl{endpoint}
+	proxy := Clientimpl{endpoint}
 	return &proxy
 }
 
@@ -43,11 +47,12 @@ func parseError(body io.ReadCloser) error {
 	return fmt.Errorf("%s", res.Error)
 }
 
-func (g *GridProxyClientimpl) url(sub string, args ...interface{}) string {
+func (g *Clientimpl) url(sub string, args ...interface{}) string {
 	return g.endpoint + fmt.Sprintf(sub, args...)
 }
 
-func (g *GridProxyClientimpl) Ping() error {
+// Ping makes sure the server is up
+func (g *Clientimpl) Ping() error {
 	req, err := http.Get(g.url(""))
 	if err != nil {
 		return err
@@ -58,7 +63,8 @@ func (g *GridProxyClientimpl) Ping() error {
 	return nil
 }
 
-func (g *GridProxyClientimpl) Nodes(filter NodeFilter, limit Limit) (res []Node, err error) {
+// Nodes returns nodes with the given filters and pagination parameters
+func (g *Clientimpl) Nodes(filter types.NodeFilter, limit types.Limit) (res []types.Node, err error) {
 	query := nodeParams(filter, limit)
 	req, err := http.Get(g.url(fmt.Sprintf("nodes%s", query)))
 	if err != nil {
@@ -74,7 +80,8 @@ func (g *GridProxyClientimpl) Nodes(filter NodeFilter, limit Limit) (res []Node,
 	return
 }
 
-func (g *GridProxyClientimpl) Farms(filter FarmFilter, limit Limit) (res FarmResult, err error) {
+// Farms returns farms with the given filters and pagination parameters
+func (g *Clientimpl) Farms(filter types.FarmFilter, limit types.Limit) (res []types.Farm, err error) {
 	query := farmParams(filter, limit)
 	req, err := http.Get(g.url(fmt.Sprintf("farms%s", query)))
 	if err != nil {
@@ -92,7 +99,8 @@ func (g *GridProxyClientimpl) Farms(filter FarmFilter, limit Limit) (res FarmRes
 	return
 }
 
-func (g *GridProxyClientimpl) Contracts(filter ContractFilter, limit Limit) (res []Contract, err error) {
+// Contracts returns contracts with the given filters and pagination parameters
+func (g *Clientimpl) Contracts(filter types.ContractFilter, limit types.Limit) (res []types.Contract, err error) {
 	query := contractParams(filter, limit)
 	req, err := http.Get(g.url(fmt.Sprintf("contracts%s", query)))
 	if err != nil {
@@ -112,18 +120,18 @@ func (g *GridProxyClientimpl) Contracts(filter ContractFilter, limit Limit) (res
 	}
 	for idx := range res {
 		if res[idx].Type == "node" {
-			res[idx].Details = NodeContractDetails{
+			res[idx].Details = types.NodeContractDetails{
 				NodeID:            uint(res[idx].Details.(map[string]interface{})["nodeId"].(float64)),
 				DeploymentData:    res[idx].Details.(map[string]interface{})["deployment_data"].(string),
 				DeploymentHash:    res[idx].Details.(map[string]interface{})["deployment_hash"].(string),
 				NumberOfPublicIps: uint(res[idx].Details.(map[string]interface{})["number_of_public_ips"].(float64)),
 			}
 		} else if res[idx].Type == "rent" {
-			res[idx].Details = RentContractDetails{
+			res[idx].Details = types.RentContractDetails{
 				NodeID: uint(res[idx].Details.(map[string]interface{})["nodeId"].(float64)),
 			}
 		} else if res[idx].Type == "name" {
-			res[idx].Details = NameContractDetails{
+			res[idx].Details = types.NameContractDetails{
 				Name: res[idx].Details.(map[string]interface{})["name"].(string),
 			}
 		}
@@ -131,7 +139,8 @@ func (g *GridProxyClientimpl) Contracts(filter ContractFilter, limit Limit) (res
 	return
 }
 
-func (g *GridProxyClientimpl) Node(nodeID uint32) (res NodeInfo, err error) {
+// Node returns the node with the give id
+func (g *Clientimpl) Node(nodeID uint32) (res types.NodeWithNestedCapacity, err error) {
 	req, err := http.Get(g.url("nodes/%d", nodeID))
 	if err != nil {
 		return
@@ -148,7 +157,8 @@ func (g *GridProxyClientimpl) Node(nodeID uint32) (res NodeInfo, err error) {
 	return
 }
 
-func (g *GridProxyClientimpl) NodeStatus(nodeID uint32) (res NodeStatus, err error) {
+// Node returns the node status up/down
+func (g *Clientimpl) NodeStatus(nodeID uint32) (res types.NodeStatus, err error) {
 	req, err := http.Get(g.url("nodes/%d/status", nodeID))
 	if err != nil {
 		return

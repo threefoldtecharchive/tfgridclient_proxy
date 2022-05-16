@@ -7,12 +7,13 @@ import (
 )
 
 type DBData struct {
-	nodeIDMap         map[string]uint64
-	farmIDMap         map[string]uint64
-	FreeIPs           map[uint64]uint64
-	TotalIPs          map[uint64]uint64
-	nodeUsedResources map[uint64]node_resources_total
-	nodeRentedBy      map[uint64]uint64
+	nodeIDMap          map[string]uint64
+	farmIDMap          map[string]uint64
+	FreeIPs            map[uint64]uint64
+	TotalIPs           map[uint64]uint64
+	nodeUsedResources  map[uint64]node_resources_total
+	nodeRentedBy       map[uint64]uint64
+	nodeRentContractID map[uint64]uint64
 
 	nodes              map[uint64]node
 	nodeTotalResources map[uint64]node_resources_total
@@ -20,9 +21,9 @@ type DBData struct {
 	twins              map[uint64]twin
 	publicIPs          map[string]public_ip
 	publicConfigs      map[uint64]public_config
-	node_contracts     map[uint64]node_contract
-	rent_contracts     map[uint64]rent_contract
-	name_contracts     map[uint64]name_contract
+	nodeContracts      map[uint64]node_contract
+	rentContracts      map[uint64]rent_contract
+	nameContracts      map[uint64]name_contract
 	billings           map[uint64][]contract_bill_report
 	contractResources  map[string]contract_resources
 }
@@ -88,7 +89,7 @@ func calcNodesUsedResources(data *DBData) error {
 			mru: uint64(2 * gridtypes.Gigabyte),
 		}
 	}
-	for _, contract := range data.node_contracts {
+	for _, contract := range data.nodeContracts {
 		if contract.state != "Created" {
 			continue
 		}
@@ -105,11 +106,12 @@ func calcNodesUsedResources(data *DBData) error {
 }
 
 func calcRentInfo(data *DBData) error {
-	for _, contract := range data.rent_contracts {
+	for _, contract := range data.rentContracts {
 		if contract.state != "Created" {
 			continue
 		}
 		data.nodeRentedBy[contract.node_id] = contract.twin_id
+		data.nodeRentContractID[contract.node_id] = contract.contract_id
 	}
 	return nil
 }
@@ -117,9 +119,9 @@ func calcRentInfo(data *DBData) error {
 func calcFreeIPs(data *DBData) error {
 	for _, publicIP := range data.publicIPs {
 		if publicIP.contract_id == 0 {
-			data.FreeIPs[data.farmIDMap[publicIP.farm_id]] += 1
+			data.FreeIPs[data.farmIDMap[publicIP.farm_id]]++
 		}
-		data.TotalIPs[data.farmIDMap[publicIP.farm_id]] += 1
+		data.TotalIPs[data.farmIDMap[publicIP.farm_id]]++
 	}
 	return nil
 }
@@ -319,7 +321,7 @@ func loadContracts(db *sql.DB, data *DBData) error {
 		); err != nil {
 			return err
 		}
-		data.node_contracts[contract.contract_id] = contract
+		data.nodeContracts[contract.contract_id] = contract
 	}
 	return nil
 }
@@ -352,7 +354,7 @@ func loadRentContracts(db *sql.DB, data *DBData) error {
 		); err != nil {
 			return err
 		}
-		data.rent_contracts[contract.contract_id] = contract
+		data.rentContracts[contract.contract_id] = contract
 	}
 	return nil
 }
@@ -384,7 +386,7 @@ func loadNameContracts(db *sql.DB, data *DBData) error {
 		); err != nil {
 			return err
 		}
-		data.name_contracts[contract.contract_id] = contract
+		data.nameContracts[contract.contract_id] = contract
 	}
 	return nil
 }
@@ -459,10 +461,11 @@ func load(db *sql.DB) (DBData, error) {
 		twins:              make(map[uint64]twin),
 		publicIPs:          make(map[string]public_ip),
 		publicConfigs:      make(map[uint64]public_config),
-		node_contracts:     make(map[uint64]node_contract),
-		rent_contracts:     make(map[uint64]rent_contract),
-		name_contracts:     make(map[uint64]name_contract),
+		nodeContracts:      make(map[uint64]node_contract),
+		rentContracts:      make(map[uint64]rent_contract),
+		nameContracts:      make(map[uint64]name_contract),
 		nodeRentedBy:       make(map[uint64]uint64),
+		nodeRentContractID: make(map[uint64]uint64),
 		billings:           make(map[uint64][]contract_bill_report),
 		contractResources:  make(map[string]contract_resources),
 		nodeTotalResources: make(map[uint64]node_resources_total),

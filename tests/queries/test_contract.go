@@ -7,7 +7,8 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
-	"github.com/threefoldtech/grid_proxy_server/pkg/gridproxy"
+	proxyclient "github.com/threefoldtech/grid_proxy_server/pkg/client"
+	proxytypes "github.com/threefoldtech/grid_proxy_server/pkg/types"
 )
 
 var (
@@ -31,7 +32,7 @@ type ContractsAggregate struct {
 	maxNumberOfPublicIPs uint64
 }
 
-func nodeContractsSatisfies(data *DBData, contract node_contract, f gridproxy.ContractFilter) bool {
+func nodeContractsSatisfies(data *DBData, contract node_contract, f proxytypes.ContractFilter) bool {
 	if f.ContractID != nil && contract.contract_id != *f.ContractID {
 		return false
 	}
@@ -62,7 +63,7 @@ func nodeContractsSatisfies(data *DBData, contract node_contract, f gridproxy.Co
 	return true
 }
 
-func nameContractsSatisfies(data *DBData, contract name_contract, f gridproxy.ContractFilter) bool {
+func nameContractsSatisfies(data *DBData, contract name_contract, f proxytypes.ContractFilter) bool {
 	if f.ContractID != nil && contract.contract_id != *f.ContractID {
 		return false
 	}
@@ -93,7 +94,7 @@ func nameContractsSatisfies(data *DBData, contract name_contract, f gridproxy.Co
 	return true
 }
 
-func rentContractsSatisfies(data *DBData, contract rent_contract, f gridproxy.ContractFilter) bool {
+func rentContractsSatisfies(data *DBData, contract rent_contract, f proxytypes.ContractFilter) bool {
 	if f.ContractID != nil && contract.contract_id != *f.ContractID {
 		return false
 	}
@@ -124,9 +125,9 @@ func rentContractsSatisfies(data *DBData, contract rent_contract, f gridproxy.Co
 	return true
 }
 
-func validateContractBillings(local, remote []gridproxy.ContractBilling) error {
-	localCp := make([]gridproxy.ContractBilling, len(local))
-	remoteCp := make([]gridproxy.ContractBilling, len(remote))
+func validateContractBillings(local, remote []proxytypes.ContractBilling) error {
+	localCp := make([]proxytypes.ContractBilling, len(local))
+	remoteCp := make([]proxytypes.ContractBilling, len(remote))
 	copy(localCp, local)
 	copy(remoteCp, remote)
 	sort.Slice(localCp, func(i, j int) bool {
@@ -156,7 +157,7 @@ func validateContractBillings(local, remote []gridproxy.ContractBilling) error {
 
 	return nil
 }
-func validateContractsResults(local, remote []gridproxy.Contract) error {
+func validateContractsResults(local, remote []proxytypes.Contract) error {
 	iter := local
 	if len(remote) < len(local) {
 		iter = remote
@@ -190,7 +191,7 @@ func validateContractsResults(local, remote []gridproxy.Contract) error {
 
 func calcContractsAggregates(data *DBData) (res ContractsAggregate) {
 	types := make(map[string]struct{})
-	for _, contract := range data.node_contracts {
+	for _, contract := range data.nodeContracts {
 		res.contractIDs = append(res.contractIDs, contract.contract_id)
 		res.maxNumberOfPublicIPs = max(res.maxNumberOfPublicIPs, contract.number_of_public_i_ps)
 		res.DeploymentDatas = append(res.DeploymentDatas, contract.deployment_data)
@@ -207,8 +208,8 @@ func calcContractsAggregates(data *DBData) (res ContractsAggregate) {
 	return
 }
 
-func randomContractsFilter(agg *ContractsAggregate) gridproxy.ContractFilter {
-	var f gridproxy.ContractFilter
+func randomContractsFilter(agg *ContractsAggregate) proxytypes.ContractFilter {
+	var f proxytypes.ContractFilter
 	if flip(.05) {
 		c := agg.contractIDs[rand.Intn(len(agg.contractIDs))]
 		f.ContractID = &c
@@ -247,7 +248,7 @@ func randomContractsFilter(agg *ContractsAggregate) gridproxy.ContractFilter {
 	return f
 }
 
-func serializeContractsFilter(f gridproxy.ContractFilter) string {
+func serializeContractsFilter(f proxytypes.ContractFilter) string {
 	res := ""
 	if f.ContractID != nil {
 		res = fmt.Sprintf("%sContractID: %d\n", res, *f.ContractID)
@@ -279,10 +280,10 @@ func serializeContractsFilter(f gridproxy.ContractFilter) string {
 	return res
 }
 
-func ContractsStressTest(data *DBData, proxyClient, localClient gridproxy.GridProxyClient) error {
+func ContractsStressTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
 	agg := calcContractsAggregates(data)
 	for i := 0; i < ContractsTests; i++ {
-		l := gridproxy.Limit{
+		l := proxytypes.Limit{
 			Size:     999999999999,
 			Page:     1,
 			RetCount: false,
@@ -306,7 +307,7 @@ func ContractsStressTest(data *DBData, proxyClient, localClient gridproxy.GridPr
 	return nil
 }
 
-func ContractsTest(data *DBData, proxyClient, localClient gridproxy.GridProxyClient) error {
+func contractsTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
 	if err := ContractsStressTest(data, proxyClient, localClient); err != nil {
 		panic(err)
 	}

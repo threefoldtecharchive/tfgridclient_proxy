@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/threefoldtech/grid_proxy_server/pkg/gridproxy"
+	proxyclient "github.com/threefoldtech/grid_proxy_server/pkg/client"
+	proxytypes "github.com/threefoldtech/grid_proxy_server/pkg/types"
 )
 
 var (
@@ -31,7 +32,7 @@ type FarmsAggregate struct {
 	maxTotalIPs uint64
 }
 
-func farmSatisfies(data *DBData, farm farm, f gridproxy.FarmFilter) bool {
+func farmSatisfies(data *DBData, farm farm, f proxytypes.FarmFilter) bool {
 	if f.FreeIPs != nil && *f.FreeIPs > data.FreeIPs[farm.farm_id] {
 		return false
 	}
@@ -67,9 +68,9 @@ func farmSatisfies(data *DBData, farm farm, f gridproxy.FarmFilter) bool {
 	return true
 }
 
-func validatePublicIPs(local, remote []gridproxy.PublicIP) error {
-	localIPs := make(map[string]gridproxy.PublicIP)
-	remoteIPs := make(map[string]gridproxy.PublicIP)
+func validatePublicIPs(local, remote []proxytypes.PublicIP) error {
+	localIPs := make(map[string]proxytypes.PublicIP)
+	remoteIPs := make(map[string]proxytypes.PublicIP)
 	for _, ip := range local {
 		localIPs[ip.ID] = ip
 	}
@@ -95,7 +96,7 @@ func validatePublicIPs(local, remote []gridproxy.PublicIP) error {
 	return nil
 }
 
-func validateFarmsResults(local, remote []gridproxy.Farm) error {
+func validateFarmsResults(local, remote []proxytypes.Farm) error {
 	iter := local
 	if len(remote) < len(local) {
 		iter = remote
@@ -154,8 +155,8 @@ func calcFarmsAggregates(data *DBData) (res FarmsAggregate) {
 	return
 }
 
-func randomFarmsFilter(agg *FarmsAggregate) gridproxy.FarmFilter {
-	var f gridproxy.FarmFilter
+func randomFarmsFilter(agg *FarmsAggregate) proxytypes.FarmFilter {
+	var f proxytypes.FarmFilter
 	if flip(.5) {
 		f.FreeIPs = rndref(0, agg.maxFreeIPs)
 	}
@@ -200,7 +201,7 @@ func randomFarmsFilter(agg *FarmsAggregate) gridproxy.FarmFilter {
 	return f
 }
 
-func serializeFarmsFilter(f gridproxy.FarmFilter) string {
+func serializeFarmsFilter(f proxytypes.FarmFilter) string {
 	res := ""
 	if f.FreeIPs != nil {
 		res = fmt.Sprintf("%sFreeIPs: %d\n", res, *f.FreeIPs)
@@ -236,10 +237,10 @@ func serializeFarmsFilter(f gridproxy.FarmFilter) string {
 	return res
 }
 
-func FarmsStressTest(data *DBData, proxyClient, localClient gridproxy.GridProxyClient) error {
+func FarmsStressTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
 	agg := calcFarmsAggregates(data)
-	for i := 0; i < Tests; i++ {
-		l := gridproxy.Limit{
+	for i := 0; i < FarmTests; i++ {
+		l := proxytypes.Limit{
 			Size:     999999999999,
 			Page:     1,
 			RetCount: false,
@@ -263,7 +264,7 @@ func FarmsStressTest(data *DBData, proxyClient, localClient gridproxy.GridProxyC
 	return nil
 }
 
-func FarmsTest(data *DBData, proxyClient, localClient gridproxy.GridProxyClient) error {
+func farmsTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
 	if err := FarmsStressTest(data, proxyClient, localClient); err != nil {
 		return err
 	}

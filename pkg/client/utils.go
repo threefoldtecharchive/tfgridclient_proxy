@@ -1,9 +1,11 @@
-package gridproxy
+package client
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/threefoldtech/grid_proxy_server/pkg/types"
 )
 
 func stringifyList(l []uint64) string {
@@ -14,7 +16,7 @@ func stringifyList(l []uint64) string {
 	return strings.Join(ls, ",")
 }
 
-func nodeParams(filter NodeFilter, limit Limit) string {
+func nodeParams(filter types.NodeFilter, limit types.Limit) string {
 
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "?")
@@ -76,7 +78,7 @@ func nodeParams(filter NodeFilter, limit Limit) string {
 	return res[:len(res)-1]
 }
 
-func farmParams(filter FarmFilter, limit Limit) string {
+func farmParams(filter types.FarmFilter, limit types.Limit) string {
 
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "?")
@@ -126,11 +128,7 @@ func farmParams(filter FarmFilter, limit Limit) string {
 	return res[:len(res)-1]
 }
 
-/*
-	DeploymentData    *string
-	DeploymentHash    *string
-*/
-func contractParams(filter ContractFilter, limit Limit) string {
+func contractParams(filter types.ContractFilter, limit types.Limit) string {
 
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "?")

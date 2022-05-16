@@ -9,7 +9,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
-	"github.com/threefoldtech/grid_proxy_server/pkg/gridproxy"
+	proxyclient "github.com/threefoldtech/grid_proxy_server/pkg/client"
 )
 
 type flags struct {
@@ -47,15 +47,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	proxyClient := gridproxy.NewGridProxyClient(f.endpoint)
+	proxyClient := proxyclient.NewClient(f.endpoint)
 	localClient := NewGridProxyClient(data)
-	if err := NodesTest(&data, proxyClient, localClient); err != nil {
+	if err := nodesTest(&data, proxyClient, localClient); err != nil {
 		panic(err)
 	}
-	if err := FarmsTest(&data, proxyClient, localClient); err != nil {
+	if err := farmsTest(&data, proxyClient, localClient); err != nil {
 		panic(err)
 	}
-	if err := ContractsTest(&data, proxyClient, localClient); err != nil {
+	if err := contractsTest(&data, proxyClient, localClient); err != nil {
 		panic(err)
 	}
 }

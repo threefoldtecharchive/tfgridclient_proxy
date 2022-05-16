@@ -16,6 +16,7 @@ import (
 	_ "github.com/threefoldtech/grid_proxy_server/docs"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
+	"github.com/threefoldtech/grid_proxy_server/pkg/types"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
@@ -51,18 +52,12 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, mw.BadRequest(err)
 	}
-	dbFarms, err := a.db.GetFarms(filter, limit)
+	farms, farmsCount, err := a.db.GetFarms(filter, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query farm")
 		return nil, mw.Error(err)
 	}
 
-	var farmsCount uint
-	farms := make([]farm, len(dbFarms))
-	for idx, farm := range dbFarms {
-		farmsCount, farms[idx] = farmFromDBFarm(farm)
-
-	}
 	resp := mw.Ok()
 
 	// return the number of pages and totalCount in the response headers
@@ -86,6 +81,9 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 // @Router /stats [get]
 func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 	filter, err := a.handleStatsRequestsQueryParams(r)
+	if err != nil {
+		return nil, mw.BadRequest(err)
+	}
 	counters, err := a.db.GetCounters(filter)
 	if err != nil {
 		return nil, mw.Error(err)
@@ -126,15 +124,13 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, mw.BadRequest(err)
 	}
-	dbNodes, err := a.db.GetNodes(filter, limit)
+	dbNodes, nodesCount, err := a.db.GetNodes(filter, limit)
 	if err != nil {
 		return nil, mw.Error(err)
 	}
-	var nodesCount uint
-	nodes := make([]node, len(dbNodes))
+	nodes := make([]types.Node, len(dbNodes))
 	for idx, node := range dbNodes {
-		nodesCount, nodes[idx] = nodeFromDBNode(node)
-
+		nodes[idx] = nodeFromDBNode(node)
 	}
 	resp := mw.Ok()
 
@@ -168,7 +164,7 @@ func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {
 }
 
 func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
-	response := NodeStatus{}
+	response := types.NodeStatus{}
 	nodeID := mux.Vars(r)["node_id"]
 
 	nodeData, err := a.getNodeData(nodeID)
@@ -197,18 +193,12 @@ func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, mw.BadRequest(err)
 	}
-	dbTwins, err := a.db.GetTwins(filter, limit)
+	twins, twinsCount, err := a.db.GetTwins(filter, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query twin")
 		return nil, mw.Error(err)
 	}
 
-	var twinsCount uint
-	twins := make([]twin, len(dbTwins))
-	for idx, twin := range dbTwins {
-		twinsCount, twins[idx] = twinFromDBTwin(twin)
-
-	}
 	resp := mw.Ok()
 
 	// return the number of pages and totalCount in the response headers
@@ -246,16 +236,15 @@ func (a *App) listContracts(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, mw.BadRequest(err)
 	}
-	dbContracts, err := a.db.GetContracts(filter, limit)
+	dbContracts, contractsCount, err := a.db.GetContracts(filter, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query contract")
 		return nil, mw.Error(err)
 	}
 
-	var contractsCount uint
-	contracts := make([]contract, len(dbContracts))
+	contracts := make([]types.Contract, len(dbContracts))
 	for idx, contract := range dbContracts {
-		contractsCount, contracts[idx] = contractFromDBContract(contract)
+		contracts[idx] = contractFromDBContract(contract)
 
 	}
 	resp := mw.Ok()
@@ -278,7 +267,9 @@ func (a *App) indexPage(r *http.Request) (interface{}, mw.Response) {
 
 func (a *App) version(r *http.Request) (interface{}, mw.Response) {
 	response := mw.Ok()
-	return version{a.releaseVersion}, response
+	return types.Version{
+		Version: a.releaseVersion,
+	}, response
 }
 
 // Setup is the server and do initial configurations

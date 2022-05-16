@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/threefoldtech/grid_proxy_server/pkg/gridproxy"
+	proxyclient "github.com/threefoldtech/grid_proxy_server/pkg/client"
+	proxytypes "github.com/threefoldtech/grid_proxy_server/pkg/types"
 )
 
 var (
@@ -42,7 +43,7 @@ type NodesAggregate struct {
 	twins       []uint64
 }
 
-func nodeSatisfies(data *DBData, node node, f gridproxy.NodeFilter) bool {
+func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.Status != nil && (*f.Status == "up") != isUp(node.updated_at) {
 		return false
 	}
@@ -86,16 +87,16 @@ func nodeSatisfies(data *DBData, node node, f gridproxy.NodeFilter) bool {
 	if f.Rentable != nil && *f.Rentable != rentable {
 		return false
 	}
-	if f.RentedBy != nil && *f.RentedBy != data.nodeRentedBy[*f.RentedBy] {
+	if f.RentedBy != nil && *f.RentedBy != data.nodeRentedBy[node.node_id] {
 		return false
 	}
-	if f.AvailableFor != nil && (*f.AvailableFor != data.nodeRentedBy[*f.AvailableFor] && data.farms[node.farm_id].dedicated_farm) {
+	if f.AvailableFor != nil && (*f.AvailableFor != data.nodeRentedBy[node.node_id] && data.farms[node.farm_id].dedicated_farm) {
 		return false
 	}
 	return true
 }
 
-func validateResults(local, remote []gridproxy.Node) error {
+func validateResults(local, remote []proxytypes.Node) error {
 	iter := local
 	if len(remote) < len(local) {
 		iter = remote
@@ -132,7 +133,7 @@ func calcNodesAggregates(data *DBData) (res NodesAggregate) {
 		res.freeSRUs = append(res.freeSRUs, free.sru)
 		res.freeHRUs = append(res.freeHRUs, free.hru)
 	}
-	for _, contract := range data.rent_contracts {
+	for _, contract := range data.rentContracts {
 		if contract.state != "Created" {
 			continue
 		}
@@ -164,11 +165,11 @@ func calcNodesAggregates(data *DBData) (res NodesAggregate) {
 	return
 }
 
-func NodeUpTest(data *DBData, proxyClient, localClient gridproxy.GridProxyClient) error {
-	f := gridproxy.NodeFilter{
+func NodeUpTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	f := proxytypes.NodeFilter{
 		Status: &statusUP,
 	}
-	l := gridproxy.Limit{
+	l := proxytypes.Limit{
 		Size:     999999999,
 		Page:     1,
 		RetCount: true,
@@ -187,8 +188,8 @@ func NodeUpTest(data *DBData, proxyClient, localClient gridproxy.GridProxyClient
 	return nil
 }
 
-func randomNodeFilter(agg *NodesAggregate) gridproxy.NodeFilter {
-	var f gridproxy.NodeFilter
+func randomNodeFilter(agg *NodesAggregate) proxytypes.NodeFilter {
+	var f proxytypes.NodeFilter
 	if flip(.5) { // status
 		status := "down"
 		if flip(.5) {
@@ -284,7 +285,7 @@ func randomNodeFilter(agg *NodesAggregate) gridproxy.NodeFilter {
 	return f
 }
 
-func serializeFilter(f gridproxy.NodeFilter) string {
+func serializeFilter(f proxytypes.NodeFilter) string {
 	res := ""
 	if f.Status != nil {
 		res = fmt.Sprintf("%sstatus: %s\n", res, *f.Status)
@@ -334,10 +335,10 @@ func serializeFilter(f gridproxy.NodeFilter) string {
 	return res
 }
 
-func NodeStressTest(data *DBData, proxyClient, localClient gridproxy.GridProxyClient) error {
+func NodeStressTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
 	agg := calcNodesAggregates(data)
 	for i := 0; i < Tests; i++ {
-		l := gridproxy.Limit{
+		l := proxytypes.Limit{
 			Size:     999999999999,
 			Page:     1,
 			RetCount: false,
@@ -361,7 +362,7 @@ func NodeStressTest(data *DBData, proxyClient, localClient gridproxy.GridProxyCl
 	return nil
 }
 
-func NodesTest(data *DBData, proxyClient, localClient gridproxy.GridProxyClient) error {
+func nodesTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
 	if err := NodeUpTest(data, proxyClient, localClient); err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package gridproxy
+package client
 
 import (
 	"fmt"
@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/threefoldtech/grid_proxy_server/pkg/types"
 )
 
 type requestCounter struct {
 	Counter int
 }
 
-func NewRequestCounter() GridProxyClient {
+func NewRequestCounter() Client {
 	return &requestCounter{0}
 }
 
@@ -20,29 +21,29 @@ func (r *requestCounter) Ping() error {
 	r.Counter++
 	return errors.New("error")
 }
-func (r *requestCounter) Nodes(filter NodeFilter, pagination Limit) (res []Node, err error) {
+func (r *requestCounter) Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, err error) {
 	r.Counter++
 	return nil, errors.New("error")
 }
-func (r *requestCounter) Farms(filter FarmFilter, pagination Limit) (res FarmResult, err error) {
+func (r *requestCounter) Farms(filter types.FarmFilter, pagination types.Limit) (res []types.Farm, err error) {
 	r.Counter++
 	return nil, errors.New("error")
 }
-func (r *requestCounter) Contracts(filter ContractFilter, pagination Limit) (res []Contract, err error) {
+func (r *requestCounter) Contracts(filter types.ContractFilter, pagination types.Limit) (res []types.Contract, err error) {
 	r.Counter++
 	return nil, errors.New("error")
 }
-func (r *requestCounter) Node(nodeID uint32) (res NodeInfo, err error) {
+func (r *requestCounter) Node(nodeID uint32) (res types.NodeWithNestedCapacity, err error) {
 	r.Counter++
-	return NodeInfo{}, errors.New("error")
+	return types.NodeWithNestedCapacity{}, errors.New("error")
 }
-func (r *requestCounter) NodeStatus(nodeID uint32) (res NodeStatus, err error) {
+func (r *requestCounter) NodeStatus(nodeID uint32) (res types.NodeStatus, err error) {
 	r.Counter++
-	return NodeStatus{}, errors.New("error")
+	return types.NodeStatus{}, errors.New("error")
 }
 
-func retryingConstructor(u string) GridProxyClient {
-	return NewRetryingGridProxyClientWithTimeout(NewGridProxyClient(u), 1*time.Millisecond)
+func retryingConstructor(u string) Client {
+	return NewRetryingClientWithTimeout(NewClient(u), 1*time.Millisecond)
 }
 
 func TestRetryingConnectionFailures(t *testing.T) {
@@ -63,19 +64,19 @@ func TestRetryingSuccess(t *testing.T) {
 
 func TestCalledMultipleTimes(t *testing.T) {
 	r := NewRequestCounter()
-	proxy := NewRetryingGridProxyClientWithTimeout(r, 1*time.Millisecond)
+	proxy := NewRetryingClientWithTimeout(r, 1*time.Millisecond)
 	methods := map[string]func(){
 		"nodes": func() {
-			proxy.Nodes(NodeFilter{}, Limit{})
+			_, _ = proxy.Nodes(types.NodeFilter{}, types.Limit{})
 		},
 		"node": func() {
-			proxy.Node(1)
+			_, _ = proxy.Node(1)
 		},
 		"farms": func() {
-			proxy.Farms(FarmFilter{}, Limit{})
+			_, _ = proxy.Farms(types.FarmFilter{}, types.Limit{})
 		},
 		"node_status": func() {
-			proxy.NodeStatus(1)
+			_, _ = proxy.NodeStatus(1)
 		},
 	}
 	for endpoint, f := range methods {

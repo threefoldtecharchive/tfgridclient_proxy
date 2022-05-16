@@ -43,7 +43,9 @@ func (a *App) sendMessage(r *http.Request) (*http.Response, mw.Response) {
 	twinIDString := mux.Vars(r)["twin_id"]
 
 	buffer := new(bytes.Buffer)
-	buffer.ReadFrom(r.Body)
+	if _, err := buffer.ReadFrom(r.Body); err != nil {
+		return nil, mw.BadRequest(err)
+	}
 
 	twinID, err := strconv.Atoi(twinIDString)
 	if err != nil {
