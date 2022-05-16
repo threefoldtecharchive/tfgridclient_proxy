@@ -62,7 +62,7 @@ func farmsFilterValues() (types.FarmFilter, types.Limit, string) {
 		Size: 13,
 	}
 
-	return f, l, "?free_ips=1&total_ips=2&stellar_address=StellarAddress&pricing_policy_id=3&version=4&farm_id=5&twin_id=6&name=freefarm&name_contains=freefar&certification_type=DYI&dedicated=false&page=12&size=13"
+	return f, l, "?free_ips=1&total_ips=2&stellar_address=StellarAddress&pricing_policy_id=3&farm_id=5&twin_id=6&name=freefarm&name_contains=freefar&certification_type=DYI&dedicated=false&page=12&size=13"
 }
 
 func TestNodeFilter(t *testing.T) {
