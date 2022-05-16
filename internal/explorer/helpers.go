@@ -166,7 +166,6 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (types.FarmFilter, 
 		"free_ips":          &filter.FreeIPs,
 		"total_ips":         &filter.TotalIPs,
 		"pricing_policy_id": &filter.PricingPolicyID,
-		"version":           &filter.Version,
 		"farm_id":           &filter.FarmID,
 		"twin_id":           &filter.TwinID,
 	}

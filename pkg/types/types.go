@@ -104,7 +104,6 @@ type FarmFilter struct {
 	TotalIPs          *uint64
 	StellarAddress    *string
 	PricingPolicyID   *uint64
-	Version           *uint64
 	FarmID            *uint64
 	TwinID            *uint64
 	Name              *string

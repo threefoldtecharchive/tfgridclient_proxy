@@ -95,9 +95,6 @@ func farmParams(filter types.FarmFilter, limit types.Limit) string {
 	if filter.PricingPolicyID != nil {
 		fmt.Fprintf(&builder, "pricing_policy_id=%d&", *filter.PricingPolicyID)
 	}
-	if filter.Version != nil {
-		fmt.Fprintf(&builder, "version=%d&", *filter.Version)
-	}
 	if filter.FarmID != nil && *filter.FarmID != 0 {
 		fmt.Fprintf(&builder, "farm_id=%d&", *filter.FarmID)
 	}
