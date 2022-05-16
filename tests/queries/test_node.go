@@ -379,5 +379,6 @@ func nodesTest(data *DBData, proxyClient, localClient proxyclient.Client) error 
 	for _, k := range keys {
 		fmt.Printf("(%d, %d)", k, returned[k])
 	}
+	fmt.Println()
 	return nil
 }

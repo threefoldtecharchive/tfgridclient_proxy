@@ -60,11 +60,9 @@ func farmSatisfies(data *DBData, farm farm, f proxytypes.FarmFilter) bool {
 	if f.CertificationType != nil && *f.CertificationType != farm.certification_type {
 		return false
 	}
-	// FIXME: version was removed from the farms
-	/*
-		TODO:
-			Dedicated         *bool
-	*/
+	if f.Dedicated != nil && *f.Dedicated != farm.dedicated_farm {
+		return false
+	}
 	return true
 }
 
@@ -104,15 +102,15 @@ func validateFarmsResults(local, remote []proxytypes.Farm) error {
 	for i := range iter {
 		localIPs := local[i].PublicIps
 		remoteIPs := remote[i].PublicIps
-		if err := validatePublicIPs(localIPs, remoteIPs); err != nil {
-			return err
-		}
 		local[i].PublicIps = nil
 		remote[i].PublicIps = nil
 		if !reflect.DeepEqual(local[i], remote[i]) {
 			local[i].PublicIps = localIPs
 			remote[i].PublicIps = remoteIPs
 			return fmt.Errorf("farm %d mismatch: local: %+v, remote: %+v", i, local[i], remote[i])
+		}
+		if err := validatePublicIPs(localIPs, remoteIPs); err != nil {
+			return err
 		}
 		local[i].PublicIps = localIPs
 		remote[i].PublicIps = remoteIPs
@@ -196,7 +194,13 @@ func randomFarmsFilter(agg *FarmsAggregate) proxytypes.FarmFilter {
 		c := agg.certificationTypes[rand.Intn(len(agg.certificationTypes))]
 		f.CertificationType = &c
 	}
-	// Dedicated         *bool
+	if flip(.5) {
+		v := true
+		if flip(.5) {
+			v = false
+		}
+		f.Dedicated = &v
+	}
 
 	return f
 }
@@ -230,10 +234,9 @@ func serializeFarmsFilter(f proxytypes.FarmFilter) string {
 	if f.CertificationType != nil {
 		res = fmt.Sprintf("%sCertificationType: %s\n", res, *f.CertificationType)
 	}
-	/*
-		TODO:
-			Dedicated         *bool
-	*/
+	if f.Dedicated != nil {
+		res = fmt.Sprintf("%sDedicated: %t\n", res, *f.Dedicated)
+	}
 	return res
 }
 
@@ -246,7 +249,6 @@ func FarmsStressTest(data *DBData, proxyClient, localClient proxyclient.Client) 
 			RetCount: false,
 		}
 		f := randomFarmsFilter(&agg)
-
 		localFarms, err := localClient.Farms(f, l)
 		if err != nil {
 			return err
