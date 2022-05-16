@@ -21,6 +21,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cenkalti/backoff/v4 v4.1.0 // indirect
 	github.com/centrifuge/go-substrate-rpc-client/v3 v3.0.2 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect

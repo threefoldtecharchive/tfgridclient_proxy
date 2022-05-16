@@ -46,7 +46,7 @@ const (
 		COALESCE(node_resources_total.sru, 0) as total_sru
 	FROM contract_resources
 	JOIN node_contract as node_contract
-	ON node_contract.id = contract_resources.contract_id AND node_contract.state = 'Created'
+	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state = 'Created'
 	RIGHT JOIN node as node
 	ON node.node_id = node_contract.node_id
 	JOIN node_resources_total AS node_resources_total
@@ -72,7 +72,7 @@ const (
 		COALESCE(node_resources_total.sru, 0) as total_sru
 	FROM contract_resources
 	JOIN node_contract as node_contract
-	ON node_contract.id = contract_resources.contract_id AND node_contract.state = 'Created'
+	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state = 'Created'
 	RIGHT JOIN node as node
 	ON node.node_id = node_contract.node_id
 	JOIN node_resources_total AS node_resources_total
@@ -202,7 +202,7 @@ const (
 
 	selectContracts = `
 	SELECT 
-		contract_id,
+		contracts.contract_id,
 	 	twin_id,
 		state,
 		CAST(created_at / 1000 AS int),
@@ -212,13 +212,7 @@ const (
 		deployment_hash, 
 		number_of_public_i_ps, 
 		type,
-		COALESCE((	SELECT 
-				COALESCE(json_agg(json_build_object('amountBilled', amount_billed, 'discountReceived', discount_received, 'timestamp', timestamp)), '[]')
-			FROM
-				contract_bill_report
-			WHERE contracts.contract_id = contract_bill_report.contract_id
-			GROUP BY contract_id
-		), '[]') as contract_billing, 
+		COALESCE(contract_billing.billings, '[]') as contract_billing, 
 		%s 
 	FROM (
 	SELECT contract_id, twin_id, state, created_at, ''AS name, node_id, deployment_data, deployment_hash, number_of_public_i_ps, 'node' AS type
@@ -229,7 +223,16 @@ const (
 	UNION 
 	SELECT contract_id, twin_id, state, created_at, name, 0, '', '', 0, 'name' AS type
 	FROM name_contract
-	) contracts	
+	) contracts
+	LEFT JOIN (
+		SELECT 
+			contract_bill_report.contract_id,
+			COALESCE(json_agg(json_build_object('amountBilled', amount_billed, 'discountReceived', discount_received, 'timestamp', timestamp)), '[]') as billings
+		FROM
+			contract_bill_report
+		GROUP BY contract_id
+	) contract_billing
+	ON contracts.contract_id = contract_billing.contract_id
 	`
 
 	countNodes = `
@@ -797,7 +800,7 @@ func (d *PostgresDatabase) GetContracts(filter ContractFilter, limit Limit) ([]C
 		args = append(args, *filter.TwinID)
 	}
 	if filter.ContractID != nil {
-		query = fmt.Sprintf("%s AND contract_id = $%d", query, idx)
+		query = fmt.Sprintf("%s AND contracts.contract_id = $%d", query, idx)
 		idx++
 		args = append(args, *filter.ContractID)
 	}
@@ -826,7 +829,7 @@ func (d *PostgresDatabase) GetContracts(filter ContractFilter, limit Limit) ([]C
 		idx++
 		args = append(args, *filter.DeploymentHash)
 	}
-	query = fmt.Sprintf("%s ORDER BY contract_id", query)
+	query = fmt.Sprintf("%s ORDER BY contracts.contract_id", query)
 	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
 	rows, err := d.db.Query(query, args...)
