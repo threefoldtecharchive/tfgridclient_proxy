@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"math/rand"
 
 	// used by the orm
 
@@ -19,6 +20,7 @@ type flags struct {
 	postgresUser     string
 	postgresPassword string
 	endpoint         string
+	seed             int
 }
 
 func parseCmdline() flags {
@@ -29,12 +31,16 @@ func parseCmdline() flags {
 	flag.StringVar(&f.postgresUser, "postgres-user", "", "postgres username")
 	flag.StringVar(&f.postgresPassword, "postgres-password", "", "postgres password")
 	flag.StringVar(&f.endpoint, "endpoint", "", "the grid proxy endpoint to test against")
+	flag.IntVar(&f.seed, "seed", 0, "seed used for the random generation of tests")
 	flag.Parse()
 	return f
 }
 
 func main() {
 	f := parseCmdline()
+	if f.seed != 0 {
+		rand.Seed(int64(f.seed))
+	}
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		f.postgresHost, f.postgresPort, f.postgresUser, f.postgresPassword, f.postgresDB)
