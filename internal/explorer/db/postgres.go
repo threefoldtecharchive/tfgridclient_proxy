@@ -683,11 +683,6 @@ func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) 
 		idx++
 		args = append(args, *filter.PricingPolicyID)
 	}
-	if filter.Version != nil {
-		query = fmt.Sprintf("%s AND version = $%d", query, idx)
-		idx++
-		args = append(args, *filter.Version)
-	}
 	if filter.FarmID != nil {
 		query = fmt.Sprintf("%s AND farm_id = $%d", query, idx)
 		idx++

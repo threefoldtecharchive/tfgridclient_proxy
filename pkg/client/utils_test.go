@@ -50,7 +50,6 @@ func farmsFilterValues() (types.FarmFilter, types.Limit, string) {
 		TotalIPs:          &ints[2],
 		StellarAddress:    &StellarAddress,
 		PricingPolicyID:   &ints[3],
-		Version:           &ints[4],
 		FarmID:            &ints[5],
 		TwinID:            &ints[6],
 		Name:              &FreeFarm,
