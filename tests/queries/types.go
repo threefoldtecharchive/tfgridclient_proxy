@@ -1,6 +1,7 @@
+// nolint
 package main
 
-// TODO: import from tools?
+// TODO: the one in tools/db/types.go is unexported but it's the same file
 
 type contract_resources struct {
 	id          string
@@ -93,11 +94,6 @@ type rent_contract struct {
 	node_id      uint64
 	state        string
 	created_at   uint64
-}
-type location struct {
-	id        string
-	longitude string
-	latitude  string
 }
 
 type contract_bill_report struct {

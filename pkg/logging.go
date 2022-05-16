@@ -11,17 +11,12 @@ import (
 )
 
 const (
-	colorBlack = iota + 30
-	colorRed
+	colorRed = iota + 31
 	colorGreen
 	colorYellow
 	colorBlue
-	colorMagenta
-	colorCyan
-	colorWhite
 
-	colorBold     = 1
-	colorDarkGray = 90
+	colorBold = 1
 )
 
 // colorize returns the string s wrapped in ANSI code c, unless disabled is true.

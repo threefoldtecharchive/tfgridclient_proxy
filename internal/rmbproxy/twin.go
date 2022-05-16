@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/threefoldtech/substrate-client"
@@ -28,19 +27,6 @@ func NewTwinResolver(substrateURL string) (*TwinExplorerResolver, error) {
 	return &TwinExplorerResolver{
 		client: client,
 	}, nil
-}
-
-func (c *twinClient) readError(r io.Reader) string {
-	var body struct {
-		Status  string `json:"status"`
-		Message string `json:"message"`
-	}
-
-	if err := json.NewDecoder(r).Decode(&body); err != nil {
-		return fmt.Sprintf("failed to read response body: %s", err)
-	}
-
-	return body.Message
 }
 
 func (c *twinClient) SubmitMessage(msg bytes.Buffer) (*http.Response, error) {

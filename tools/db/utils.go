@@ -21,6 +21,7 @@ func randomIPv4() net.IP {
 	return net.IP(ip)
 }
 
+// IPv4Subnet gets the ipv4 subnet given the ip
 func IPv4Subnet(ip net.IP) *net.IPNet {
 	return &net.IPNet{
 		IP:   ip,

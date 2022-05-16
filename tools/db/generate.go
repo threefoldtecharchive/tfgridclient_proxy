@@ -9,12 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-/*
-TODO:
-- public config
-- dedicated farms and rent contracts
-*/
-
 var (
 	nodesMRU             = make(map[uint64]uint64)
 	nodesSRU             = make(map[uint64]uint64)
@@ -29,26 +23,26 @@ var (
 )
 
 const (
-	ContractCreatedRatio = .1 // from devnet
-	UsedPublicIPsRatio   = .9
-	NodeUpRatio          = .5
-	NodeCount            = 1000
-	FarmCount            = 100
-	NormalUsers          = 2000
-	PublicIPCount        = 1000
-	TwinCount            = NodeCount + FarmCount + NormalUsers
-	ContractCount        = 3000
-	RentContractCount    = 20
-	NameContractCount    = 300
+	contractCreatedRatio = .1 // from devnet
+	usedPublicIPsRatio   = .9
+	nodeUpRatio          = .5
+	nodeCount            = 1000
+	farmCount            = 100
+	normalUsers          = 2000
+	publicIPCount        = 1000
+	twinCount            = nodeCount + farmCount + normalUsers
+	contractCount        = 3000
+	rentContractCount    = 20
+	nameContractCount    = 300
 
-	MaxContractHRU = 1024 * 1024 * 1024 * 300
-	MaxContractSRU = 1024 * 1024 * 1024 * 300
-	MaxContractMRU = 1024 * 1024 * 1024 * 16
-	MaxContractCRU = 16
-	MinContractHRU = 0
-	MinContractSRU = 1024 * 1024 * 256
-	MinContractMRU = 1024 * 1024 * 256
-	MinContractCRU = 1
+	maxContractHRU = 1024 * 1024 * 1024 * 300
+	maxContractSRU = 1024 * 1024 * 1024 * 300
+	maxContractMRU = 1024 * 1024 * 1024 * 16
+	maxContractCRU = 16
+	minContractHRU = 0
+	minContractSRU = 1024 * 1024 * 256
+	minContractMRU = 1024 * 1024 * 256
+	minContractCRU = 1
 )
 
 func initSchema(db *sql.DB) error {
@@ -64,12 +58,13 @@ func initSchema(db *sql.DB) error {
 }
 
 func generateTwins(db *sql.DB) error {
-	for i := uint64(1); i <= TwinCount; i++ {
+	for i := uint64(1); i <= twinCount; i++ {
 		twin := twin{
-			id:         fmt.Sprintf("twin-%d", i),
-			account_id: fmt.Sprintf("account-id-%d", i),
-			ip:         fmt.Sprintf("account-ip-%d", i),
-			twin_id:    i,
+			id:           fmt.Sprintf("twin-%d", i),
+			account_id:   fmt.Sprintf("account-id-%d", i),
+			ip:           fmt.Sprintf("account-ip-%d", i),
+			twin_id:      i,
+			grid_version: 3,
 		}
 		if _, err := db.Exec(insertQuery(&twin)); err != nil {
 			panic(err)
@@ -79,9 +74,9 @@ func generateTwins(db *sql.DB) error {
 }
 
 func generatePublicIPs(db *sql.DB) error {
-	for i := uint64(1); i <= PublicIPCount; i++ {
+	for i := uint64(1); i <= publicIPCount; i++ {
 		contract_id := uint64(0)
-		if flip(UsedPublicIPsRatio) {
+		if flip(usedPublicIPsRatio) {
 			contract_id = createdNodeContracts[rnd(0, uint64(len(createdNodeContracts))-1)]
 		}
 		ip := randomIPv4()
@@ -90,7 +85,7 @@ func generatePublicIPs(db *sql.DB) error {
 			gateway:     ip.String(),
 			ip:          IPv4Subnet(ip).String(),
 			contract_id: contract_id,
-			farm_id:     fmt.Sprintf("farm-%d", rnd(1, FarmCount)),
+			farm_id:     fmt.Sprintf("farm-%d", rnd(1, farmCount)),
 		}
 		if _, err := db.Exec(insertQuery(&public_ip)); err != nil {
 			panic(err)
@@ -103,7 +98,7 @@ func generatePublicIPs(db *sql.DB) error {
 }
 
 func generateFarms(db *sql.DB) error {
-	for i := uint64(1); i <= FarmCount; i++ {
+	for i := uint64(1); i <= farmCount; i++ {
 		farm := farm{
 			id:                 fmt.Sprintf("farm-%d", i),
 			farm_id:            i,
@@ -112,6 +107,11 @@ func generateFarms(db *sql.DB) error {
 			dedicated_farm:     flip(.1),
 			twin_id:            i,
 			pricing_policy_id:  1,
+			grid_version:       3,
+			stellar_address:    "",
+		}
+		if farm.dedicated_farm {
+			dedicatedFarms[farm.farm_id] = struct{}{}
 		}
 		if _, err := db.Exec(insertQuery(&farm)); err != nil {
 			panic(err)
@@ -121,10 +121,10 @@ func generateFarms(db *sql.DB) error {
 }
 
 func generateContracts(db *sql.DB) error {
-	for i := uint64(1); i <= ContractCount; i++ {
-		nodeID := rnd(1, NodeCount)
+	for i := uint64(1); i <= contractCount; i++ {
+		nodeID := rnd(1, nodeCount)
 		state := "Deleted"
-		if nodeUP[nodeID] && flip(ContractCreatedRatio) {
+		if nodeUP[nodeID] && flip(contractCreatedRatio) {
 			state = "Created"
 		}
 		twinID := rnd(1100, 3100)
@@ -145,11 +145,13 @@ func generateContracts(db *sql.DB) error {
 			deployment_data:       fmt.Sprintf("deployment-data-%d", contractCnt),
 			deployment_hash:       fmt.Sprintf("deployment-hash-%d", contractCnt),
 			number_of_public_i_ps: 0,
+			grid_version:          3,
+			resources_used_id:     "",
 		}
-		cru := rnd(1, MaxContractCRU)
-		hru := rnd(MinContractHRU, min(MaxContractHRU, nodesHRU[nodeID]))
-		sru := rnd(MinContractSRU, min(MaxContractSRU, nodesSRU[nodeID]))
-		mru := rnd(MinContractMRU, min(MaxContractMRU, nodesMRU[nodeID]))
+		cru := rnd(minContractCRU, maxContractCRU)
+		hru := rnd(minContractHRU, min(maxContractHRU, nodesHRU[nodeID]))
+		sru := rnd(minContractSRU, min(maxContractSRU, nodesSRU[nodeID]))
+		mru := rnd(minContractMRU, min(maxContractMRU, nodesMRU[nodeID]))
 		contract_resources := contract_resources{
 			id:          fmt.Sprintf("contract-resources-%d", contractCnt),
 			hru:         hru,
@@ -192,10 +194,10 @@ func generateContracts(db *sql.DB) error {
 	return nil
 }
 func generateNameContracts(db *sql.DB) error {
-	for i := uint64(1); i <= NameContractCount; i++ {
-		nodeID := rnd(1, NodeCount)
+	for i := uint64(1); i <= nameContractCount; i++ {
+		nodeID := rnd(1, nodeCount)
 		state := "Deleted"
-		if nodeUP[nodeID] && flip(ContractCreatedRatio) {
+		if nodeUP[nodeID] && flip(contractCreatedRatio) {
 			state = "Created"
 		}
 		twinID := rnd(1100, 3100)
@@ -237,11 +239,11 @@ func generateNameContracts(db *sql.DB) error {
 	return nil
 }
 func generateRentContracts(db *sql.DB) error {
-	for i := uint64(1); i <= RentContractCount; i++ {
+	for i := uint64(1); i <= rentContractCount; i++ {
 		nodeID := randomKey(availableRentNodes)
 		delete(availableRentNodes, nodeID)
 		state := "Deleted"
-		if nodeUP[nodeID] && flip(ContractCreatedRatio) {
+		if nodeUP[nodeID] && flip(.9) {
 			state = "Created"
 		}
 		contract := rent_contract{
@@ -286,7 +288,7 @@ func generateNodes(db *sql.DB) error {
 		hru := rnd(100, 30*1024) * 1024 * 1024 * 1024 // 100GB -> 30TB
 		sru := rnd(100, 30*1024) * 1024 * 1024 * 1024 // 100GB -> 30TB
 		cru := rnd(4, 128)
-		up := flip(NodeUpRatio)
+		up := flip(nodeUpRatio)
 		updatedAt := time.Now().Unix()*1000 - int64(rnd(1000*60*60*2, 1000*60*60*24*30*12))
 		if up {
 			updatedAt = time.Now().Unix()*1000 - int64(rnd(0, 1000*60*60*1))
@@ -301,19 +303,23 @@ func generateNodes(db *sql.DB) error {
 			latitude:  fmt.Sprintf("location-lat-%d", i),
 		}
 		node := node{
-			id:                fmt.Sprintf("node-%d", i),
-			location_id:       fmt.Sprintf("location-%d", i),
-			node_id:           i,
-			farm_id:           i%100 + 1,
-			twin_id:           i + 100 + 1,
-			country:           "Belgium",
-			city:              "Unknown",
-			uptime:            1000,
-			updated_at:        uint64(updatedAt),
-			created:           uint64(time.Now().Unix()),
-			created_at:        uint64(time.Now().Unix()) * 1000,
-			farming_policy_id: 1,
-			grid_version:      3,
+			id:                 fmt.Sprintf("node-%d", i),
+			location_id:        fmt.Sprintf("location-%d", i),
+			node_id:            i,
+			farm_id:            i%100 + 1,
+			twin_id:            i + 100 + 1,
+			country:            "Belgium",
+			city:               "Unknown",
+			uptime:             1000,
+			updated_at:         uint64(updatedAt),
+			created:            uint64(time.Now().Unix()),
+			created_at:         uint64(time.Now().Unix()) * 1000,
+			farming_policy_id:  1,
+			grid_version:       3,
+			certification_type: "Diy",
+			secure:             false,
+			virtualized:        false,
+			serial_number:      "",
 		}
 		total_resources := node_resources_total{
 			id:      fmt.Sprintf("total-resources-%d", i),
@@ -334,6 +340,20 @@ func generateNodes(db *sql.DB) error {
 		}
 		if _, err := db.Exec(insertQuery(&total_resources)); err != nil {
 			panic(err)
+		}
+
+		if flip(.1) {
+			if _, err := db.Exec(insertQuery(&public_config{
+				id:      fmt.Sprintf("public-config-%d", i),
+				ipv4:    "185.16.5.2/24",
+				gw4:     "185.16.5.2",
+				ipv6:    "::1/64",
+				gw6:     "::1",
+				domain:  "hamada.com",
+				node_id: fmt.Sprintf("node-%d", i),
+			})); err != nil {
+				panic(err)
+			}
 		}
 	}
 	return nil

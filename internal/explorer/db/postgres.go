@@ -9,6 +9,7 @@ import (
 
 	// to use for database/sql
 	_ "github.com/lib/pq"
+	"github.com/threefoldtech/grid_proxy_server/pkg/types"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 
 	"github.com/pkg/errors"
@@ -314,8 +315,8 @@ func (d *PostgresDatabase) CountNodes() (uint, error) {
 }
 
 // GetCounters returns aggregate info about the grid
-func (d *PostgresDatabase) GetCounters(filter StatsFilter) (Counters, error) {
-	var counters Counters
+func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters, error) {
+	var counters types.Counters
 	query := countersQuery
 	totalResourcesQuery := totalResources
 
@@ -372,50 +373,50 @@ func (d *PostgresDatabase) GetCounters(filter StatsFilter) (Counters, error) {
 	return counters, nil
 }
 
-func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
+func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *DBNodeData, count *uint) error {
 	err := rows.Scan(
-		&node.NodeData.ID,
+		&node.ID,
 		&node.NodeID,
-		&node.NodeData.FarmID,
-		&node.NodeData.TwinID,
-		&node.NodeData.Country,
-		&node.NodeData.GridVersion,
-		&node.NodeData.City,
-		&node.NodeData.Uptime,
-		&node.NodeData.Created,
-		&node.NodeData.FarmingPolicyID,
-		&node.NodeData.UpdatedAt,
-		&node.NodeData.TotalResources.CRU,
-		&node.NodeData.TotalResources.SRU,
-		&node.NodeData.TotalResources.HRU,
-		&node.NodeData.TotalResources.MRU,
-		&node.NodeData.UsedResources.CRU,
-		&node.NodeData.UsedResources.SRU,
-		&node.NodeData.UsedResources.HRU,
-		&node.NodeData.UsedResources.MRU,
-		&node.NodeData.PublicConfig.Domain,
-		&node.NodeData.PublicConfig.Gw4,
-		&node.NodeData.PublicConfig.Gw6,
-		&node.NodeData.PublicConfig.Ipv4,
-		&node.NodeData.PublicConfig.Ipv6,
-		&node.NodeData.CertificationType,
-		&node.NodeData.Dedicated,
-		&node.NodeData.RentContractID,
-		&node.NodeData.RentedByTwinID,
-		&node.Count,
+		&node.FarmID,
+		&node.TwinID,
+		&node.Country,
+		&node.GridVersion,
+		&node.City,
+		&node.Uptime,
+		&node.Created,
+		&node.FarmingPolicyID,
+		&node.UpdatedAt,
+		&node.TotalResources.CRU,
+		&node.TotalResources.SRU,
+		&node.TotalResources.HRU,
+		&node.TotalResources.MRU,
+		&node.UsedResources.CRU,
+		&node.UsedResources.SRU,
+		&node.UsedResources.HRU,
+		&node.UsedResources.MRU,
+		&node.PublicConfig.Domain,
+		&node.PublicConfig.Gw4,
+		&node.PublicConfig.Gw6,
+		&node.PublicConfig.Ipv4,
+		&node.PublicConfig.Ipv6,
+		&node.CertificationType,
+		&node.Dedicated,
+		&node.RentContractID,
+		&node.RentedByTwinID,
+		count,
 	)
 	if err != nil {
 		return err
 	}
-	if int64(node.NodeData.UpdatedAt) >= time.Now().Unix()-nodeStateFactor*int64(reportInterval/time.Second) {
-		node.NodeData.Status = "up"
+	if int64(node.UpdatedAt) >= time.Now().Unix()-nodeStateFactor*int64(reportInterval/time.Second) {
+		node.Status = "up"
 	} else {
-		node.NodeData.Status = "down"
+		node.Status = "down"
 	}
 	return nil
 }
 
-func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
+func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *types.Farm, count *uint) error {
 	var publicIPStr string
 	err := rows.Scan(
 		&farm.FarmID,
@@ -426,7 +427,7 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 		&farm.StellarAddress,
 		&farm.Dedicated,
 		&publicIPStr,
-		&farm.Count,
+		count,
 	)
 	if err != nil {
 		return err
@@ -437,12 +438,12 @@ func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
 	return nil
 }
 
-func (d *PostgresDatabase) scanTwin(rows *sql.Rows, twin *Twin) error {
+func (d *PostgresDatabase) scanTwin(rows *sql.Rows, twin *types.Twin, count *uint) error {
 	err := rows.Scan(
 		&twin.TwinID,
 		&twin.AccountID,
 		&twin.IP,
-		&twin.Count,
+		count,
 	)
 	if err != nil {
 		return err
@@ -450,7 +451,7 @@ func (d *PostgresDatabase) scanTwin(rows *sql.Rows, twin *Twin) error {
 	return nil
 }
 
-func (d *PostgresDatabase) scanContract(rows *sql.Rows, contract *Contract) error {
+func (d *PostgresDatabase) scanContract(rows *sql.Rows, contract *DBContract, count *uint) error {
 	var contractBilling string
 	err := rows.Scan(
 		&contract.ContractID,
@@ -464,7 +465,7 @@ func (d *PostgresDatabase) scanContract(rows *sql.Rows, contract *Contract) erro
 		&contract.NumberOfPublicIps,
 		&contract.Type,
 		&contractBilling,
-		&contract.Count,
+		count,
 	)
 	if err != nil {
 		return err
@@ -476,8 +477,8 @@ func (d *PostgresDatabase) scanContract(rows *sql.Rows, contract *Contract) erro
 }
 
 // GetNode returns node info
-func (d *PostgresDatabase) GetNode(nodeID uint32) (AllNodeData, error) {
-	var node AllNodeData
+func (d *PostgresDatabase) GetNode(nodeID uint32) (DBNodeData, error) {
+	var node DBNodeData
 	rows, err := d.db.Query(selectSingleNode, nodeID)
 	if err != nil {
 		return node, err
@@ -486,13 +487,14 @@ func (d *PostgresDatabase) GetNode(nodeID uint32) (AllNodeData, error) {
 	if !rows.Next() {
 		return node, ErrNodeNotFound
 	}
-	err = d.scanNode(rows, &node)
+	var count uint
+	err = d.scanNode(rows, &node, &count)
 	return node, err
 }
 
 // GetFarm return farm info
-func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
-	var farm Farm
+func (d *PostgresDatabase) GetFarm(farmID uint32) (types.Farm, error) {
+	var farm types.Farm
 	rows, err := d.db.Query(selectFarm, farmID)
 	if err != nil {
 		return farm, err
@@ -501,10 +503,12 @@ func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
 	if !rows.Next() {
 		return farm, ErrFarmNotFound
 	}
-	err = d.scanFarm(rows, &farm)
+	var count uint
+	err = d.scanFarm(rows, &farm, &count)
 	return farm, err
 }
 
+//lint:ignore U1000 used for debugging
 func convertParam(p interface{}) string {
 	if v, ok := p.(string); ok {
 		return fmt.Sprintf("'%s'", v)
@@ -522,6 +526,9 @@ func convertParam(p interface{}) string {
 	log.Error().Msgf("can't recognize type %s", fmt.Sprintf("%v", p))
 	return "0"
 }
+
+//lint:ignore U1000 used for debugging
+//nolint
 func printQuery(query string, args ...interface{}) {
 	for i, e := range args {
 		query = strings.ReplaceAll(query, fmt.Sprintf("$%d", i+1), convertParam(e))
@@ -530,7 +537,7 @@ func printQuery(query string, args ...interface{}) {
 }
 
 // GetNodes returns nodes filtered and paginated
-func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error) {
+func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) ([]DBNodeData, uint, error) {
 	query := selectNodesWithFilter
 	args := make([]interface{}, 0)
 	if limit.RetCount {
@@ -628,23 +635,24 @@ func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeDa
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
 	rows, err := d.db.Query(query, args...)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query nodes")
+		return nil, 0, errors.Wrap(err, "failed to query nodes")
 	}
 	defer rows.Close()
-	nodes := make([]AllNodeData, 0)
+	nodes := make([]DBNodeData, 0)
+	var count uint
 	for rows.Next() {
-		var node AllNodeData
-		if err := d.scanNode(rows, &node); err != nil {
+		var node DBNodeData
+		if err := d.scanNode(rows, &node, &count); err != nil {
 			log.Error().Err(err).Msg("failed to scan returned node from database")
 			continue
 		}
 		nodes = append(nodes, node)
 	}
-	return nodes, nil
+	return nodes, count, nil
 }
 
 // GetFarms return farms filtered and paginated
-func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, error) {
+func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) ([]types.Farm, uint, error) {
 	query := selectFarmsWithFilter
 	if limit.RetCount {
 		query = fmt.Sprintf(query, "COUNT(*) OVER()")
@@ -717,23 +725,24 @@ func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, err
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
 	rows, err := d.db.Query(query, args...)
 	if err != nil {
-		return nil, errors.Wrap(err, "couldn't query farms")
+		return nil, 0, errors.Wrap(err, "couldn't query farms")
 	}
 	defer rows.Close()
-	farms := make([]Farm, 0)
+	farms := make([]types.Farm, 0)
+	var count uint
 	for rows.Next() {
-		var farm Farm
-		if err := d.scanFarm(rows, &farm); err != nil {
+		var farm types.Farm
+		if err := d.scanFarm(rows, &farm, &count); err != nil {
 			log.Error().Err(err).Msg("failed to scan returned farm from database")
 			continue
 		}
 		farms = append(farms, farm)
 	}
-	return farms, nil
+	return farms, count, nil
 }
 
 // GetTwins returns twins filtered and paginated
-func (d *PostgresDatabase) GetTwins(filter TwinFilter, limit Limit) ([]Twin, error) {
+func (d *PostgresDatabase) GetTwins(filter types.TwinFilter, limit types.Limit) ([]types.Twin, uint, error) {
 	query := selectTwins
 	args := make([]interface{}, 0)
 	if limit.RetCount {
@@ -758,23 +767,24 @@ func (d *PostgresDatabase) GetTwins(filter TwinFilter, limit Limit) ([]Twin, err
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
 	rows, err := d.db.Query(query, args...)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query twins")
+		return nil, 0, errors.Wrap(err, "failed to query twins")
 	}
 	defer rows.Close()
-	twins := make([]Twin, 0)
+	twins := make([]types.Twin, 0)
+	var count uint
 	for rows.Next() {
-		var twin Twin
-		if err := d.scanTwin(rows, &twin); err != nil {
+		var twin types.Twin
+		if err := d.scanTwin(rows, &twin, &count); err != nil {
 			log.Error().Err(err).Msg("failed to scan returned twin from database")
 			continue
 		}
 		twins = append(twins, twin)
 	}
-	return twins, nil
+	return twins, count, nil
 }
 
 // GetContracts returns contracts filtered and paginated
-func (d *PostgresDatabase) GetContracts(filter ContractFilter, limit Limit) ([]Contract, error) {
+func (d *PostgresDatabase) GetContracts(filter types.ContractFilter, limit types.Limit) ([]DBContract, uint, error) {
 	query := selectContracts
 	args := make([]interface{}, 0)
 	if limit.RetCount {
@@ -834,17 +844,18 @@ func (d *PostgresDatabase) GetContracts(filter ContractFilter, limit Limit) ([]C
 	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
 	rows, err := d.db.Query(query, args...)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query contracts")
+		return nil, 0, errors.Wrap(err, "failed to query contracts")
 	}
 	defer rows.Close()
-	contracts := make([]Contract, 0)
+	contracts := make([]DBContract, 0)
+	var count uint
 	for rows.Next() {
-		var contract Contract
-		if err := d.scanContract(rows, &contract); err != nil {
+		var contract DBContract
+		if err := d.scanContract(rows, &contract, &count); err != nil {
 			log.Error().Err(err).Msg("failed to scan returned contract from database")
 			continue
 		}
 		contracts = append(contracts, contract)
 	}
-	return contracts, nil
+	return contracts, count, nil
 }
