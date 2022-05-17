@@ -34,19 +34,19 @@ const (
 	CREATE OR REPLACE VIEW nodes_resources_view AS SELECT
 		node.node_id,
 		COALESCE(sum(contract_resources.cru), 0) as used_cru,
-		COALESCE(sum(contract_resources.mru), 0) + 2147483648 as used_mru,
+		COALESCE(sum(contract_resources.mru), 0) + GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as used_mru,
 		COALESCE(sum(contract_resources.hru), 0) as used_hru,
-		COALESCE(sum(contract_resources.sru), 0) as used_sru,
-		node_resources_total.mru - COALESCE(sum(contract_resources.mru), 0) - 2147483648 as free_mru,
+		COALESCE(sum(contract_resources.sru), 0) + 107374182400 as used_sru,
+		node_resources_total.mru - COALESCE(sum(contract_resources.mru), 0) - GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as free_mru,
 		node_resources_total.hru - COALESCE(sum(contract_resources.hru), 0) as free_hru,
-		2 * node_resources_total.sru - COALESCE(sum(contract_resources.sru), 0) as free_sru,
+		2 * node_resources_total.sru - COALESCE(sum(contract_resources.sru), 0) - 107374182400 as free_sru,
 		COALESCE(node_resources_total.cru, 0) as total_cru,
 		COALESCE(node_resources_total.mru, 0) as total_mru,
 		COALESCE(node_resources_total.hru, 0) as total_hru,
 		COALESCE(node_resources_total.sru, 0) as total_sru
 	FROM contract_resources
 	JOIN node_contract as node_contract
-	ON node_contract.id = contract_resources.contract_id AND node_contract.state = 'Created'
+	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state = 'Created'
 	RIGHT JOIN node as node
 	ON node.node_id = node_contract.node_id
 	JOIN node_resources_total AS node_resources_total
@@ -60,19 +60,19 @@ const (
 	SELECT
 		node.node_id,
 		COALESCE(sum(contract_resources.cru), 0) as used_cru,
-		COALESCE(sum(contract_resources.mru), 0) + 2147483648 as used_mru,
+		COALESCE(sum(contract_resources.mru), 0) + GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as used_mru,
 		COALESCE(sum(contract_resources.hru), 0) as used_hru,
-		COALESCE(sum(contract_resources.sru), 0) as used_sru,
-		node_resources_total.mru - COALESCE(sum(contract_resources.mru), 0) - 2147483648 as free_mru,
+		COALESCE(sum(contract_resources.sru), 0) + 107374182400 as used_sru,
+		node_resources_total.mru - COALESCE(sum(contract_resources.mru), 0) - GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as free_mru,
 		node_resources_total.hru - COALESCE(sum(contract_resources.hru), 0) as free_hru,
-		2 * node_resources_total.sru - COALESCE(sum(contract_resources.sru), 0) as free_sru,
+		2 * node_resources_total.sru - COALESCE(sum(contract_resources.sru), 0) - 107374182400 as free_sru,
 		COALESCE(node_resources_total.cru, 0) as total_cru,
 		COALESCE(node_resources_total.mru, 0) as total_mru,
 		COALESCE(node_resources_total.hru, 0) as total_hru,
 		COALESCE(node_resources_total.sru, 0) as total_sru
 	FROM contract_resources
 	JOIN node_contract as node_contract
-	ON node_contract.id = contract_resources.contract_id AND node_contract.state = 'Created'
+	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state = 'Created'
 	RIGHT JOIN node as node
 	ON node.node_id = node_contract.node_id
 	JOIN node_resources_total AS node_resources_total
