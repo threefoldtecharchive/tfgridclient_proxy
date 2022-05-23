@@ -21,17 +21,21 @@ func (r *requestCounter) Ping() error {
 	r.Counter++
 	return errors.New("error")
 }
-func (r *requestCounter) Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, err error) {
+func (r *requestCounter) Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, totalCount int, err error) {
 	r.Counter++
-	return nil, errors.New("error")
+	return nil, 0, errors.New("error")
 }
-func (r *requestCounter) Farms(filter types.FarmFilter, pagination types.Limit) (res []types.Farm, err error) {
+func (r *requestCounter) Farms(filter types.FarmFilter, pagination types.Limit) (res []types.Farm, totalCount int, err error) {
 	r.Counter++
-	return nil, errors.New("error")
+	return nil, 0, errors.New("error")
 }
-func (r *requestCounter) Contracts(filter types.ContractFilter, pagination types.Limit) (res []types.Contract, err error) {
+func (r *requestCounter) Contracts(filter types.ContractFilter, pagination types.Limit) (res []types.Contract, totalCount int, err error) {
 	r.Counter++
-	return nil, errors.New("error")
+	return nil, 0, errors.New("error")
+}
+func (r *requestCounter) Twins(filter types.TwinFilter, pagination types.Limit) (res []types.Twin, totalCount int, err error) {
+	r.Counter++
+	return nil, 0, errors.New("error")
 }
 func (r *requestCounter) Node(nodeID uint32) (res types.NodeWithNestedCapacity, err error) {
 	r.Counter++
@@ -40,6 +44,10 @@ func (r *requestCounter) Node(nodeID uint32) (res types.NodeWithNestedCapacity, 
 func (r *requestCounter) NodeStatus(nodeID uint32) (res types.NodeStatus, err error) {
 	r.Counter++
 	return types.NodeStatus{}, errors.New("error")
+}
+func (r *requestCounter) Counters(filter types.StatsFilter) (res types.Counters, err error) {
+	r.Counter++
+	return types.Counters{}, errors.New("error")
 }
 
 func retryingConstructor(u string) Client {
@@ -67,13 +75,13 @@ func TestCalledMultipleTimes(t *testing.T) {
 	proxy := NewRetryingClientWithTimeout(r, 1*time.Millisecond)
 	methods := map[string]func(){
 		"nodes": func() {
-			_, _ = proxy.Nodes(types.NodeFilter{}, types.Limit{})
+			_, _, _ = proxy.Nodes(types.NodeFilter{}, types.Limit{})
 		},
 		"node": func() {
 			_, _ = proxy.Node(1)
 		},
 		"farms": func() {
-			_, _ = proxy.Farms(types.FarmFilter{}, types.Limit{})
+			_, _, _ = proxy.Farms(types.FarmFilter{}, types.Limit{})
 		},
 		"node_status": func() {
 			_, _ = proxy.NodeStatus(1)

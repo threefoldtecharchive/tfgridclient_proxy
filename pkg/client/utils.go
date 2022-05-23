@@ -73,6 +73,13 @@ func nodeParams(filter types.NodeFilter, limit types.Limit) string {
 	if limit.Size != 0 {
 		fmt.Fprintf(&builder, "size=%d&", limit.Size)
 	}
+	if limit.RetCount {
+		fmt.Fprintf(&builder, "ret_count=true&")
+	}
+	if limit.Randomize {
+		fmt.Fprintf(&builder, "randomize=true&")
+	}
+
 	res := builder.String()
 	// pop the extra ? or &
 	return res[:len(res)-1]
@@ -118,6 +125,43 @@ func farmParams(filter types.FarmFilter, limit types.Limit) string {
 	}
 	if limit.Size != 0 {
 		fmt.Fprintf(&builder, "size=%d&", limit.Size)
+	}
+	if limit.RetCount {
+		fmt.Fprintf(&builder, "ret_count=true&")
+	}
+	if limit.Randomize {
+		fmt.Fprintf(&builder, "randomize=true&")
+	}
+
+	res := builder.String()
+	// pop the extra ? or &
+	return res[:len(res)-1]
+}
+
+func twinParams(filter types.TwinFilter, limit types.Limit) string {
+
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "?")
+
+	if filter.TwinID != nil && *filter.TwinID != 0 {
+		fmt.Fprintf(&builder, "twin_id=%d&", *filter.TwinID)
+	}
+
+	if filter.AccountID != nil && *filter.AccountID != "" {
+		fmt.Fprintf(&builder, "account_id=%s&", *filter.AccountID)
+	}
+
+	if limit.Page != 0 {
+		fmt.Fprintf(&builder, "page=%d&", limit.Page)
+	}
+	if limit.Size != 0 {
+		fmt.Fprintf(&builder, "size=%d&", limit.Size)
+	}
+	if limit.RetCount {
+		fmt.Fprintf(&builder, "ret_count=true&")
+	}
+	if limit.Randomize {
+		fmt.Fprintf(&builder, "randomize=true&")
 	}
 
 	res := builder.String()
@@ -165,6 +209,26 @@ func contractParams(filter types.ContractFilter, limit types.Limit) string {
 	}
 	if limit.Size != 0 {
 		fmt.Fprintf(&builder, "size=%d&", limit.Size)
+	}
+	if limit.RetCount {
+		fmt.Fprintf(&builder, "ret_count=true&")
+	}
+	if limit.Randomize {
+		fmt.Fprintf(&builder, "randomize=true&")
+	}
+
+	res := builder.String()
+	// pop the extra ? or &
+	return res[:len(res)-1]
+}
+
+func statsParams(filter types.StatsFilter) string {
+
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "?")
+
+	if filter.Status != nil && *filter.Status != "" {
+		fmt.Fprintf(&builder, "status=%s&", *filter.Status)
 	}
 
 	res := builder.String()

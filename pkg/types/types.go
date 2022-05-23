@@ -16,18 +16,18 @@ type ContractBilling struct {
 
 // Counters contains aggregate info about the grid
 type Counters struct {
-	Nodes       uint64 `json:"nodes"`
-	Farms       uint64 `json:"farms"`
-	Countries   uint64 `json:"countries"`
-	TotalCRU    uint64 `json:"totalCru"`
-	TotalSRU    uint64 `json:"totalSru"`
-	TotalMRU    uint64 `json:"totalMru"`
-	TotalHRU    uint64 `json:"totalHru"`
-	PublicIPs   uint64 `json:"publicIps"`
-	AccessNodes uint64 `json:"accessNodes"`
-	Gateways    uint64 `json:"gateways"`
-	Twins       uint64 `json:"twins"`
-	Contracts   uint64 `json:"contracts"`
+	Nodes       int64 `json:"nodes"`
+	Farms       int64 `json:"farms"`
+	Countries   int64 `json:"countries"`
+	TotalCRU    int64 `json:"totalCru"`
+	TotalSRU    int64 `json:"totalSru"`
+	TotalMRU    int64 `json:"totalMru"`
+	TotalHRU    int64 `json:"totalHru"`
+	PublicIPs   int64 `json:"publicIps"`
+	AccessNodes int64 `json:"accessNodes"`
+	Gateways    int64 `json:"gateways"`
+	Twins       int64 `json:"twins"`
+	Contracts   int64 `json:"contracts"`
 }
 
 // PublicConfig node public config
@@ -73,9 +73,10 @@ type StatsFilter struct {
 
 // Limit used for pagination
 type Limit struct {
-	Size     uint64
-	Page     uint64
-	RetCount bool
+	Size      uint64
+	Page      uint64
+	RetCount  bool
+	Randomize bool
 }
 
 // NodeFilter node filters

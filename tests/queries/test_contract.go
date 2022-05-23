@@ -280,6 +280,48 @@ func serializeContractsFilter(f proxytypes.ContractFilter) string {
 	return res
 }
 
+func contractsPaginationTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	node := "node"
+	f := proxytypes.ContractFilter{
+		Type: &node,
+	}
+	l := proxytypes.Limit{
+		Size:     5,
+		Page:     1,
+		RetCount: true,
+	}
+	for {
+		localContracts, localCount, err := localClient.Contracts(f, l)
+		if err != nil {
+			return err
+		}
+		remoteContracts, remoteCount, err := proxyClient.Contracts(f, l)
+		if err != nil {
+			return err
+		}
+		if localCount != remoteCount {
+			return fmt.Errorf("contracts: node pagination: local count: %d, remote count: %d", localCount, remoteCount)
+		}
+		if localCount < len(localContracts) {
+			return fmt.Errorf("contracts: count in the header %d is less returned length", localCount)
+		}
+		if remoteCount < len(remoteContracts) {
+			return fmt.Errorf("contracts: count in the header %d is less returned length", remoteCount)
+		}
+		if localCount == 0 {
+			fmt.Println("trivial contract pagination test")
+		}
+		if err := validateContractsResults(localContracts, remoteContracts); err != nil {
+			return err
+		}
+		if l.Page*l.Size >= uint64(localCount) {
+			break
+		}
+		l.Page++
+	}
+	return nil
+}
+
 func ContractsStressTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
 	agg := calcContractsAggregates(data)
 	for i := 0; i < ContractsTests; i++ {
@@ -290,11 +332,11 @@ func ContractsStressTest(data *DBData, proxyClient, localClient proxyclient.Clie
 		}
 		f := randomContractsFilter(&agg)
 
-		localContracts, err := localClient.Contracts(f, l)
+		localContracts, _, err := localClient.Contracts(f, l)
 		if err != nil {
 			panic(err)
 		}
-		remoteContracts, err := proxyClient.Contracts(f, l)
+		remoteContracts, _, err := proxyClient.Contracts(f, l)
 		if err != nil {
 			panic(err)
 		}
@@ -308,6 +350,9 @@ func ContractsStressTest(data *DBData, proxyClient, localClient proxyclient.Clie
 }
 
 func contractsTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	if err := contractsPaginationTest(data, proxyClient, localClient); err != nil {
+		panic(err)
+	}
 	if err := ContractsStressTest(data, proxyClient, localClient); err != nil {
 		panic(err)
 	}

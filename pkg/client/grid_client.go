@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/grid_proxy_server/pkg/types"
@@ -14,11 +15,13 @@ import (
 // Client a client to communicate with the grid proxy
 type Client interface {
 	Ping() error
-	Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, err error)
-	Farms(filter types.FarmFilter, pagination types.Limit) (res []types.Farm, err error)
-	Contracts(filter types.ContractFilter, pagination types.Limit) (res []types.Contract, err error)
+	Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, totalCount int, err error)
+	Farms(filter types.FarmFilter, pagination types.Limit) (res []types.Farm, totalCount int, err error)
+	Contracts(filter types.ContractFilter, pagination types.Limit) (res []types.Contract, totalCount int, err error)
+	Twins(filter types.TwinFilter, pagination types.Limit) (res []types.Twin, totalCount int, err error)
 	Node(nodeID uint32) (res types.NodeWithNestedCapacity, err error)
 	NodeStatus(nodeID uint32) (res types.NodeStatus, err error)
+	Counters(filter types.StatsFilter) (res types.Counters, err error)
 }
 
 // Clientimpl concrete implementation of the client to communicate with the grid proxy
@@ -47,6 +50,18 @@ func parseError(body io.ReadCloser) error {
 	return fmt.Errorf("%s", res.Error)
 }
 
+func requestCounters(r *http.Response) (int, error) {
+	counth := r.Header.Get("Count")
+	if counth != "" {
+		count, err := strconv.ParseInt(counth, 10, 32)
+		if err != nil {
+			return 0, errors.Wrap(err, "couldn't parse count header")
+		}
+		return int(count), nil
+	}
+	return 0, nil
+}
+
 func (g *Clientimpl) url(sub string, args ...interface{}) string {
 	return g.endpoint + fmt.Sprintf(sub, args...)
 }
@@ -64,7 +79,7 @@ func (g *Clientimpl) Ping() error {
 }
 
 // Nodes returns nodes with the given filters and pagination parameters
-func (g *Clientimpl) Nodes(filter types.NodeFilter, limit types.Limit) (res []types.Node, err error) {
+func (g *Clientimpl) Nodes(filter types.NodeFilter, limit types.Limit) (res []types.Node, totalCount int, err error) {
 	query := nodeParams(filter, limit)
 	req, err := http.Get(g.url(fmt.Sprintf("nodes%s", query)))
 	if err != nil {
@@ -75,13 +90,14 @@ func (g *Clientimpl) Nodes(filter types.NodeFilter, limit types.Limit) (res []ty
 		return
 	}
 	if err := json.NewDecoder(req.Body).Decode(&res); err != nil {
-		return res, err
+		return res, 0, err
 	}
+	totalCount, err = requestCounters(req)
 	return
 }
 
 // Farms returns farms with the given filters and pagination parameters
-func (g *Clientimpl) Farms(filter types.FarmFilter, limit types.Limit) (res []types.Farm, err error) {
+func (g *Clientimpl) Farms(filter types.FarmFilter, limit types.Limit) (res []types.Farm, totalCount int, err error) {
 	query := farmParams(filter, limit)
 	req, err := http.Get(g.url(fmt.Sprintf("farms%s", query)))
 	if err != nil {
@@ -96,11 +112,38 @@ func (g *Clientimpl) Farms(filter types.FarmFilter, limit types.Limit) (res []ty
 		return
 	}
 	err = json.Unmarshal(data, &res)
+	if err != nil {
+		return
+	}
+	totalCount, err = requestCounters(req)
+	return
+}
+
+// Twins returns twins with the given filters and pagination parameters
+func (g *Clientimpl) Twins(filter types.TwinFilter, limit types.Limit) (res []types.Twin, totalCount int, err error) {
+	query := twinParams(filter, limit)
+	req, err := http.Get(g.url(fmt.Sprintf("twins%s", query)))
+	if err != nil {
+		return
+	}
+	if req.StatusCode != http.StatusOK {
+		err = parseError(req.Body)
+		return
+	}
+	data, err := io.ReadAll(req.Body)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(data, &res)
+	if err != nil {
+		return
+	}
+	totalCount, err = requestCounters(req)
 	return
 }
 
 // Contracts returns contracts with the given filters and pagination parameters
-func (g *Clientimpl) Contracts(filter types.ContractFilter, limit types.Limit) (res []types.Contract, err error) {
+func (g *Clientimpl) Contracts(filter types.ContractFilter, limit types.Limit) (res []types.Contract, totalCount int, err error) {
 	query := contractParams(filter, limit)
 	req, err := http.Get(g.url(fmt.Sprintf("contracts%s", query)))
 	if err != nil {
@@ -136,6 +179,7 @@ func (g *Clientimpl) Contracts(filter types.ContractFilter, limit types.Limit) (
 			}
 		}
 	}
+	totalCount, err = requestCounters(req)
 	return
 }
 
@@ -157,9 +201,26 @@ func (g *Clientimpl) Node(nodeID uint32) (res types.NodeWithNestedCapacity, err 
 	return
 }
 
-// Node returns the node status up/down
+// NodeStatus returns the node status up/down
 func (g *Clientimpl) NodeStatus(nodeID uint32) (res types.NodeStatus, err error) {
 	req, err := http.Get(g.url("nodes/%d/status", nodeID))
+	if err != nil {
+		return
+	}
+	if req.StatusCode != http.StatusOK {
+		err = parseError(req.Body)
+		return
+	}
+	if err := json.NewDecoder(req.Body).Decode(&res); err != nil {
+		return res, err
+	}
+	return
+}
+
+// Counters return statistics about the grid
+func (g *Clientimpl) Counters(filter types.StatsFilter) (res types.Counters, err error) {
+	query := statsParams(filter)
+	req, err := http.Get(g.url(fmt.Sprintf("stats%s", query)))
 	if err != nil {
 		return
 	}
