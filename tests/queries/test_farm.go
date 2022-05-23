@@ -249,11 +249,11 @@ func FarmsStressTest(data *DBData, proxyClient, localClient proxyclient.Client) 
 			RetCount: false,
 		}
 		f := randomFarmsFilter(&agg)
-		localFarms, err := localClient.Farms(f, l)
+		localFarms, _, err := localClient.Farms(f, l)
 		if err != nil {
 			return err
 		}
-		remoteFarms, err := proxyClient.Farms(f, l)
+		remoteFarms, _, err := proxyClient.Farms(f, l)
 		if err != nil {
 			return err
 		}
@@ -266,7 +266,51 @@ func FarmsStressTest(data *DBData, proxyClient, localClient proxyclient.Client) 
 	return nil
 }
 
+func farmsPaginationTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	one := uint64(1)
+	f := proxytypes.FarmFilter{
+		TotalIPs: &one,
+	}
+	l := proxytypes.Limit{
+		Size:     5,
+		Page:     1,
+		RetCount: true,
+	}
+	for {
+		localFarms, localCount, err := localClient.Farms(f, l)
+		if err != nil {
+			return err
+		}
+		remoteFarms, remoteCount, err := proxyClient.Farms(f, l)
+		if err != nil {
+			return err
+		}
+		if localCount != remoteCount {
+			return fmt.Errorf("farm pagination: local count: %d, remote count: %d", localCount, remoteCount)
+		}
+		if localCount < len(localFarms) {
+			return fmt.Errorf("farms: count in the header %d is less returned length", localCount)
+		}
+		if remoteCount < len(remoteFarms) {
+			return fmt.Errorf("farms: count in the header %d is less returned length", remoteCount)
+		}
+		if localCount == 0 {
+			fmt.Println("trivial farm pagination test")
+		}
+		if err := validateFarmsResults(localFarms, remoteFarms); err != nil {
+			return err
+		}
+		if l.Page*l.Size >= uint64(localCount) {
+			break
+		}
+		l.Page++
+	}
+	return nil
+}
 func farmsTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	if err := farmsPaginationTest(data, proxyClient, localClient); err != nil {
+		return err
+	}
 	if err := FarmsStressTest(data, proxyClient, localClient); err != nil {
 		return err
 	}

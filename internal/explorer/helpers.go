@@ -28,6 +28,7 @@ func getLimit(r *http.Request) (types.Limit, error) {
 	page := r.URL.Query().Get("page")
 	size := r.URL.Query().Get("size")
 	retCount := r.URL.Query().Get("ret_count")
+	randomize := r.URL.Query().Get("randomize")
 	if page == "" {
 		page = "1"
 	}
@@ -46,11 +47,15 @@ func getLimit(r *http.Request) (types.Limit, error) {
 	}
 	limit.Size = parsed
 
-	returnCount := false
+	limit.RetCount = false
 	if retCount == "true" {
-		returnCount = true
+		limit.RetCount = true
 	}
-	limit.RetCount = returnCount
+
+	limit.Randomize = false
+	if randomize == "true" {
+		limit.Randomize = true
+	}
 
 	// TODO: readd the check once clients are updated
 	// if limit.Size > maxPageSize {

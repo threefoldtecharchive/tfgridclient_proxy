@@ -1,71 +1,135 @@
 package explorer
 
 import (
+	"encoding/json"
+	"math"
+	"time"
+
+	"github.com/pkg/errors"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/pkg/types"
+	"github.com/threefoldtech/zos/pkg/gridtypes"
 )
 
-func nodeFromDBNode(info db.DBNodeData) types.Node {
-	return types.Node{
+func nodeFromDBNode(info db.Node) types.Node {
+	node := types.Node{
 		ID:              info.ID,
-		NodeID:          info.NodeID,
-		FarmID:          info.FarmID,
-		TwinID:          info.TwinID,
+		NodeID:          int(info.NodeID),
+		FarmID:          int(info.FarmID),
+		TwinID:          int(info.TwinID),
 		Country:         info.Country,
-		GridVersion:     info.GridVersion,
+		GridVersion:     int(info.GridVersion),
 		City:            info.City,
 		Uptime:          info.Uptime,
 		Created:         info.Created,
-		FarmingPolicyID: info.FarmingPolicyID,
-		UpdatedAt:       info.UpdatedAt,
-		TotalResources:  info.TotalResources,
-		UsedResources:   info.UsedResources,
+		FarmingPolicyID: int(info.FarmingPolicyID),
+		UpdatedAt:       int64(math.Round(float64(info.UpdatedAt) / 1000)),
+		TotalResources: types.Capacity{
+			CRU: uint64(info.TotalCru),
+			SRU: gridtypes.Unit(info.TotalSru),
+			HRU: gridtypes.Unit(info.TotalHru),
+			MRU: gridtypes.Unit(info.TotalMru),
+		},
+		UsedResources: types.Capacity{
+			CRU: uint64(info.UsedCru),
+			SRU: gridtypes.Unit(info.UsedSru),
+			HRU: gridtypes.Unit(info.UsedHru),
+			MRU: gridtypes.Unit(info.UsedMru),
+		},
 		Location: types.Location{
 			Country: info.Country,
 			City:    info.City,
 		},
-		PublicConfig:      info.PublicConfig,
-		Status:            info.Status,
+		PublicConfig: types.PublicConfig{
+			Domain: info.Domain,
+			Gw4:    info.Gw4,
+			Gw6:    info.Gw6,
+			Ipv4:   info.Ipv4,
+			Ipv6:   info.Ipv6,
+		},
 		CertificationType: info.CertificationType,
 		Dedicated:         info.Dedicated,
-		RentContractID:    info.RentContractID,
-		RentedByTwinID:    info.RentedByTwinID,
+		RentContractID:    uint(info.RentContractID),
+		RentedByTwinID:    uint(info.RentedByTwinID),
 	}
-
+	if node.UpdatedAt >= time.Now().Add(-2*time.Hour).Unix() {
+		node.Status = "up"
+	} else {
+		node.Status = "down"
+	}
+	return node
 }
 
-func nodeWithNestedCapacityFromDBNode(info db.DBNodeData) types.NodeWithNestedCapacity {
-	return types.NodeWithNestedCapacity{
+func farmFromDBFarm(info db.Farm) (types.Farm, error) {
+	farm := types.Farm{
+		Name:              info.Name,
+		FarmID:            info.FarmID,
+		TwinID:            info.TwinID,
+		PricingPolicyID:   info.PricingPolicyID,
+		CertificationType: info.CertificationType,
+		StellarAddress:    info.StellarAddress,
+		Dedicated:         info.Dedicated,
+	}
+	if err := json.Unmarshal([]byte(info.PublicIps), &farm.PublicIps); err != nil {
+		return farm, errors.Wrap(err, "couldn't unmarshal public ips returned from db")
+	}
+	return farm, nil
+}
+
+func nodeWithNestedCapacityFromDBNode(info db.Node) types.NodeWithNestedCapacity {
+
+	node := types.NodeWithNestedCapacity{
 		ID:              info.ID,
-		NodeID:          info.NodeID,
-		FarmID:          info.FarmID,
-		TwinID:          info.TwinID,
+		NodeID:          int(info.NodeID),
+		FarmID:          int(info.FarmID),
+		TwinID:          int(info.TwinID),
 		Country:         info.Country,
-		GridVersion:     info.GridVersion,
+		GridVersion:     int(info.GridVersion),
 		City:            info.City,
 		Uptime:          info.Uptime,
 		Created:         info.Created,
-		FarmingPolicyID: info.FarmingPolicyID,
-		UpdatedAt:       info.UpdatedAt,
+		FarmingPolicyID: int(info.FarmingPolicyID),
+		UpdatedAt:       int64(math.Round(float64(info.UpdatedAt) / 1000)),
 		Capacity: types.CapacityResult{
-			Total: info.TotalResources,
-			Used:  info.UsedResources,
+
+			Total: types.Capacity{
+				CRU: uint64(info.TotalCru),
+				SRU: gridtypes.Unit(info.TotalSru),
+				HRU: gridtypes.Unit(info.TotalHru),
+				MRU: gridtypes.Unit(info.TotalMru),
+			},
+			Used: types.Capacity{
+				CRU: uint64(info.UsedCru),
+				SRU: gridtypes.Unit(info.UsedSru),
+				HRU: gridtypes.Unit(info.UsedHru),
+				MRU: gridtypes.Unit(info.UsedMru),
+			},
 		},
 		Location: types.Location{
 			Country: info.Country,
 			City:    info.City,
 		},
-		PublicConfig:      info.PublicConfig,
-		Status:            info.Status,
+		PublicConfig: types.PublicConfig{
+			Domain: info.Domain,
+			Gw4:    info.Gw4,
+			Gw6:    info.Gw6,
+			Ipv4:   info.Ipv4,
+			Ipv6:   info.Ipv6,
+		},
 		CertificationType: info.CertificationType,
 		Dedicated:         info.Dedicated,
-		RentContractID:    info.RentContractID,
-		RentedByTwinID:    info.RentedByTwinID,
+		RentContractID:    uint(info.RentContractID),
+		RentedByTwinID:    uint(info.RentedByTwinID),
 	}
-
+	if node.UpdatedAt >= time.Now().Add(-2*time.Hour).Unix() {
+		node.Status = "up"
+	} else {
+		node.Status = "down"
+	}
+	return node
 }
 
-func contractFromDBContract(info db.DBContract) types.Contract {
+func contractFromDBContract(info db.DBContract) (types.Contract, error) {
 	var details interface{}
 	switch info.Type {
 	case "node":
@@ -84,13 +148,16 @@ func contractFromDBContract(info db.DBContract) types.Contract {
 			NodeID: info.NodeID,
 		}
 	}
-	return types.Contract{
+	contract := types.Contract{
 		ContractID: info.ContractID,
 		TwinID:     info.TwinID,
 		State:      info.State,
 		CreatedAt:  info.CreatedAt,
 		Type:       info.Type,
 		Details:    details,
-		Billing:    info.ContractBillings,
 	}
+	if err := json.Unmarshal([]byte(info.ContractBillings), &contract.Billing); err != nil {
+		return contract, errors.Wrap(err, "couldn't parse contract billing")
+	}
+	return contract, nil
 }

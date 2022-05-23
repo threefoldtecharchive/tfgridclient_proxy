@@ -47,19 +47,29 @@ func (g *RetryingClient) Ping() error {
 }
 
 // Nodes returns nodes with the given filters and pagination parameters
-func (g *RetryingClient) Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, err error) {
+func (g *RetryingClient) Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, totalCount int, err error) {
 	f := func() error {
-		res, err = g.cl.Nodes(filter, pagination)
+		res, totalCount, err = g.cl.Nodes(filter, pagination)
 		return err
 	}
 	err = backoff.RetryNotify(f, bf(g.timeout), notify("nodes"))
 	return
 }
 
-// Farms returns farms with the given filters and pagination parameters
-func (g *RetryingClient) Farms(filter types.FarmFilter, pagination types.Limit) (res []types.Farm, err error) {
+// Twins returns twins with the given filters and pagination parameters
+func (g *RetryingClient) Twins(filter types.TwinFilter, pagination types.Limit) (res []types.Twin, totalCount int, err error) {
 	f := func() error {
-		res, err = g.cl.Farms(filter, pagination)
+		res, totalCount, err = g.cl.Twins(filter, pagination)
+		return err
+	}
+	err = backoff.RetryNotify(f, bf(g.timeout), notify("twins"))
+	return
+}
+
+// Farms returns farms with the given filters and pagination parameters
+func (g *RetryingClient) Farms(filter types.FarmFilter, pagination types.Limit) (res []types.Farm, totalCount int, err error) {
+	f := func() error {
+		res, totalCount, err = g.cl.Farms(filter, pagination)
 		return err
 	}
 	err = backoff.RetryNotify(f, bf(g.timeout), notify("farms"))
@@ -67,9 +77,9 @@ func (g *RetryingClient) Farms(filter types.FarmFilter, pagination types.Limit) 
 }
 
 // Contracts returns contracts with the given filters and pagination parameters
-func (g *RetryingClient) Contracts(filter types.ContractFilter, pagination types.Limit) (res []types.Contract, err error) {
+func (g *RetryingClient) Contracts(filter types.ContractFilter, pagination types.Limit) (res []types.Contract, totalCount int, err error) {
 	f := func() error {
-		res, err = g.cl.Contracts(filter, pagination)
+		res, totalCount, err = g.cl.Contracts(filter, pagination)
 		return err
 	}
 	err = backoff.RetryNotify(f, bf(g.timeout), notify("contracts"))
@@ -83,6 +93,16 @@ func (g *RetryingClient) Node(nodeID uint32) (res types.NodeWithNestedCapacity, 
 		return err
 	}
 	err = backoff.RetryNotify(f, bf(g.timeout), notify("node"))
+	return
+}
+
+// Counters returns statistics about the grid
+func (g *RetryingClient) Counters(filter types.StatsFilter) (res types.Counters, err error) {
+	f := func() error {
+		res, err = g.cl.Counters(filter)
+		return err
+	}
+	err = backoff.RetryNotify(f, bf(g.timeout), notify("counters"))
 	return
 }
 

@@ -52,12 +52,19 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, mw.BadRequest(err)
 	}
-	farms, farmsCount, err := a.db.GetFarms(filter, limit)
+	dbFarms, farmsCount, err := a.db.GetFarms(filter, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query farm")
 		return nil, mw.Error(err)
 	}
-
+	farms := make([]types.Farm, 0, len(dbFarms))
+	for _, farm := range dbFarms {
+		f, err := farmFromDBFarm(farm)
+		if err != nil {
+			log.Err(err).Msg("couldn't convert db farm to api farm")
+		}
+		farms = append(farms, f)
+	}
 	resp := mw.Ok()
 
 	// return the number of pages and totalCount in the response headers
@@ -244,8 +251,10 @@ func (a *App) listContracts(r *http.Request) (interface{}, mw.Response) {
 
 	contracts := make([]types.Contract, len(dbContracts))
 	for idx, contract := range dbContracts {
-		contracts[idx] = contractFromDBContract(contract)
-
+		contracts[idx], err = contractFromDBContract(contract)
+		if err != nil {
+			log.Err(err).Msg("failed to convert db contract to api contract")
+		}
 	}
 	resp := mw.Ok()
 

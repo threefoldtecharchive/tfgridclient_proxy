@@ -5,49 +5,69 @@ import "github.com/threefoldtech/grid_proxy_server/pkg/types"
 // Database interface for storing and fetching grid info
 type Database interface {
 	GetCounters(filter types.StatsFilter) (types.Counters, error)
-	CountNodes() (uint, error)
-	GetNode(nodeID uint32) (DBNodeData, error)
-	GetFarm(farmID uint32) (types.Farm, error)
-	GetNodes(filter types.NodeFilter, limit types.Limit) ([]DBNodeData, uint, error)
-	GetFarms(filter types.FarmFilter, limit types.Limit) ([]types.Farm, uint, error)
+	GetNode(nodeID uint32) (Node, error)
+	GetFarm(farmID uint32) (Farm, error)
+	GetNodes(filter types.NodeFilter, limit types.Limit) ([]Node, uint, error)
+	GetFarms(filter types.FarmFilter, limit types.Limit) ([]Farm, uint, error)
 	GetTwins(filter types.TwinFilter, limit types.Limit) ([]types.Twin, uint, error)
 	GetContracts(filter types.ContractFilter, limit types.Limit) ([]DBContract, uint, error)
 }
 
-// Contract is contract info
+// DBContract is contract info
 type DBContract struct {
-	ContractID        uint                    `json:"contractId"`
-	TwinID            uint                    `json:"twinId"`
-	State             string                  `json:"state"`
-	CreatedAt         uint                    `json:"created_at"`
-	Name              string                  `json:"name"`
-	NodeID            uint                    `json:"nodeId"`
-	DeploymentData    string                  `json:"deployment_data"`
-	DeploymentHash    string                  `json:"deployment_hash"`
-	NumberOfPublicIps uint                    `json:"number_of_public_ips"`
-	Type              string                  `json:"type"`
-	ContractBillings  []types.ContractBilling `json:"contract_billings"`
+	ContractID        uint
+	TwinID            uint
+	State             string
+	CreatedAt         uint
+	Name              string
+	NodeID            uint
+	DeploymentData    string
+	DeploymentHash    string
+	NumberOfPublicIps uint
+	Type              string
+	ContractBillings  string
 }
 
-// DBNodeData data about nodes which is calculated from the chain
-type DBNodeData struct {
-	ID                string             `json:"id"`
-	FarmID            int                `json:"farmId"`
-	NodeID            int                `json:"nodeId"`
-	TwinID            int                `json:"twinId"`
-	Country           string             `json:"country"`
-	GridVersion       int                `json:"gridVersion"`
-	City              string             `json:"city"`
-	Uptime            int64              `json:"uptime"`
-	Created           int64              `json:"created"`
-	FarmingPolicyID   int                `json:"farmingPolicyId"`
-	UpdatedAt         int64              `json:"updatedAt"`
-	CertificationType string             `json:"certificationType"`
-	TotalResources    types.Capacity     `json:"total_resources"`
-	UsedResources     types.Capacity     `json:"used_resources"`
-	PublicConfig      types.PublicConfig `json:"publicConfig"`
-	Status            string             `json:"status"` // added node status field for up or down
-	Dedicated         bool               `json:"dedicated"`
-	RentContractID    uint               `json:"rentContractId"`
-	RentedByTwinID    uint               `json:"rentedByTwinId"`
+// Node data about a node which is calculated from the chain
+type Node struct {
+	ID                string
+	NodeID            int64
+	FarmID            int64
+	TwinID            int64
+	Country           string
+	GridVersion       int64
+	City              string
+	Uptime            int64
+	Created           int64
+	FarmingPolicyID   int64
+	UpdatedAt         int64
+	TotalCru          int64
+	TotalMru          int64
+	TotalSru          int64
+	TotalHru          int64
+	UsedCru           int64
+	UsedMru           int64
+	UsedSru           int64
+	UsedHru           int64
+	Domain            string
+	Gw4               string
+	Gw6               string
+	Ipv4              string
+	Ipv6              string
+	CertificationType string
+	Dedicated         bool
+	RentContractID    int64
+	RentedByTwinID    int64
+}
+
+// Farm data about a farm which is calculated from the chain
+type Farm struct {
+	Name              string
+	FarmID            int
+	TwinID            int
+	PricingPolicyID   int
+	CertificationType string
+	StellarAddress    string
+	Dedicated         bool
+	PublicIps         string
 }

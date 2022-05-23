@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	statusUP = "up"
+	statusUP   = "up"
+	statusDown = "down"
 )
 
 var (
@@ -165,7 +166,7 @@ func calcNodesAggregates(data *DBData) (res NodesAggregate) {
 	return
 }
 
-func NodeUpTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+func nodeUpTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
 	f := proxytypes.NodeFilter{
 		Status: &statusUP,
 	}
@@ -174,11 +175,11 @@ func NodeUpTest(data *DBData, proxyClient, localClient proxyclient.Client) error
 		Page:     1,
 		RetCount: true,
 	}
-	localNodes, err := localClient.Nodes(f, l)
+	localNodes, _, err := localClient.Nodes(f, l)
 	if err != nil {
 		return err
 	}
-	remoteNodes, err := proxyClient.Nodes(f, l)
+	remoteNodes, _, err := proxyClient.Nodes(f, l)
 	if err != nil {
 		return err
 	}
@@ -335,7 +336,7 @@ func serializeFilter(f proxytypes.NodeFilter) string {
 	return res
 }
 
-func NodeStressTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+func nodeStressTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
 	agg := calcNodesAggregates(data)
 	for i := 0; i < Tests; i++ {
 		l := proxytypes.Limit{
@@ -345,11 +346,11 @@ func NodeStressTest(data *DBData, proxyClient, localClient proxyclient.Client) e
 		}
 		f := randomNodeFilter(&agg)
 
-		localNodes, err := localClient.Nodes(f, l)
+		localNodes, _, err := localClient.Nodes(f, l)
 		if err != nil {
 			return err
 		}
-		remoteNodes, err := proxyClient.Nodes(f, l)
+		remoteNodes, _, err := proxyClient.Nodes(f, l)
 		if err != nil {
 			return err
 		}
@@ -362,11 +363,100 @@ func NodeStressTest(data *DBData, proxyClient, localClient proxyclient.Client) e
 	return nil
 }
 
-func nodesTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
-	if err := NodeUpTest(data, proxyClient, localClient); err != nil {
+func nodePaginationTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	f := proxytypes.NodeFilter{
+		Status: &statusDown,
+	}
+	l := proxytypes.Limit{
+		Size:     5,
+		Page:     1,
+		RetCount: true,
+	}
+	for {
+
+		localNodes, localCount, err := localClient.Nodes(f, l)
+		if err != nil {
+			return err
+		}
+		remoteNodes, remoteCount, err := proxyClient.Nodes(f, l)
+		if err != nil {
+			return err
+		}
+		if localCount != remoteCount {
+			return fmt.Errorf("nodes: local count: %d, remote count: %d", localCount, remoteCount)
+		}
+		if localCount < len(localNodes) {
+			return fmt.Errorf("nodes: count in the header %d is less returned length", localCount)
+		}
+		if remoteCount < len(remoteNodes) {
+			return fmt.Errorf("nodes: count in the header %d is less returned length", remoteCount)
+		}
+		if localCount == 0 {
+			fmt.Println("trivial node pagination test")
+		}
+		if err := validateResults(localNodes, remoteNodes); err != nil {
+			return err
+		}
+		if l.Page*l.Size >= uint64(localCount) {
+			break
+		}
+		l.Page++
+	}
+	return nil
+}
+func singleNodeTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	nodeIDs := make([]uint64, 0, len(data.nodes))
+	for _, node := range data.nodes {
+		nodeIDs = append(nodeIDs, node.node_id)
+	}
+	nodeID := rand.Intn(len(nodeIDs))
+	localNode, err := localClient.Node(uint32(nodeID))
+	if err != nil {
 		return err
 	}
-	if err := NodeStressTest(data, proxyClient, localClient); err != nil {
+	remoteNode, err := proxyClient.Node(uint32(nodeID))
+	if err != nil {
+		return err
+	}
+	if !reflect.DeepEqual(localNode, remoteNode) {
+		return fmt.Errorf("single node %d mismatch: local: %+v, remote: %+v", nodeID, localNode, remoteNode)
+	}
+	return nil
+}
+func nodeStatusTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	for _, node := range data.nodes {
+		if flip(.3) {
+			localNodeStatus, err := localClient.NodeStatus(uint32(node.node_id))
+			if err != nil {
+				return err
+			}
+			remoteNodeStatus, err := proxyClient.NodeStatus(uint32(node.node_id))
+			if err != nil {
+				return err
+			}
+
+			if !reflect.DeepEqual(localNodeStatus, remoteNodeStatus) {
+				return fmt.Errorf("single node %d mismatch: local: %+v, remote: %+v", node.node_id, localNodeStatus, remoteNodeStatus)
+			}
+		}
+	}
+	return nil
+}
+
+func nodesTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	if err := nodePaginationTest(data, proxyClient, localClient); err != nil {
+		return err
+	}
+	if err := singleNodeTest(data, proxyClient, localClient); err != nil {
+		return err
+	}
+	if err := nodeUpTest(data, proxyClient, localClient); err != nil {
+		return err
+	}
+	if err := nodeStatusTest(data, proxyClient, localClient); err != nil {
+		return err
+	}
+	if err := nodeStressTest(data, proxyClient, localClient); err != nil {
 		return err
 	}
 	keys := make([]int, 0)

@@ -67,7 +67,7 @@ func testConnectionFailures(t *testing.T, f ProxyFunc) {
 			return proxy.Ping()
 		},
 		"nodes": func() error {
-			_, err := proxy.Nodes(types.NodeFilter{}, types.Limit{})
+			_, _, err := proxy.Nodes(types.NodeFilter{}, types.Limit{})
 			return err
 		},
 		"node": func() error {
@@ -75,7 +75,7 @@ func testConnectionFailures(t *testing.T, f ProxyFunc) {
 			return err
 		},
 		"farms": func() error {
-			_, err := proxy.Farms(types.FarmFilter{}, types.Limit{})
+			_, _, err := proxy.Farms(types.FarmFilter{}, types.Limit{})
 			return err
 		},
 		"node_status": func() error {
@@ -129,7 +129,7 @@ func testStatusCodeFailures(t *testing.T, f ProxyFunc) {
 	proxy := f(ts.URL)
 	endpoints := map[string]func() error{
 		"nodes": func() error {
-			_, err := proxy.Nodes(types.NodeFilter{}, types.Limit{})
+			_, _, err := proxy.Nodes(types.NodeFilter{}, types.Limit{})
 			return err
 		},
 		"node": func() error {
@@ -137,7 +137,7 @@ func testStatusCodeFailures(t *testing.T, f ProxyFunc) {
 			return err
 		},
 		"farms": func() error {
-			_, err := proxy.Farms(types.FarmFilter{}, types.Limit{})
+			_, _, err := proxy.Farms(types.FarmFilter{}, types.Limit{})
 			return err
 		},
 		"node_status": func() error {
@@ -210,7 +210,7 @@ func testSuccess(t *testing.T, f ProxyFunc) {
 			path:     fmt.Sprintf("/nodes%s", expectedNodesURL),
 			response: NodesExampleStr,
 			call: func(proxy Client) error {
-				res, err := proxy.Nodes(nodesFilter, nodesLimit)
+				res, _, err := proxy.Nodes(nodesFilter, nodesLimit)
 				if err != nil {
 					return err
 				}
@@ -240,7 +240,7 @@ func testSuccess(t *testing.T, f ProxyFunc) {
 			path:     fmt.Sprintf("/farms%s", expectedFarmsURL),
 			response: FarmsExampleStr,
 			call: func(proxy Client) error {
-				res, err := proxy.Farms(farmsFilter, farmsLimit)
+				res, _, err := proxy.Farms(farmsFilter, farmsLimit)
 				if err != nil {
 					return err
 				}
