@@ -52,7 +52,7 @@ func nodeFromDBNode(info db.Node) types.Node {
 		RentContractID:    uint(info.RentContractID),
 		RentedByTwinID:    uint(info.RentedByTwinID),
 	}
-	if node.UpdatedAt >= time.Now().Add(-2*time.Hour).Unix() {
+	if node.UpdatedAt >= time.Now().Add(-3*time.Hour).Unix() {
 		node.Status = "up"
 	} else {
 		node.Status = "down"
@@ -121,7 +121,7 @@ func nodeWithNestedCapacityFromDBNode(info db.Node) types.NodeWithNestedCapacity
 		RentContractID:    uint(info.RentContractID),
 		RentedByTwinID:    uint(info.RentedByTwinID),
 	}
-	if node.UpdatedAt >= time.Now().Add(-2*time.Hour).Unix() {
+	if node.UpdatedAt >= time.Now().Add(-3*time.Hour).Unix() {
 		node.Status = "up"
 	} else {
 		node.Status = "down"
