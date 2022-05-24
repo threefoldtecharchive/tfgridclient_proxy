@@ -1,14 +1,14 @@
-name: Go
+name: Unit tests
 
 on:
   push:
     branches: [ main, development ]
   pull_request:
     branches: [ main, development ]
+  workflow_dispatch:
 
 jobs:
-
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -26,11 +26,6 @@ jobs:
       env:
         GO111MODULE: on
 
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
-    
-    - name: staticcheck
-      uses: dominikh/staticcheck-action@v1.2.0
-
-    - name: Test version
-      run: ./main -v
+    - name: Test
+      run: |
+        go test -v ./...

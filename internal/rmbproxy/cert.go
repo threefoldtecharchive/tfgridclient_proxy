@@ -228,7 +228,7 @@ func NewKeypairReloader(certManager *CertificateManager) (*KeypairReloader, erro
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't update certificate")
 	}
-	result.reload(certData.CertPath, certData.KeyPath)
+	_ = result.reload(certData.CertPath, certData.KeyPath)
 	go func() {
 		for range time.Tick(time.Hour * 24 * 5) {
 			certData, err := result.certManager.EnsureCertificate()
@@ -295,7 +295,7 @@ func (p *Provider) handler(w http.ResponseWriter, req *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(auth))
+			_, _ = w.Write([]byte(auth))
 		}
 	} else {
 		http.Redirect(w, req, "https://"+req.Host+req.RequestURI, http.StatusMovedPermanently)

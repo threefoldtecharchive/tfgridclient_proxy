@@ -12,7 +12,8 @@ import (
 )
 
 type errType struct {
-	Error string `json:"error"`
+	Status  string `json:",omitempty"`
+	Message string `json:",omitempty"`
 }
 
 var (
@@ -34,10 +35,12 @@ var (
 	ErrEaxmple2 = errors.New("another internal grid proxy failure")
 
 	JSONErrExample1 = errType{
-		Error: ErrExample1.Error(),
+		Status:  http.StatusText(http.StatusInternalServerError),
+		Message: ErrExample1.Error(),
 	}
 	JSONErrExample2 = errType{
-		Error: ErrEaxmple2.Error(),
+		Status:  http.StatusText(http.StatusInternalServerError),
+		Message: ErrEaxmple2.Error(),
 	}
 
 	ProxyHeaderExample1 = http.Header{
@@ -96,6 +99,15 @@ func TestProxyGridProxyError(t *testing.T) {
 	if w.Result().StatusCode != http.StatusInternalServerError {
 		t.Fatalf("grid proxy status code mismatch: expected: %d, found: %d", http.StatusInternalServerError, w.Result().StatusCode)
 	}
+	header := w.Header()
+	if header["Access-Control-Allow-Origin"][0] != "*" {
+		t.Fatalf("invalid Access-Control-Allow-Origin header: %+v", header)
+	}
+	if header["Content-Type"][0] != "application/json" {
+		t.Fatalf("invalid Content-Type header: %+v", header)
+	}
+	delete(header, "Access-Control-Allow-Origin")
+	delete(header, "Content-Type")
 	if !reflect.DeepEqual(w.Header(), ProxyHeaderExample1) {
 		t.Fatalf("grid proxy header mismatch: expected: %v, found: %v", ProxyHeaderExample1, w.Header())
 	}
@@ -112,6 +124,12 @@ func TestProxyUpstreamError(t *testing.T) {
 	handler := AsProxyHandlerFunc(upstreamFailureHandler)
 	w := httptest.NewRecorder()
 	handler(w, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	header := w.Header()
+	if header["Access-Control-Allow-Origin"][0] != "*" {
+		t.Fatalf("invalid Access-Control-Allow-Origin header: %+v", header)
+	}
+	delete(header, "Access-Control-Allow-Origin")
 	if w.Result().StatusCode != http.StatusBadRequest {
 		t.Fatalf("upstream error status code mismatch: expected: %d, found: %d", http.StatusBadRequest, w.Result().StatusCode)
 	}
@@ -131,6 +149,11 @@ func TestProxySuccess(t *testing.T) {
 	if w.Result().StatusCode != http.StatusOK {
 		t.Fatalf("upstream success status code mismatch: expected: %d, found: %d", http.StatusOK, w.Result().StatusCode)
 	}
+	header := w.Header()
+	if header["Access-Control-Allow-Origin"][0] != "*" {
+		t.Fatalf("invalid Access-Control-Allow-Origin header: %+v", header)
+	}
+	delete(header, "Access-Control-Allow-Origin")
 	if !reflect.DeepEqual(w.Header(), HeaderExample2) {
 		t.Fatalf("upstream success header mismatch: expected: %v, found: %v", HeaderExample2, w.Header())
 	}
@@ -147,6 +170,15 @@ func TestBothResponses(t *testing.T) {
 	if w.Result().StatusCode != http.StatusInternalServerError {
 		t.Fatalf("both result status code mismatch: expected: %d, found: %d", http.StatusInternalServerError, w.Result().StatusCode)
 	}
+	header := w.Header()
+	if header["Access-Control-Allow-Origin"][0] != "*" {
+		t.Fatalf("invalid Access-Control-Allow-Origin header: %+v", header)
+	}
+	if header["Content-Type"][0] != "application/json" {
+		t.Fatalf("invalid Content-Type header: %+v", header)
+	}
+	delete(header, "Access-Control-Allow-Origin")
+	delete(header, "Content-Type")
 	if !reflect.DeepEqual(w.Header(), ProxyHeaderExample2) {
 		t.Fatalf("both result header mismatch: expected: %v, found: %v", ProxyHeaderExample2, w.Header())
 	}

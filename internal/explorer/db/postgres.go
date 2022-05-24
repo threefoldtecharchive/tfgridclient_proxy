@@ -1,15 +1,17 @@
 package db
 
 import (
-	"database/sql"
-	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
 	// to use for database/sql
 	_ "github.com/lib/pq"
+	"github.com/threefoldtech/grid_proxy_server/pkg/types"
 	"github.com/threefoldtech/zos/pkg/gridtypes"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -82,190 +84,11 @@ const (
 	$body$
 	language sql;
 	`
-
-	selectFarm = `
-	SELECT 
-		farm_id,
-		COALESCE(name, ''),
-		COALESCE(twin_id, 0),
-		COALESCE(pricing_policy_id, 0),
-		COALESCE(certification_type, ''),
-		COALESCE(stellar_address, ''),
-		COALESCE(dedicated_farm, false),
-		(
-			SELECT 
-				COALESCE(json_agg(json_build_object('id', id, 'ip', ip, 'contractId', contract_id, 'gateway', gateway)), '[]')
-			FROM
-				public_ip
-			WHERE farm.id = public_ip.farm_id
-		) as public_ips
-	FROM farm
-	JOIN 
-	WHERE farm.farm_id = $1
-	`
-
-	selectSingleNode = `
-	SELECT
-		node.id,
-		COALESCE(node.node_id, 0),
-		COALESCE(node.farm_id, 0),
-		COALESCE(node.twin_id, 0),
-		COALESCE(node.country, ''),
-		COALESCE(node.grid_version, 0),
-		COALESCE(node.city, ''),
-		COALESCE(node.uptime, 0),
-		COALESCE(node.created, 0),
-		COALESCE(node.farming_policy_id, 0),
-		COALESCE(CAST(updated_at / 1000 AS int), 0),
-		COALESCE(node_resources.total_cru, 0),
-		COALESCE(node_resources.total_sru, 0),
-		COALESCE(node_resources.total_hru, 0),
-		COALESCE(node_resources.total_mru, 0),
-		COALESCE(node_resources.used_cru, 0),
-		COALESCE(node_resources.used_sru, 0),
-		COALESCE(node_resources.used_hru, 0),
-		COALESCE(node_resources.used_mru, 0),
-		COALESCE(public_config.domain, ''),
-		COALESCE(public_config.gw4, ''),
-		COALESCE(public_config.gw6, ''),
-		COALESCE(public_config.ipv4, ''),
-		COALESCE(public_config.ipv6, ''),
-		COALESCE(node.certification_type, ''),
-		COALESCE(farm.dedicated_farm, false),
-		COALESCE(rent_contract.contract_id, 0),
-		COALESCE(rent_contract.twin_id, 0),
-		0
-	FROM node
-	LEFT JOIN node_resources($1) ON node.node_id = node_resources.node_id
-	LEFT JOIN public_config ON node.id = public_config.node_id
-	LEFT JOIN rent_contract ON rent_contract.state = 'Created' AND rent_contract.node_id = node.node_id
-	LEFT JOIN farm ON node.farm_id = farm.farm_id
-	WHERE node.node_id = $1;
-	`
-	selectNodesWithFilter = `
-	SELECT
-		node.id,
-		COALESCE(node.node_id, 0),
-		COALESCE(node.farm_id, 0),
-		COALESCE(node.twin_id, 0),
-		COALESCE(node.country, ''),
-		COALESCE(node.grid_version, 0),
-		COALESCE(node.city, ''),
-		COALESCE(node.uptime, 0),
-		COALESCE(node.created, 0),
-		COALESCE(node.farming_policy_id, 0),
-		COALESCE(CAST(updated_at / 1000 AS int), 0),
-		COALESCE(nodes_resources_view.total_cru, 0),
-		COALESCE(nodes_resources_view.total_sru, 0),
-		COALESCE(nodes_resources_view.total_hru, 0),
-		COALESCE(nodes_resources_view.total_mru, 0),
-		COALESCE(nodes_resources_view.used_cru, 0),
-		COALESCE(nodes_resources_view.used_sru, 0),
-		COALESCE(nodes_resources_view.used_hru, 0),
-		COALESCE(nodes_resources_view.used_mru, 0),
-		COALESCE(public_config.domain, ''),
-		COALESCE(public_config.gw4, ''),
-		COALESCE(public_config.gw6, ''),
-		COALESCE(public_config.ipv4, ''),
-		COALESCE(public_config.ipv6, ''),
-		COALESCE(node.certification_type, ''),
-		COALESCE(farm.dedicated_farm, false),
-		COALESCE(rent_contract.contract_id, 0),
-		COALESCE(rent_contract.twin_id, 0),
-		%s
-	FROM node
-	LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id
-	LEFT JOIN public_config ON node.id = public_config.node_id
-	LEFT JOIN rent_contract ON rent_contract.state = 'Created' AND rent_contract.node_id = node.node_id
-	LEFT JOIN farm ON node.farm_id = farm.farm_id
-	`
-	selectFarmsWithFilter = `
-	SELECT 
-		farm_id,
-		COALESCE(name, ''),
-		COALESCE(twin_id, 0),
-		COALESCE(pricing_policy_id, 0),
-		COALESCE(certification_type, ''),
-		COALESCE(stellar_address, ''),
-		COALESCE(dedicated_farm, false),
-		(
-			SELECT 
-				COALESCE(json_agg(json_build_object('id', id, 'ip', ip, 'contractId', contract_id, 'gateway', gateway)), '[]')
-			FROM
-				public_ip
-			WHERE farm.id = public_ip.farm_id
-		) as public_ips,
-		%s
-	FROM farm
-	`
-	selectTwins = "SELECT twin_id, account_id, ip, %s From twin"
-
-	selectContracts = `
-	SELECT 
-		contract_id,
-	 	twin_id,
-		state,
-		CAST(created_at / 1000 AS int),
-		name, 
-		node_id, 
-		deployment_data, 
-		deployment_hash, 
-		number_of_public_i_ps, 
-		type,
-		COALESCE((	SELECT 
-				COALESCE(json_agg(json_build_object('amountBilled', amount_billed, 'discountReceived', discount_received, 'timestamp', timestamp)), '[]')
-			FROM
-				contract_bill_report
-			WHERE contracts.contract_id = contract_bill_report.contract_id
-			GROUP BY contract_id
-		), '[]') as contract_billing, 
-		%s 
-	FROM (
-	SELECT contract_id, twin_id, state, created_at, ''AS name, node_id, deployment_data, deployment_hash, number_of_public_i_ps, 'node' AS type
-	FROM node_contract 
-	UNION 
-	SELECT contract_id, twin_id, state, created_at, '' AS name, node_id, '', '', 0, 'rent' AS type
-	FROM rent_contract 
-	UNION 
-	SELECT contract_id, twin_id, state, created_at, name, 0, '', '', 0, 'name' AS type
-	FROM name_contract
-	) contracts	
-	`
-
-	countNodes = `
-	SELECT 
-		count(*)
-	FROM node
-	`
-	totalResources = `
-	SELECT
-		COALESCE(sum(node_resources_total.cru),0) AS total_cru,
-		COALESCE(sum(node_resources_total.sru),0) AS total_sru,
-		COALESCE(sum(node_resources_total.hru),0) AS total_hru,
-		COALESCE(sum(node_resources_total.mru),0) AS total_mru
-	FROM node
-	LEFT JOIN node_resources_total ON node.id = node_resources_total.id
-	`
-	countersQuery = `
-	SELECT
-	(SELECT count(id) AS twins FROM twin),
-	(SELECT count(id) AS public_ips FROM public_ip),
-	(SELECT count(node.id) AS access_nodes FROM node 
-		RIGHT JOIN public_config ON node.id = public_config.node_id 
-		%[1]s AND (COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv4, '') != '')),
-	(SELECT count(node.id) AS gateways FROM node 
-	 	RIGHT JOIN public_config ON node.id = public_config.node_id 
-	 	%[1]s AND COALESCE(public_config.domain, '') != '' AND (COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv6, '') != '')),
-	(SELECT count(id) AS contracts FROM node_contract),
-	(SELECT count(id) AS nodes FROM node %[1]s),
-	(SELECT count(DISTINCT farm_id) AS farm FROM node %[1]s),
-	(SELECT count(DISTINCT country) AS countries FROM node %[1]s)
-	`
 )
 
 // PostgresDatabase postgres db client
 type PostgresDatabase struct {
-	db *sql.DB
+	gormDB *gorm.DB
 }
 
 // NewPostgresDatabase returns a new postgres db client
@@ -273,11 +96,11 @@ func NewPostgresDatabase(host string, port int, user, password, dbname string) (
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
+	gormDB, err := gorm.Open(postgres.Open(psqlInfo), &gorm.Config{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to initialize db")
+		return nil, errors.Wrap(err, "failed to create orm wrapper around db")
 	}
-	res := PostgresDatabase{db}
+	res := PostgresDatabase{gormDB}
 	if err := res.initialize(); err != nil {
 		return nil, errors.Wrap(err, "failed to setup tables")
 	}
@@ -286,222 +109,106 @@ func NewPostgresDatabase(host string, port int, user, password, dbname string) (
 
 // Close the db connection
 func (d *PostgresDatabase) Close() error {
-	return d.db.Close()
+	db, err := d.gormDB.DB()
+	if err != nil {
+		return err
+	}
+	return db.Close()
 }
 
 func (d *PostgresDatabase) initialize() error {
-	_, err := d.db.Exec(setupPostgresql)
-	return err
-}
-
-// CountNodes returns the total number of nodes
-func (d *PostgresDatabase) CountNodes() (uint, error) {
-	var count uint
-	rows, err := d.db.Query(countNodes)
-	if err != nil {
-		return 0, err
-	}
-	defer rows.Close()
-	if !rows.Next() {
-		return 0, errors.New("count query returned 0 rows")
-	}
-	err = rows.Scan(&count)
-	return count, err
-
+	res := d.gormDB.Exec(setupPostgresql)
+	return res.Error
 }
 
 // GetCounters returns aggregate info about the grid
-func (d *PostgresDatabase) GetCounters(filter StatsFilter) (Counters, error) {
-	var counters Counters
-	query := countersQuery
-	totalResourcesQuery := totalResources
-
+func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters, error) {
+	var counters types.Counters
+	if res := d.gormDB.Table("twin").Count(&counters.Twins); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get twin count")
+	}
+	if res := d.gormDB.Table("public_ip").Count(&counters.PublicIPs); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get public ip count")
+	}
+	var count int64
+	if res := d.gormDB.Table("node_contract").Count(&count); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get node contract count")
+	}
+	counters.Contracts += count
+	if res := d.gormDB.Table("rent_contract").Count(&count); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get rent contract count")
+	}
+	counters.Contracts += count
+	if res := d.gormDB.Table("name_contract").Count(&count); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get name contract count")
+	}
+	counters.Contracts += count
+	if res := d.gormDB.Table("farm").Distinct("farm_id").Count(&counters.Farms); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get farm count")
+	}
+	condition := "TRUE"
 	if filter.Status != nil && *filter.Status == "up" {
 		nodeUpInterval := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
-		condition := fmt.Sprintf(`WHERE node.updated_at >= %d`, nodeUpInterval)
-		query = fmt.Sprintf(query, condition)
-		totalResourcesQuery = fmt.Sprintf(`%s %s`, totalResourcesQuery, condition)
-	} else {
-		query = fmt.Sprintf(query, "where TRUE")
+		condition = fmt.Sprintf(`node.updated_at >= %d`, nodeUpInterval)
 	}
-
-	rows, err := d.db.Query(query)
-	if err != nil {
-		return counters, errors.Wrap(err, "couldn't get counters")
+	if res := d.gormDB.
+		Table("node").
+		Select(
+			"sum(node_resources_total.cru) as total_cru",
+			"sum(node_resources_total.sru) as total_sru",
+			"sum(node_resources_total.hru) as total_hru",
+			"sum(node_resources_total.mru) as total_mru",
+		).
+		Joins("LEFT JOIN node_resources_total ON node.id = node_resources_total.node_id").
+		Where(condition).
+		Scan(&counters); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get nodes total resources")
 	}
-	defer rows.Close()
-	if !rows.Next() {
-		return counters, errors.New("count query returned 0 rows")
+	if res := d.gormDB.Table("node").Where(condition).Count(&counters.Nodes); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get node count")
 	}
-
-	err = rows.Scan(
-		&counters.Twins,
-		&counters.PublicIPs,
-		&counters.AccessNodes,
-		&counters.Gateways,
-		&counters.Contracts,
-		&counters.Nodes,
-		&counters.Farms,
-		&counters.Countries,
-	)
-	if err != nil {
-		return counters, errors.Wrap(err, "couldn't scan counters")
+	if res := d.gormDB.Table("node").Where(condition).Distinct("country").Count(&counters.Countries); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get country count")
 	}
-
-	rows, err = d.db.Query(totalResourcesQuery)
-	if err != nil {
-		return counters, errors.Wrap(err, "couldn't query total resources")
+	query := d.gormDB.
+		Table("node").
+		Joins(
+			`RIGHT JOIN public_config
+			ON node.id = public_config.node_id
+			`,
+		)
+	if res := query.Where(condition).Where("COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv6, '') != ''").Count(&counters.AccessNodes); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get access node count")
 	}
-	defer rows.Close()
-	if !rows.Next() {
-		return counters, errors.New("total resources query returned 0 rows")
-	}
-
-	err = rows.Scan(
-		&counters.TotalCRU,
-		&counters.TotalSRU,
-		&counters.TotalHRU,
-		&counters.TotalMRU,
-	)
-	if err != nil {
-		return counters, errors.Wrap(err, "couldn't scan total resources")
+	if res := query.Where(condition).Where("COALESCE(public_config.domain, '') != '' AND (COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv6, '') != '')").Count(&counters.Gateways); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get gateway count")
 	}
 	return counters, nil
 }
 
-func (d *PostgresDatabase) scanNode(rows *sql.Rows, node *AllNodeData) error {
-	err := rows.Scan(
-		&node.NodeData.ID,
-		&node.NodeID,
-		&node.NodeData.FarmID,
-		&node.NodeData.TwinID,
-		&node.NodeData.Country,
-		&node.NodeData.GridVersion,
-		&node.NodeData.City,
-		&node.NodeData.Uptime,
-		&node.NodeData.Created,
-		&node.NodeData.FarmingPolicyID,
-		&node.NodeData.UpdatedAt,
-		&node.NodeData.TotalResources.CRU,
-		&node.NodeData.TotalResources.SRU,
-		&node.NodeData.TotalResources.HRU,
-		&node.NodeData.TotalResources.MRU,
-		&node.NodeData.UsedResources.CRU,
-		&node.NodeData.UsedResources.SRU,
-		&node.NodeData.UsedResources.HRU,
-		&node.NodeData.UsedResources.MRU,
-		&node.NodeData.PublicConfig.Domain,
-		&node.NodeData.PublicConfig.Gw4,
-		&node.NodeData.PublicConfig.Gw6,
-		&node.NodeData.PublicConfig.Ipv4,
-		&node.NodeData.PublicConfig.Ipv6,
-		&node.NodeData.CertificationType,
-		&node.NodeData.Dedicated,
-		&node.NodeData.RentContractID,
-		&node.NodeData.RentedByTwinID,
-		&node.Count,
-	)
-	if err != nil {
-		return err
-	}
-	if int64(node.NodeData.UpdatedAt) >= time.Now().Unix()-nodeStateFactor*int64(reportInterval/time.Second) {
-		node.NodeData.Status = "up"
-	} else {
-		node.NodeData.Status = "down"
-	}
-	return nil
-}
-
-func (d *PostgresDatabase) scanFarm(rows *sql.Rows, farm *Farm) error {
-	var publicIPStr string
-	err := rows.Scan(
-		&farm.FarmID,
-		&farm.Name,
-		&farm.TwinID,
-		&farm.PricingPolicyID,
-		&farm.CertificationType,
-		&farm.StellarAddress,
-		&farm.Dedicated,
-		&publicIPStr,
-		&farm.Count,
-	)
-	if err != nil {
-		return err
-	}
-	if err := json.Unmarshal([]byte(publicIPStr), &farm.PublicIps); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *PostgresDatabase) scanTwin(rows *sql.Rows, twin *Twin) error {
-	err := rows.Scan(
-		&twin.TwinID,
-		&twin.AccountID,
-		&twin.IP,
-		&twin.Count,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *PostgresDatabase) scanContract(rows *sql.Rows, contract *Contract) error {
-	var contractBilling string
-	err := rows.Scan(
-		&contract.ContractID,
-		&contract.TwinID,
-		&contract.State,
-		&contract.CreatedAt,
-		&contract.Name,
-		&contract.NodeID,
-		&contract.DeploymentData,
-		&contract.DeploymentHash,
-		&contract.NumberOfPublicIps,
-		&contract.Type,
-		&contractBilling,
-		&contract.Count,
-	)
-	if err != nil {
-		return err
-	}
-	if err := json.Unmarshal([]byte(contractBilling), &contract.ContractBillings); err != nil {
-		return err
-	}
-	return nil
-}
-
 // GetNode returns node info
-func (d *PostgresDatabase) GetNode(nodeID uint32) (AllNodeData, error) {
-	var node AllNodeData
-	rows, err := d.db.Query(selectSingleNode, nodeID)
-	if err != nil {
-		return node, err
+func (d *PostgresDatabase) GetNode(nodeID uint32) (Node, error) {
+	q := d.nodeTableQuery()
+	q = q.Where("node.node_id = ?", nodeID)
+	var node Node
+	if res := q.Scan(&node); res.Error != nil {
+		return node, errors.Wrap(res.Error, "failed to scan returned node from database")
 	}
-	defer rows.Close()
-	if !rows.Next() {
-		return node, ErrNodeNotFound
-	}
-	err = d.scanNode(rows, &node)
-	return node, err
+	return node, nil
 }
 
 // GetFarm return farm info
 func (d *PostgresDatabase) GetFarm(farmID uint32) (Farm, error) {
+	q := d.farmTableQuery()
+	q = q.Where("farm.farm_id = ?", farmID)
 	var farm Farm
-	rows, err := d.db.Query(selectFarm, farmID)
-	if err != nil {
-		return farm, err
+	if res := q.Scan(&farm); res.Error != nil {
+		return farm, errors.Wrap(res.Error, "failed to scan returned farm from database")
 	}
-	defer rows.Close()
-	if !rows.Next() {
-		return farm, ErrFarmNotFound
-	}
-	err = d.scanFarm(rows, &farm)
-	return farm, err
+	return farm, nil
 }
 
+//lint:ignore U1000 used for debugging
 func convertParam(p interface{}) string {
 	if v, ok := p.(string); ok {
 		return fmt.Sprintf("'%s'", v)
@@ -519,329 +226,336 @@ func convertParam(p interface{}) string {
 	log.Error().Msgf("can't recognize type %s", fmt.Sprintf("%v", p))
 	return "0"
 }
+
+//lint:ignore U1000 used for debugging
+//nolint
 func printQuery(query string, args ...interface{}) {
 	for i, e := range args {
 		query = strings.ReplaceAll(query, fmt.Sprintf("$%d", i+1), convertParam(e))
 	}
 	fmt.Printf("node query: %s", query)
 }
+func (d *PostgresDatabase) farmTableQuery() *gorm.DB {
+	return d.gormDB.
+		Table("farm").
+		Select(
+			"farm.farm_id",
+			"name",
+			"twin_id",
+			"pricing_policy_id",
+			"certification_type",
+			"stellar_address",
+			"dedicated_farm as dedicated",
+			"COALESCE(public_ip.public_ips, '[]') as public_ips",
+		).
+		Joins(
+			`LEFT JOIN
+		(SELECT
+			farm_id, 
+			json_agg(json_build_object('id', id, 'ip', ip, 'contractId', contract_id, 'gateway', gateway)) as public_ips
+		FROM
+			public_ip
+		GROUP by farm_id) public_ip
+		ON public_ip.farm_id = farm.id`,
+		)
+}
+func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
+	return d.gormDB.
+		Table("node").
+		Select(
+			"node.id",
+			"node.node_id",
+			"node.farm_id",
+			"node.twin_id",
+			"node.country",
+			"node.grid_version",
+			"node.city",
+			"node.uptime",
+			"node.created",
+			"node.farming_policy_id",
+			"updated_at",
+			"nodes_resources_view.total_cru",
+			"nodes_resources_view.total_sru",
+			"nodes_resources_view.total_hru",
+			"nodes_resources_view.total_mru",
+			"nodes_resources_view.used_cru",
+			"nodes_resources_view.used_sru",
+			"nodes_resources_view.used_hru",
+			"nodes_resources_view.used_mru",
+			"public_config.domain",
+			"public_config.gw4",
+			"public_config.gw6",
+			"public_config.ipv4",
+			"public_config.ipv6",
+			"node.certification_type",
+			"farm.dedicated_farm as dedicated",
+			"rent_contract.contract_id as rent_contract_id",
+			"rent_contract.twin_id as rented_by_twin_id",
+		).
+		Joins(
+			"LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id",
+		).
+		Joins(
+			"LEFT JOIN public_config ON node.id = public_config.node_id",
+		).
+		Joins(
+			"LEFT JOIN rent_contract ON rent_contract.state = 'Created' AND rent_contract.node_id = node.node_id",
+		).
+		Joins(
+			"LEFT JOIN farm ON node.farm_id = farm.farm_id",
+		)
+}
 
 // GetNodes returns nodes filtered and paginated
-func (d *PostgresDatabase) GetNodes(filter NodeFilter, limit Limit) ([]AllNodeData, error) {
-	query := selectNodesWithFilter
-	args := make([]interface{}, 0)
-	if limit.RetCount {
-		query = fmt.Sprintf(query, "COUNT(*) OVER()")
-	} else {
-		query = fmt.Sprintf(query, "0")
-	}
-	idx := 1
-	query = fmt.Sprintf("%s WHERE TRUE", query)
+func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) ([]Node, uint, error) {
+	q := d.nodeTableQuery()
 	if filter.Status != nil {
+		// TODO: this shouldn't be in db
+		threshold := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
 		if *filter.Status == "down" {
-			query = fmt.Sprintf("%s AND (node.updated_at < $%d OR node.updated_at IS NULL)", query, idx)
+			q = q.Where("node.updated_at < ? OR node.updated_at IS NULL", threshold)
 		} else {
-			query = fmt.Sprintf("%s AND node.updated_at >= $%d", query, idx)
+			q = q.Where("node.updated_at >= ?", threshold)
 		}
-		idx++
-		args = append(args, time.Now().Unix()*1000-nodeStateFactor*int64(reportInterval/time.Millisecond))
 	}
 	if filter.FreeMRU != nil {
-		query = fmt.Sprintf("%s AND nodes_resources_view.free_mru >= $%d", query, idx)
-		idx++
-		args = append(args, *filter.FreeMRU)
+		q = q.Where("nodes_resources_view.free_mru >= ?", *filter.FreeMRU)
 	}
 	if filter.FreeHRU != nil {
-		query = fmt.Sprintf("%s AND nodes_resources_view.free_hru >= $%d", query, idx)
-		idx++
-		args = append(args, *filter.FreeHRU)
+		q = q.Where("nodes_resources_view.free_hru >= ?", *filter.FreeHRU)
 	}
 	if filter.FreeSRU != nil {
-		query = fmt.Sprintf("%s AND nodes_resources_view.free_sru >= $%d", query, idx)
-		idx++
-		args = append(args, *filter.FreeSRU)
+		q = q.Where("nodes_resources_view.free_sru >= ?", *filter.FreeSRU)
 	}
 	if filter.Country != nil {
-		query = fmt.Sprintf("%s AND node.country = $%d", query, idx)
-		idx++
-		args = append(args, *filter.Country)
+		q = q.Where("node.country = ?", *filter.Country)
 	}
 	if filter.City != nil {
-		query = fmt.Sprintf("%s AND node.city = $%d", query, idx)
-		idx++
-		args = append(args, *filter.City)
+		q = q.Where("node.city = ?", *filter.City)
 	}
 	if filter.FarmIDs != nil {
-		query = fmt.Sprintf("%s AND (false", query)
-		for _, id := range filter.FarmIDs {
-			query = fmt.Sprintf("%s OR node.farm_id = $%d", query, idx)
-			idx++
-			args = append(args, id)
-		}
-		query = fmt.Sprintf("%s)", query)
+		q = q.Where("node.farm_id IN ?", filter.FarmIDs)
 	}
 	if filter.FarmName != nil {
-		query = fmt.Sprintf("%s AND farm.name = $%d", query, idx)
-		idx++
-		args = append(args, *filter.FarmName)
+		q = q.Where("farm.name = ?", *filter.FarmName)
 	}
 	if filter.FreeIPs != nil {
-		query = fmt.Sprintf("%s AND (SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id AND public_ip.contract_id = 0) >= $%d", query, idx)
-		idx++
-		args = append(args, *filter.FreeIPs)
+		q = q.Where("(SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id AND public_ip.contract_id = 0) >= ?", *filter.FreeIPs)
 	}
 	if filter.IPv4 != nil {
-		query = fmt.Sprintf(`%s AND COALESCE(public_config.ipv4, '') != ''`, query)
+		q = q.Where("COALESCE(public_config.ipv4, '') != ''")
 	}
 	if filter.IPv6 != nil {
-		query = fmt.Sprintf(`%s AND COALESCE(public_config.ipv6, '') != ''`, query)
+		q = q.Where("COALESCE(public_config.ipv6, '') != ''")
 	}
 	if filter.Domain != nil {
-		query = fmt.Sprintf(`%s AND COALESCE(public_config.domain, '') != ''`, query)
+		q = q.Where("COALESCE(public_config.domain, '') != ''")
 	}
 	if filter.Dedicated != nil {
-		query = fmt.Sprintf(`%s AND farm.dedicated_farm = $%d`, query, idx)
-		idx++
-		args = append(args, *filter.Dedicated)
+		q = q.Where("farm.dedicated_farm = ?", *filter.Dedicated)
 	}
 	if filter.Rentable != nil {
-		query = fmt.Sprintf(`%s AND ($%[2]d AND (farm.dedicated_farm = true AND COALESCE(rent_contract.contract_id, 0) = 0)
-		OR NOT $%[2]d AND (farm.dedicated_farm = false OR (farm.dedicated_farm = true AND COALESCE(rent_contract.contract_id, 0) > 0)))`, query, idx)
-		idx++
-		args = append(args, *filter.Rentable)
+		q = q.Where(`? = (farm.dedicated_farm = true AND COALESCE(rent_contract.contract_id, 0) = 0)`, *filter.Rentable)
 	}
 	if filter.RentedBy != nil {
-		query = fmt.Sprintf("%s AND COALESCE(rent_contract.twin_id, 0) = $%d ", query, idx)
-		idx++
-		args = append(args, *filter.RentedBy)
+		q = q.Where(`COALESCE(rent_contract.twin_id, 0) = ?`, *filter.RentedBy)
 	}
 	if filter.AvailableFor != nil {
-		query = fmt.Sprintf("%s AND (COALESCE(rent_contract.twin_id, 0) = $%d OR farm.dedicated_farm = false)", query, idx)
-		idx++
-		args = append(args, *filter.AvailableFor)
+		q = q.Where(`(COALESCE(rent_contract.twin_id, 0) = ? OR farm.dedicated_farm = false)`, *filter.AvailableFor)
 	}
-	query = fmt.Sprintf("%s ORDER BY node.node_id", query)
-	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
-	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
-	rows, err := d.db.Query(query, args...)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query nodes")
-	}
-	defer rows.Close()
-	nodes := make([]AllNodeData, 0)
-	for rows.Next() {
-		var node AllNodeData
-		if err := d.scanNode(rows, &node); err != nil {
-			log.Error().Err(err).Msg("failed to scan returned node from database")
-			continue
+	var count int64
+	if limit.Randomize || limit.RetCount {
+		if res := q.Count(&count); res.Error != nil {
+			return nil, 0, res.Error
 		}
-		nodes = append(nodes, node)
 	}
-	return nodes, nil
+	if limit.Randomize {
+		q = q.Limit(int(limit.Size)).
+			Offset(int(rand.Intn(int(count)) - int(limit.Size)))
+	} else {
+		q = q.Limit(int(limit.Size)).
+			Offset(int(limit.Page-1) * int(limit.Size)).
+			Order("node_id")
+	}
+	var nodes []Node
+	if res := q.Scan(&nodes); res.Error != nil {
+		return nil, 0, res.Error
+	}
+	return nodes, uint(count), nil
 }
 
 // GetFarms return farms filtered and paginated
-func (d *PostgresDatabase) GetFarms(filter FarmFilter, limit Limit) ([]Farm, error) {
-	query := selectFarmsWithFilter
-	if limit.RetCount {
-		query = fmt.Sprintf(query, "COUNT(*) OVER()")
-	} else {
-		query = fmt.Sprintf(query, "0")
-	}
-	query = fmt.Sprintf("%s WHERE TRUE", query)
-	args := make([]interface{}, 0)
-	idx := 1
+func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) ([]Farm, uint, error) {
+	q := d.farmTableQuery()
 	if filter.FreeIPs != nil {
-		query = fmt.Sprintf("%s AND (SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id and public_ip.contract_id = 0) >= $%d", query, idx)
-		idx++
-		args = append(args, *filter.FreeIPs)
+		q = q.Where("(SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id and public_ip.contract_id = 0) >= ?", *filter.FreeIPs)
 	}
 	if filter.TotalIPs != nil {
-		query = fmt.Sprintf("%s AND (SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id) >= $%d", query, idx)
-		idx++
-		args = append(args, *filter.TotalIPs)
+		q = q.Where("(SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id) >= ?", *filter.TotalIPs)
 	}
-
 	if filter.StellarAddress != nil {
-		query = fmt.Sprintf("%s AND stellar_address = $%d", query, idx)
-		idx++
-		args = append(args, *filter.StellarAddress)
+		q = q.Where("stellar_address = ?", *filter.StellarAddress)
 	}
 	if filter.PricingPolicyID != nil {
-		query = fmt.Sprintf("%s AND pricing_policy_id = $%d", query, idx)
-		idx++
-		args = append(args, *filter.PricingPolicyID)
-	}
-	if filter.Version != nil {
-		query = fmt.Sprintf("%s AND version = $%d", query, idx)
-		idx++
-		args = append(args, *filter.Version)
+		q = q.Where("pricing_policy_id = ?", *filter.PricingPolicyID)
 	}
 	if filter.FarmID != nil {
-		query = fmt.Sprintf("%s AND farm_id = $%d", query, idx)
-		idx++
-		args = append(args, *filter.FarmID)
+		q = q.Where("farm.farm_id = ?", *filter.FarmID)
 	}
 	if filter.TwinID != nil {
-		query = fmt.Sprintf("%s AND twin_id = $%d", query, idx)
-		idx++
-		args = append(args, *filter.TwinID)
+		q = q.Where("twin_id = ?", *filter.TwinID)
 	}
 	if filter.Name != nil {
-		query = fmt.Sprintf("%s AND name = $%d", query, idx)
-		idx++
-		args = append(args, *filter.Name)
+		q = q.Where("name = ?", *filter.Name)
 	}
 	if filter.NameContains != nil {
-		query = fmt.Sprintf("%s AND name LIKE $%d", query, idx)
-		idx++
-		args = append(args, fmt.Sprintf("%[1]s%s%[1]s", "%", *filter.NameContains))
+		q = q.Where("name LIKE ?", fmt.Sprintf("%%%s%%", *filter.NameContains))
 	}
 
 	if filter.CertificationType != nil {
-		query = fmt.Sprintf("%s AND certification_type = $%d", query, idx)
-		idx++
-		args = append(args, *filter.CertificationType)
+		q = q.Where("certification_type = ?", *filter.CertificationType)
 	}
 
 	if filter.Dedicated != nil {
-		query = fmt.Sprintf("%s AND dedicated_farm = $%d", query, idx)
-		idx++
-		args = append(args, *filter.Dedicated)
+		q = q.Where("dedicated_farm = ?", *filter.Dedicated)
 	}
-	query = fmt.Sprintf("%s ORDER BY farm.farm_id", query)
-	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
-	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
-	rows, err := d.db.Query(query, args...)
-	if err != nil {
-		return nil, errors.Wrap(err, "couldn't query farms")
-	}
-	defer rows.Close()
-	farms := make([]Farm, 0)
-	for rows.Next() {
-		var farm Farm
-		if err := d.scanFarm(rows, &farm); err != nil {
-			log.Error().Err(err).Msg("failed to scan returned farm from database")
-			continue
+	var count int64
+	if limit.Randomize || limit.RetCount {
+		if res := q.Count(&count); res.Error != nil {
+			return nil, 0, errors.Wrap(res.Error, "couldn't get farm count")
 		}
-		farms = append(farms, farm)
 	}
-	return farms, nil
+	if limit.Randomize {
+		q = q.Limit(int(limit.Size)).
+			Offset(int(rand.Intn(int(count)) - int(limit.Size)))
+	} else {
+		q = q.Limit(int(limit.Size)).
+			Offset(int(limit.Page-1) * int(limit.Size)).
+			Order("farm.farm_id")
+	}
+	var farms []Farm
+	if res := q.Scan(&farms); res.Error != nil {
+		return farms, uint(count), errors.Wrap(res.Error, "failed to scan returned farm from database")
+	}
+	return farms, uint(count), nil
 }
 
 // GetTwins returns twins filtered and paginated
-func (d *PostgresDatabase) GetTwins(filter TwinFilter, limit Limit) ([]Twin, error) {
-	query := selectTwins
-	args := make([]interface{}, 0)
-	if limit.RetCount {
-		query = fmt.Sprintf(query, "COUNT(*) OVER()")
-	} else {
-		query = fmt.Sprintf(query, "0")
-	}
-	idx := 1
-	query = fmt.Sprintf("%s WHERE TRUE", query)
+func (d *PostgresDatabase) GetTwins(filter types.TwinFilter, limit types.Limit) ([]types.Twin, uint, error) {
+	q := d.gormDB.
+		Table("twin").
+		Select(
+			"twin_id",
+			"account_id",
+			"ip",
+		)
 	if filter.TwinID != nil {
-		query = fmt.Sprintf("%s AND twin_id = $%d", query, idx)
-		idx++
-		args = append(args, *filter.TwinID)
+		q = q.Where("twin_id = ?", *filter.TwinID)
 	}
 	if filter.AccountID != nil {
-		query = fmt.Sprintf("%s AND account_id = $%d", query, idx)
-		idx++
-		args = append(args, *filter.AccountID)
+		q = q.Where("account_id = ?", *filter.AccountID)
 	}
-	query = fmt.Sprintf("%s ORDER BY twin_id", query)
-	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
-	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
-	rows, err := d.db.Query(query, args...)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query twins")
-	}
-	defer rows.Close()
-	twins := make([]Twin, 0)
-	for rows.Next() {
-		var twin Twin
-		if err := d.scanTwin(rows, &twin); err != nil {
-			log.Error().Err(err).Msg("failed to scan returned twin from database")
-			continue
+	var count int64
+	if limit.Randomize || limit.RetCount {
+		if res := q.Count(&count); res.Error != nil {
+			return nil, 0, errors.Wrap(res.Error, "couldn't get twin count")
 		}
-		twins = append(twins, twin)
 	}
-	return twins, nil
+	if limit.Randomize {
+		q = q.Limit(int(limit.Size)).
+			Offset(int(rand.Intn(int(count)) - int(limit.Size)))
+	} else {
+		q = q.Limit(int(limit.Size)).
+			Offset(int(limit.Page-1) * int(limit.Size)).
+			Order("twin.twin_id")
+	}
+	var twins []types.Twin
+
+	if res := q.Scan(&twins); res.Error != nil {
+		return twins, uint(count), errors.Wrap(res.Error, "failed to scan returned twins from database")
+	}
+	return twins, uint(count), nil
 }
 
 // GetContracts returns contracts filtered and paginated
-func (d *PostgresDatabase) GetContracts(filter ContractFilter, limit Limit) ([]Contract, error) {
-	query := selectContracts
-	args := make([]interface{}, 0)
-	if limit.RetCount {
-		query = fmt.Sprintf(query, "COUNT(*) OVER()")
-	} else {
-		query = fmt.Sprintf(query, "0")
-	}
-	idx := 1
-	query = fmt.Sprintf("%s WHERE TRUE", query)
+func (d *PostgresDatabase) GetContracts(filter types.ContractFilter, limit types.Limit) ([]DBContract, uint, error) {
+	q := d.gormDB.
+		Table(`(SELECT contract_id, twin_id, state, created_at, ''AS name, node_id, deployment_data, deployment_hash, number_of_public_i_ps, 'node' AS type
+	FROM node_contract 
+	UNION 
+	SELECT contract_id, twin_id, state, created_at, '' AS name, node_id, '', '', 0, 'rent' AS type
+	FROM rent_contract 
+	UNION 
+	SELECT contract_id, twin_id, state, created_at, name, 0, '', '', 0, 'name' AS type
+	FROM name_contract) contracts`).
+		Select(
+			"contracts.contract_id",
+			"twin_id",
+			"state",
+			"CAST(created_at / 1000 AS int) as created_at",
+			"name",
+			"node_id",
+			"deployment_data",
+			"deployment_hash",
+			"number_of_public_i_ps as number_of_public_ips",
+			"type",
+			"COALESCE(contract_billing.billings, '[]') as contract_billings",
+		).
+		Joins(
+			`LEFT JOIN (
+				SELECT 
+					contract_bill_report.contract_id,
+					COALESCE(json_agg(json_build_object('amountBilled', amount_billed, 'discountReceived', discount_received, 'timestamp', timestamp)), '[]') as billings
+				FROM
+					contract_bill_report
+				GROUP BY contract_id
+			) contract_billing
+			ON contracts.contract_id = contract_billing.contract_id`,
+		)
 	if filter.Type != nil {
-		query = fmt.Sprintf("%s AND type = $%d", query, idx)
-		idx++
-		args = append(args, *filter.Type)
+		q = q.Where("type = ?", *filter.Type)
 	}
 	if filter.State != nil {
-		query = fmt.Sprintf("%s AND state = $%d", query, idx)
-		idx++
-		args = append(args, *filter.State)
+		q = q.Where("state = ?", *filter.State)
 	}
 	if filter.TwinID != nil {
-		query = fmt.Sprintf("%s AND twin_id = $%d", query, idx)
-		idx++
-		args = append(args, *filter.TwinID)
+		q = q.Where("twin_id = ?", *filter.TwinID)
 	}
 	if filter.ContractID != nil {
-		query = fmt.Sprintf("%s AND contract_id = $%d", query, idx)
-		idx++
-		args = append(args, *filter.ContractID)
+		q = q.Where("contracts.contract_id = ?", *filter.ContractID)
 	}
 	if filter.NodeID != nil {
-		query = fmt.Sprintf("%s AND node_id = $%d", query, idx)
-		idx++
-		args = append(args, *filter.NodeID)
+		q = q.Where("node_id = ?", *filter.NodeID)
 	}
 	if filter.NumberOfPublicIps != nil {
-		query = fmt.Sprintf("%s AND number_of_public_i_ps >= $%d", query, idx)
-		idx++
-		args = append(args, *filter.NumberOfPublicIps)
+		q = q.Where("number_of_public_i_ps >= ?", *filter.NumberOfPublicIps)
 	}
 	if filter.Name != nil {
-		query = fmt.Sprintf("%s AND name = $%d", query, idx)
-		idx++
-		args = append(args, *filter.Name)
+		q = q.Where("name = ?", *filter.Name)
 	}
 	if filter.DeploymentData != nil {
-		query = fmt.Sprintf("%s AND deployment_data = $%d", query, idx)
-		idx++
-		args = append(args, *filter.DeploymentData)
+		q = q.Where("deployment_data = ?", *filter.DeploymentData)
 	}
 	if filter.DeploymentHash != nil {
-		query = fmt.Sprintf("%s AND deployment_hash = $%d", query, idx)
-		idx++
-		args = append(args, *filter.DeploymentHash)
+		q = q.Where("deployment_hash = ?", *filter.DeploymentHash)
 	}
-	query = fmt.Sprintf("%s ORDER BY contract_id", query)
-	query = fmt.Sprintf("%s LIMIT $%d OFFSET $%d;", query, idx, idx+1)
-	args = append(args, limit.Size, (limit.Page-1)*limit.Size)
-	rows, err := d.db.Query(query, args...)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query contracts")
-	}
-	defer rows.Close()
-	contracts := make([]Contract, 0)
-	for rows.Next() {
-		var contract Contract
-		if err := d.scanContract(rows, &contract); err != nil {
-			log.Error().Err(err).Msg("failed to scan returned contract from database")
-			continue
+	var count int64
+	if limit.Randomize || limit.RetCount {
+		if res := q.Count(&count); res.Error != nil {
+			return nil, 0, errors.Wrap(res.Error, "couldn't get contract count")
 		}
-		contracts = append(contracts, contract)
 	}
-	return contracts, nil
+	if limit.Randomize {
+		q = q.Limit(int(limit.Size)).
+			Offset(int(rand.Intn(int(count)) - int(limit.Size)))
+	} else {
+		q = q.Limit(int(limit.Size)).
+			Offset(int(limit.Page-1) * int(limit.Size)).
+			Order("contract_id")
+	}
+	var contracts []DBContract
+	if res := q.Scan(&contracts); res.Error != nil {
+		return contracts, uint(count), errors.Wrap(res.Error, "failed to scan returned contracts from database")
+	}
+	return contracts, uint(count), nil
 }

@@ -9,10 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
-)
-
-const (
-	maxPageSize = 100
+	"github.com/threefoldtech/grid_proxy_server/pkg/types"
 )
 
 func errorReply(err error) mw.Response {
@@ -25,12 +22,13 @@ func errorReply(err error) mw.Response {
 	}
 }
 
-func getLimit(r *http.Request) (db.Limit, error) {
-	var limit db.Limit
+func getLimit(r *http.Request) (types.Limit, error) {
+	var limit types.Limit
 
 	page := r.URL.Query().Get("page")
 	size := r.URL.Query().Get("size")
 	retCount := r.URL.Query().Get("ret_count")
+	randomize := r.URL.Query().Get("randomize")
 	if page == "" {
 		page = "1"
 	}
@@ -49,11 +47,15 @@ func getLimit(r *http.Request) (db.Limit, error) {
 	}
 	limit.Size = parsed
 
-	returnCount := false
+	limit.RetCount = false
 	if retCount == "true" {
-		returnCount = true
+		limit.RetCount = true
 	}
-	limit.RetCount = returnCount
+
+	limit.Randomize = false
+	if randomize == "true" {
+		limit.Randomize = true
+	}
 
 	// TODO: readd the check once clients are updated
 	// if limit.Size > maxPageSize {
@@ -117,9 +119,9 @@ func parseParams(
 
 // test nodes?status=up&free_ips=0&free_cru=1&free_mru=1&free_hru=1&country=Belgium&city=Unknown&ipv4=true&ipv6=true&domain=false
 // handleNodeRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
-func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.Limit, error) {
-	var filter db.NodeFilter
-	var limit db.Limit
+func (a *App) handleNodeRequestsQueryParams(r *http.Request) (types.NodeFilter, types.Limit, error) {
+	var filter types.NodeFilter
+	var limit types.Limit
 	ints := map[string]**uint64{
 		"free_mru":      &filter.FreeMRU,
 		"free_hru":      &filter.FreeHRU,
@@ -161,15 +163,14 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (db.NodeFilter, db.
 
 // test farms?free_ips=1&pricing_policy_id=1&version=4&farm_id=23&twin_id=291&name=Farm-1&stellar_address=13VrxhaBZh87ZP8nuYF4LtAhnDPWMfSrMUvHeRAFaqN43W1X
 // handleFarmRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
-func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.Limit, error) {
-	var filter db.FarmFilter
-	var limit db.Limit
+func (a *App) handleFarmRequestsQueryParams(r *http.Request) (types.FarmFilter, types.Limit, error) {
+	var filter types.FarmFilter
+	var limit types.Limit
 
 	ints := map[string]**uint64{
 		"free_ips":          &filter.FreeIPs,
 		"total_ips":         &filter.TotalIPs,
 		"pricing_policy_id": &filter.PricingPolicyID,
-		"version":           &filter.Version,
 		"farm_id":           &filter.FarmID,
 		"twin_id":           &filter.TwinID,
 	}
@@ -195,9 +196,9 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (db.FarmFilter, db.
 
 // test twins?twin_id=7
 // handleTwinRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
-func (a *App) handleTwinRequestsQueryParams(r *http.Request) (db.TwinFilter, db.Limit, error) {
-	var filter db.TwinFilter
-	var limit db.Limit
+func (a *App) handleTwinRequestsQueryParams(r *http.Request) (types.TwinFilter, types.Limit, error) {
+	var filter types.TwinFilter
+	var limit types.Limit
 	ints := map[string]**uint64{
 		"twin_id": &filter.TwinID,
 	}
@@ -217,9 +218,9 @@ func (a *App) handleTwinRequestsQueryParams(r *http.Request) (db.TwinFilter, db.
 
 // test contracts?contract_id=7
 // HandleContractRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
-func (a *App) handleContractRequestsQueryParams(r *http.Request) (db.ContractFilter, db.Limit, error) {
-	var filter db.ContractFilter
-	var limit db.Limit
+func (a *App) handleContractRequestsQueryParams(r *http.Request) (types.ContractFilter, types.Limit, error) {
+	var filter types.ContractFilter
+	var limit types.Limit
 	ints := map[string]**uint64{
 		"contract_id":          &filter.ContractID,
 		"twin_id":              &filter.TwinID,
@@ -246,8 +247,8 @@ func (a *App) handleContractRequestsQueryParams(r *http.Request) (db.ContractFil
 
 // test stats?status=up
 // HandleNodeRequestsQueryParams takes the request and restore the query paramas, handle errors and set default values if not available
-func (a *App) handleStatsRequestsQueryParams(r *http.Request) (db.StatsFilter, error) {
-	var filter db.StatsFilter
+func (a *App) handleStatsRequestsQueryParams(r *http.Request) (types.StatsFilter, error) {
+	var filter types.StatsFilter
 	strs := map[string]**string{
 		"status": &filter.Status,
 	}
@@ -257,23 +258,19 @@ func (a *App) handleStatsRequestsQueryParams(r *http.Request) (db.StatsFilter, e
 	return filter, nil
 }
 
-func (a *App) getTotalCount() (uint, error) {
-	return a.db.CountNodes()
-}
-
 // getNodeData is a helper function that wraps fetch node data
 // it caches the results in redis to save time
-func (a *App) getNodeData(nodeIDStr string) (nodeWithNestedCapacity, error) {
+func (a *App) getNodeData(nodeIDStr string) (types.NodeWithNestedCapacity, error) {
 	nodeID, err := strconv.Atoi(nodeIDStr)
 	if err != nil {
-		return nodeWithNestedCapacity{}, errors.Wrap(ErrBadGateway, fmt.Sprintf("invalid node id %d: %s", nodeID, err.Error()))
+		return types.NodeWithNestedCapacity{}, errors.Wrap(ErrBadGateway, fmt.Sprintf("invalid node id %d: %s", nodeID, err.Error()))
 	}
 	info, err := a.db.GetNode(uint32(nodeID))
 	if errors.Is(err, db.ErrNodeNotFound) {
-		return nodeWithNestedCapacity{}, ErrNodeNotFound
+		return types.NodeWithNestedCapacity{}, ErrNodeNotFound
 	} else if err != nil {
 		// TODO: wrapping
-		return nodeWithNestedCapacity{}, err
+		return types.NodeWithNestedCapacity{}, err
 	}
 	apiNode := nodeWithNestedCapacityFromDBNode(info)
 	return apiNode, nil
