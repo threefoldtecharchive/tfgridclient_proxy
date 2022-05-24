@@ -294,7 +294,7 @@ func generateNodes(db *sql.DB) error {
 			updatedAt = time.Now().Unix()*1000 - int64(rnd(0, 1000*60*60*1))
 		}
 		nodesMRU[i] = mru - 2*1024*1024*1024
-		nodesSRU[i] = 2 * sru
+		nodesSRU[i] = sru
 		nodesHRU[i] = hru
 		nodeUP[i] = up
 		location := location{
