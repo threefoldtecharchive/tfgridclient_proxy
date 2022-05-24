@@ -12,12 +12,12 @@ func calcFreeResources(total node_resources_total, used node_resources_total) no
 	if total.hru < used.hru {
 		panic("total hru is less than hru")
 	}
-	if 2*total.sru < used.sru {
-		panic("2 * total sru is less than sru")
+	if total.sru < used.sru {
+		panic("total sru is less than sru")
 	}
 	return node_resources_total{
 		hru: total.hru - used.hru,
-		sru: 2*total.sru - used.sru,
+		sru: total.sru - used.sru,
 		mru: total.mru - used.mru,
 	}
 }
