@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"math"
 
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 )
@@ -85,10 +86,17 @@ func loadNodes(db *sql.DB, data *DBData) error {
 func calcNodesUsedResources(data *DBData) error {
 
 	for _, node := range data.nodes {
-		data.nodeUsedResources[node.node_id] = node_resources_total{
+		used := node_resources_total{
 			mru: uint64(2 * gridtypes.Gigabyte),
+			sru: uint64(100 * gridtypes.Gigabyte),
 		}
+		tenpercent := uint64(math.Round(float64(data.nodeTotalResources[node.node_id].mru) / 10))
+		if used.mru < tenpercent {
+			used.mru = tenpercent
+		}
+		data.nodeUsedResources[node.node_id] = used
 	}
+
 	for _, contract := range data.nodeContracts {
 		if contract.state != "Created" {
 			continue
