@@ -35,7 +35,7 @@ func nodesFilterValues() (types.NodeFilter, types.Limit, string) {
 		Page: 12,
 		Size: 13,
 	}
-	return f, l, "?status=up&free_mru=1&free_hru=2&free_sru=3&country=Egypt&city=Mansoura&farm_name=Freefarm&farm_ids=1,2&free_ips=4&ipv4=true&ipv6=false&domain=true&rentable=false&rented_by=5&available_for=6&page=12&size=13"
+	return f, l, "?status=up&free_mru=1&free_hru=2&free_sru=3&country=Egypt&city=Mansoura&farm_name=Freefarm&farm_ids=1%2C2&free_ips=4&ipv4=true&ipv6=false&domain=true&rentable=false&rented_by=5&available_for=6&page=12&size=13"
 }
 
 func farmsFilterValues() (types.FarmFilter, types.Limit, string) {
