@@ -63,6 +63,7 @@ func requestCounters(r *http.Response) (int, error) {
 }
 
 func (g *Clientimpl) url(sub string, args ...interface{}) string {
+
 	return g.endpoint + fmt.Sprintf(sub, args...)
 }
 
@@ -81,7 +82,7 @@ func (g *Clientimpl) Ping() error {
 // Nodes returns nodes with the given filters and pagination parameters
 func (g *Clientimpl) Nodes(filter types.NodeFilter, limit types.Limit) (res []types.Node, totalCount int, err error) {
 	query := nodeParams(filter, limit)
-	req, err := http.Get(g.url(fmt.Sprintf("nodes%s", query)))
+	req, err := http.Get(g.url("nodes%s", query))
 	if err != nil {
 		return
 	}
@@ -99,7 +100,7 @@ func (g *Clientimpl) Nodes(filter types.NodeFilter, limit types.Limit) (res []ty
 // Farms returns farms with the given filters and pagination parameters
 func (g *Clientimpl) Farms(filter types.FarmFilter, limit types.Limit) (res []types.Farm, totalCount int, err error) {
 	query := farmParams(filter, limit)
-	req, err := http.Get(g.url(fmt.Sprintf("farms%s", query)))
+	req, err := http.Get(g.url("farms%s", query))
 	if err != nil {
 		return
 	}
@@ -122,7 +123,7 @@ func (g *Clientimpl) Farms(filter types.FarmFilter, limit types.Limit) (res []ty
 // Twins returns twins with the given filters and pagination parameters
 func (g *Clientimpl) Twins(filter types.TwinFilter, limit types.Limit) (res []types.Twin, totalCount int, err error) {
 	query := twinParams(filter, limit)
-	req, err := http.Get(g.url(fmt.Sprintf("twins%s", query)))
+	req, err := http.Get(g.url("twins%s", query))
 	if err != nil {
 		return
 	}
@@ -145,7 +146,7 @@ func (g *Clientimpl) Twins(filter types.TwinFilter, limit types.Limit) (res []ty
 // Contracts returns contracts with the given filters and pagination parameters
 func (g *Clientimpl) Contracts(filter types.ContractFilter, limit types.Limit) (res []types.Contract, totalCount int, err error) {
 	query := contractParams(filter, limit)
-	req, err := http.Get(g.url(fmt.Sprintf("contracts%s", query)))
+	req, err := http.Get(g.url("contracts%s", query))
 	if err != nil {
 		return
 	}
@@ -220,7 +221,7 @@ func (g *Clientimpl) NodeStatus(nodeID uint32) (res types.NodeStatus, err error)
 // Counters return statistics about the grid
 func (g *Clientimpl) Counters(filter types.StatsFilter) (res types.Counters, err error) {
 	query := statsParams(filter)
-	req, err := http.Get(g.url(fmt.Sprintf("stats%s", query)))
+	req, err := http.Get(g.url("stats%s", query))
 	if err != nil {
 		return
 	}

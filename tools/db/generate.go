@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/threefoldtech/zos/pkg/gridtypes"
 )
 
 var (
@@ -286,15 +287,15 @@ func generateNodes(db *sql.DB) error {
 	for i := uint64(1); i <= NodeCount; i++ {
 		mru := rnd(4, 256) * 1024 * 1024 * 1024
 		hru := rnd(100, 30*1024) * 1024 * 1024 * 1024 // 100GB -> 30TB
-		sru := rnd(100, 30*1024) * 1024 * 1024 * 1024 // 100GB -> 30TB
+		sru := rnd(200, 30*1024) * 1024 * 1024 * 1024 // 100GB -> 30TB
 		cru := rnd(4, 128)
 		up := flip(nodeUpRatio)
 		updatedAt := time.Now().Unix()*1000 - int64(rnd(1000*60*60*2, 1000*60*60*24*30*12))
 		if up {
 			updatedAt = time.Now().Unix()*1000 - int64(rnd(0, 1000*60*60*1))
 		}
-		nodesMRU[i] = mru - 2*1024*1024*1024
-		nodesSRU[i] = sru
+		nodesMRU[i] = mru - 2*uint64(gridtypes.Gigabyte)
+		nodesSRU[i] = sru - 100*uint64(gridtypes.Gigabyte)
 		nodesHRU[i] = hru
 		nodeUP[i] = up
 		location := location{

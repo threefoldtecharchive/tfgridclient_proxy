@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -22,7 +23,7 @@ func nodeParams(filter types.NodeFilter, limit types.Limit) string {
 	fmt.Fprintf(&builder, "?")
 
 	if filter.Status != nil {
-		fmt.Fprintf(&builder, "status=%s&", *filter.Status)
+		fmt.Fprintf(&builder, "status=%s&", url.QueryEscape(*filter.Status))
 	}
 	if filter.FreeMRU != nil && *filter.FreeMRU != 0 {
 		fmt.Fprintf(&builder, "free_mru=%d&", *filter.FreeMRU)
@@ -34,16 +35,16 @@ func nodeParams(filter types.NodeFilter, limit types.Limit) string {
 		fmt.Fprintf(&builder, "free_sru=%d&", *filter.FreeSRU)
 	}
 	if filter.Country != nil && *filter.Country != "" {
-		fmt.Fprintf(&builder, "country=%s&", *filter.Country)
+		fmt.Fprintf(&builder, "country=%s&", url.QueryEscape(*filter.Country))
 	}
 	if filter.City != nil && *filter.City != "" {
-		fmt.Fprintf(&builder, "city=%s&", *filter.City)
+		fmt.Fprintf(&builder, "city=%s&", url.QueryEscape(*filter.City))
 	}
 	if filter.FarmName != nil && *filter.FarmName != "" {
-		fmt.Fprintf(&builder, "farm_name=%s&", *filter.FarmName)
+		fmt.Fprintf(&builder, "farm_name=%s&", url.QueryEscape(*filter.FarmName))
 	}
 	if filter.FarmIDs != nil && len(filter.FarmIDs) != 0 {
-		fmt.Fprintf(&builder, "farm_ids=%s&", stringifyList(filter.FarmIDs))
+		fmt.Fprintf(&builder, "farm_ids=%s&", url.QueryEscape(stringifyList(filter.FarmIDs)))
 	}
 	if filter.FreeIPs != nil && *filter.FreeIPs != 0 {
 		fmt.Fprintf(&builder, "free_ips=%d&", *filter.FreeIPs)
@@ -97,7 +98,7 @@ func farmParams(filter types.FarmFilter, limit types.Limit) string {
 		fmt.Fprintf(&builder, "total_ips=%d&", *filter.TotalIPs)
 	}
 	if filter.StellarAddress != nil && *filter.StellarAddress != "" {
-		fmt.Fprintf(&builder, "stellar_address=%s&", *filter.StellarAddress)
+		fmt.Fprintf(&builder, "stellar_address=%s&", url.QueryEscape(*filter.StellarAddress))
 	}
 	if filter.PricingPolicyID != nil {
 		fmt.Fprintf(&builder, "pricing_policy_id=%d&", *filter.PricingPolicyID)
@@ -109,13 +110,13 @@ func farmParams(filter types.FarmFilter, limit types.Limit) string {
 		fmt.Fprintf(&builder, "twin_id=%d&", *filter.TwinID)
 	}
 	if filter.Name != nil && *filter.Name != "" {
-		fmt.Fprintf(&builder, "name=%s&", *filter.Name)
+		fmt.Fprintf(&builder, "name=%s&", url.QueryEscape(*filter.Name))
 	}
 	if filter.NameContains != nil && *filter.NameContains != "" {
-		fmt.Fprintf(&builder, "name_contains=%s&", *filter.NameContains)
+		fmt.Fprintf(&builder, "name_contains=%s&", url.QueryEscape(*filter.NameContains))
 	}
 	if filter.CertificationType != nil && *filter.CertificationType != "" {
-		fmt.Fprintf(&builder, "certification_type=%s&", *filter.CertificationType)
+		fmt.Fprintf(&builder, "certification_type=%s&", url.QueryEscape(*filter.CertificationType))
 	}
 	if filter.Dedicated != nil {
 		fmt.Fprintf(&builder, "dedicated=%t&", *filter.Dedicated)
@@ -148,7 +149,7 @@ func twinParams(filter types.TwinFilter, limit types.Limit) string {
 	}
 
 	if filter.AccountID != nil && *filter.AccountID != "" {
-		fmt.Fprintf(&builder, "account_id=%s&", *filter.AccountID)
+		fmt.Fprintf(&builder, "account_id=%s&", url.QueryEscape(*filter.AccountID))
 	}
 
 	if limit.Page != 0 {
@@ -185,24 +186,23 @@ func contractParams(filter types.ContractFilter, limit types.Limit) string {
 		fmt.Fprintf(&builder, "node_id=%d&", *filter.NodeID)
 	}
 	if filter.Type != nil && *filter.Type != "" {
-		fmt.Fprintf(&builder, "type=%s&", *filter.Type)
+		fmt.Fprintf(&builder, "type=%s&", url.QueryEscape(*filter.Type))
 	}
 	if filter.State != nil && *filter.State != "" {
-		fmt.Fprintf(&builder, "state=%s&", *filter.State)
+		fmt.Fprintf(&builder, "state=%s&", url.QueryEscape(*filter.State))
 	}
 	if filter.Name != nil && *filter.Name != "" {
-		fmt.Fprintf(&builder, "name=%s&", *filter.Name)
+		fmt.Fprintf(&builder, "name=%s&", url.QueryEscape(*filter.Name))
 	}
 
 	if filter.NumberOfPublicIps != nil && *filter.NumberOfPublicIps != 0 {
 		fmt.Fprintf(&builder, "number_of_public_ips=%d&", *filter.NumberOfPublicIps)
 	}
-
 	if filter.DeploymentData != nil && *filter.DeploymentData != "" {
-		fmt.Fprintf(&builder, "deployment_data=%s&", *filter.DeploymentData)
+		fmt.Fprintf(&builder, "deployment_data=%s&", url.QueryEscape(*filter.DeploymentData))
 	}
 	if filter.DeploymentHash != nil && *filter.DeploymentHash != "" {
-		fmt.Fprintf(&builder, "deployment_hash=%s&", *filter.DeploymentHash)
+		fmt.Fprintf(&builder, "deployment_hash=%s&", url.QueryEscape(*filter.DeploymentHash))
 	}
 	if limit.Page != 0 {
 		fmt.Fprintf(&builder, "page=%d&", limit.Page)
@@ -228,7 +228,7 @@ func statsParams(filter types.StatsFilter) string {
 	fmt.Fprintf(&builder, "?")
 
 	if filter.Status != nil && *filter.Status != "" {
-		fmt.Fprintf(&builder, "status=%s&", *filter.Status)
+		fmt.Fprintf(&builder, "status=%s&", url.QueryEscape(*filter.Status))
 	}
 
 	res := builder.String()
