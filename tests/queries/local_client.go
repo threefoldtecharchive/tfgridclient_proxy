@@ -342,11 +342,11 @@ func (g *GridProxyClientimpl) Counters(filter proxytypes.StatsFilter) (res proxy
 	res.Contracts = int64(len(g.data.rentContracts))
 	res.Contracts += int64(len(g.data.nodeContracts))
 	res.Contracts += int64(len(g.data.nameContracts))
-	countries := make(map[string]struct{})
+	distribution := map[string]int64{}
 	for _, node := range g.data.nodes {
 		if filter.Status == nil || (filter.Status != nil && *filter.Status == "up" && isUp(node.updated_at)) {
 			res.Nodes++
-			countries[node.country] = struct{}{}
+			distribution[node.country] += 1
 			res.TotalCRU += int64(g.data.nodeTotalResources[node.node_id].cru)
 			res.TotalMRU += int64(g.data.nodeTotalResources[node.node_id].mru)
 			res.TotalSRU += int64(g.data.nodeTotalResources[node.node_id].sru)
@@ -359,6 +359,8 @@ func (g *GridProxyClientimpl) Counters(filter proxytypes.StatsFilter) (res proxy
 			}
 		}
 	}
-	res.Countries = int64(len(countries))
+	res.Countries = int64(len(distribution))
+	res.NodesDistribution = distribution
+
 	return
 }
