@@ -183,7 +183,7 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 	if res := query.Where(condition).Where("COALESCE(public_config.domain, '') != '' AND (COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv6, '') != '')").Count(&counters.Gateways); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get gateway count")
 	}
-	var distribution []types.NodesDistribution
+	var distribution []NodesDistribution
 	if res := d.gormDB.Table("node").Select("country, count(node_id) as nodes").Where(condition).Group("country").Scan(&distribution); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get nodes distribution")
 	}

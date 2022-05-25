@@ -71,3 +71,9 @@ type Farm struct {
 	Dedicated         bool
 	PublicIps         string
 }
+
+// NodesDistribution is the number of nodes per each country
+type NodesDistribution struct {
+	Country string `json:"country"`
+	Nodes   int64  `json:"nodes"`
+}

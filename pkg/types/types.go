@@ -31,12 +31,6 @@ type Counters struct {
 	NodesDistribution map[string]int64 `json:"nodesDistribution" gorm:"-:all"`
 }
 
-// NodesDistribution is the number of nodes per each country
-type NodesDistribution struct {
-	Country string `json:"country"`
-	Nodes   int64  `json:"nodes"`
-}
-
 // PublicConfig node public config
 type PublicConfig struct {
 	Domain string `json:"domain"`
