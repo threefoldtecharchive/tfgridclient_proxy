@@ -199,14 +199,14 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 func (d *PostgresDatabase) GetNode(nodeID uint32) (Node, error) {
 	q := d.nodeTableQuery()
 	q = q.Where("node.node_id = ?", nodeID)
-	var node *Node
-	if res := q.Scan(node); res.Error != nil {
-		return *node, errors.Wrap(res.Error, "failed to scan returned node from database")
+	var node Node
+	if res := q.Scan(&node); res.Error != nil {
+		return node, errors.Wrap(res.Error, "failed to scan returned node from database")
 	}
-	if node == nil {
+	if node.ID == "" {
 		return Node{}, ErrNodeNotFound
 	}
-	return *node, nil
+	return node, nil
 }
 
 // GetFarm return farm info
