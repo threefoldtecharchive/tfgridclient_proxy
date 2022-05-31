@@ -12,6 +12,7 @@ import (
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -199,9 +200,20 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 func (d *PostgresDatabase) GetNode(nodeID uint32) (Node, error) {
 	q := d.nodeTableQuery()
 	q = q.Where("node.node_id = ?", nodeID)
+	q = q.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
 	var node Node
-	if res := q.Scan(&node); res.Error != nil {
-		return node, errors.Wrap(res.Error, "failed to scan returned node from database")
+	res := q.Scan(&node)
+	if res.Error != nil && res.Error.Error() == "ERROR: relation \"nodes_resources_view\" does not exist (SQLSTATE 42P01)" {
+		if err := d.initialize(); err != nil {
+			return node, errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
+		}
+		res = q.Scan(&node)
+		if res.Error != nil {
+			return node, res.Error
+		}
+	} else if res.Error != nil {
+		log.Logger.Err(res.Error).Msg("")
+		return node, res.Error
 	}
 	if node.ID == "" {
 		return Node{}, ErrNodeNotFound
@@ -389,8 +401,19 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 			Offset(int(limit.Page-1) * int(limit.Size)).
 			Order("node_id")
 	}
+	q = q.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
 	var nodes []Node
-	if res := q.Scan(&nodes); res.Error != nil {
+	res := q.Scan(&nodes)
+	if res.Error != nil && res.Error.Error() == "ERROR: relation \"nodes_resources_view\" does not exist (SQLSTATE 42P01)" {
+		if err := d.initialize(); err != nil {
+			return nil, 0, errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
+		}
+		res = q.Scan(&nodes)
+		if res.Error != nil {
+			return nil, 0, res.Error
+		}
+	} else if res.Error != nil {
+		log.Logger.Err(res.Error).Msg("")
 		return nil, 0, res.Error
 	}
 	return nodes, uint(count), nil
