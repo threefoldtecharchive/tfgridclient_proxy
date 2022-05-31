@@ -205,10 +205,13 @@ func (d *PostgresDatabase) GetNode(nodeID uint32) (Node, error) {
 	res := q.Scan(&node)
 	if res.Error != nil && res.Error.Error() == "ERROR: relation \"nodes_resources_view\" does not exist (SQLSTATE 42P01)" {
 		if err := d.initialize(); err != nil {
-			return node, errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
+			err = errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
+			log.Logger.Err(err).Msg("")
+			return node, err
 		}
 		res = q.Scan(&node)
 		if res.Error != nil {
+			log.Logger.Err(res.Error).Msg("")
 			return node, res.Error
 		}
 	} else if res.Error != nil {
@@ -406,10 +409,13 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 	res := q.Scan(&nodes)
 	if res.Error != nil && res.Error.Error() == "ERROR: relation \"nodes_resources_view\" does not exist (SQLSTATE 42P01)" {
 		if err := d.initialize(); err != nil {
-			return nil, 0, errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
+			err = errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
+			log.Logger.Err(err).Msg("")
+			return nil, 0, err
 		}
 		res = q.Scan(&nodes)
 		if res.Error != nil {
+			log.Logger.Err(res.Error).Msg("")
 			return nil, 0, res.Error
 		}
 	} else if res.Error != nil {
