@@ -23,6 +23,8 @@ var (
 	ErrNodeNotFound = errors.New("node not found")
 	// ErrFarmNotFound farm not found
 	ErrFarmNotFound = errors.New("farm not found")
+	//ErrViewNotFound
+	ErrNodeResourcesViewNotFound = errors.New("ERROR: relation \"nodes_resources_view\" does not exist (SQLSTATE 42P01)")
 )
 
 const (
@@ -203,20 +205,22 @@ func (d *PostgresDatabase) GetNode(nodeID uint32) (Node, error) {
 	q = q.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
 	var node Node
 	res := q.Scan(&node)
-	if res.Error != nil && res.Error.Error() == "ERROR: relation \"nodes_resources_view\" does not exist (SQLSTATE 42P01)" {
-		if err := d.initialize(); err != nil {
-			err = errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
-			log.Logger.Err(err).Msg("")
-			return node, err
-		}
-		res = q.Scan(&node)
-		if res.Error != nil {
+	if res.Error != nil {
+		if res.Error.Error() == ErrNodeResourcesViewNotFound.Error() {
+			if err := d.initialize(); err != nil {
+				err = errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
+				log.Logger.Err(err).Msg("")
+				return node, err
+			}
+			res = q.Scan(&node)
+			if res.Error != nil {
+				log.Logger.Err(res.Error).Msg("")
+				return node, res.Error
+			}
+		} else {
 			log.Logger.Err(res.Error).Msg("")
 			return node, res.Error
 		}
-	} else if res.Error != nil {
-		log.Logger.Err(res.Error).Msg("")
-		return node, res.Error
 	}
 	if node.ID == "" {
 		return Node{}, ErrNodeNotFound
@@ -336,6 +340,7 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 // GetNodes returns nodes filtered and paginated
 func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) ([]Node, uint, error) {
 	q := d.nodeTableQuery()
+	q = q.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
 	if filter.Status != nil {
 		// TODO: this shouldn't be in db
 		threshold := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
@@ -390,10 +395,25 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 	if filter.AvailableFor != nil {
 		q = q.Where(`(COALESCE(rent_contract.twin_id, 0) = ? OR farm.dedicated_farm = false)`, *filter.AvailableFor)
 	}
+
 	var count int64
 	if limit.Randomize || limit.RetCount {
-		if res := q.Count(&count); res.Error != nil {
-			return nil, 0, res.Error
+		res := q.Session(&gorm.Session{}).Count(&count)
+		if res.Error != nil {
+			if res.Error.Error() == ErrNodeResourcesViewNotFound.Error() {
+				if err := d.initialize(); err != nil {
+					err = errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
+					log.Logger.Err(err).Msg("msg1")
+					return nil, 0, err
+				}
+				if res = q.Count(&count); res.Error != nil {
+					log.Logger.Err(res.Error).Msg("msg2")
+					return nil, 0, res.Error
+				}
+			} else {
+				log.Logger.Err(res.Error).Msg("msg3")
+				return nil, 0, res.Error
+			}
 		}
 	}
 	if limit.Randomize {
@@ -404,23 +424,24 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 			Offset(int(limit.Page-1) * int(limit.Size)).
 			Order("node_id")
 	}
-	q = q.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
+
 	var nodes []Node
-	res := q.Scan(&nodes)
-	if res.Error != nil && res.Error.Error() == "ERROR: relation \"nodes_resources_view\" does not exist (SQLSTATE 42P01)" {
-		if err := d.initialize(); err != nil {
-			err = errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
-			log.Logger.Err(err).Msg("")
-			return nil, 0, err
-		}
-		res = q.Scan(&nodes)
-		if res.Error != nil {
-			log.Logger.Err(res.Error).Msg("")
+	res := q.Session(&gorm.Session{}).Scan(&nodes)
+	if res.Error != nil {
+		if res.Error.Error() == ErrNodeResourcesViewNotFound.Error() {
+			if err := d.initialize(); err != nil {
+				err = errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
+				log.Logger.Err(err).Msg("scan1")
+				return nil, 0, err
+			}
+			if res = q.Scan(&nodes); res.Error != nil {
+				log.Logger.Err(res.Error).Msg("scan2")
+				return nil, 0, res.Error
+			}
+		} else {
+			log.Logger.Err(res.Error).Msg("scan3")
 			return nil, 0, res.Error
 		}
-	} else if res.Error != nil {
-		log.Logger.Err(res.Error).Msg("")
-		return nil, 0, res.Error
 	}
 	return nodes, uint(count), nil
 }
