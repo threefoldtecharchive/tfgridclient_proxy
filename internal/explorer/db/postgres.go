@@ -205,22 +205,11 @@ func (d *PostgresDatabase) GetNode(nodeID uint32) (Node, error) {
 	q = q.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
 	var node Node
 	res := q.Scan(&node)
+	if d.shouldRetry(res.Error) {
+		res = q.Scan(&node)
+	}
 	if res.Error != nil {
-		if res.Error.Error() == ErrNodeResourcesViewNotFound.Error() {
-			if err := d.initialize(); err != nil {
-				err = errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
-				log.Logger.Err(err).Msg("")
-				return node, err
-			}
-			res = q.Scan(&node)
-			if res.Error != nil {
-				log.Logger.Err(res.Error).Msg("")
-				return node, res.Error
-			}
-		} else {
-			log.Logger.Err(res.Error).Msg("")
-			return node, res.Error
-		}
+		return Node{}, res.Error
 	}
 	if node.ID == "" {
 		return Node{}, ErrNodeNotFound
@@ -398,22 +387,13 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 
 	var count int64
 	if limit.Randomize || limit.RetCount {
-		res := q.Session(&gorm.Session{}).Count(&count)
+		q = q.Session(&gorm.Session{})
+		res := q.Count(&count)
+		if d.shouldRetry(res.Error) {
+			res = q.Count(&count)
+		}
 		if res.Error != nil {
-			if res.Error.Error() == ErrNodeResourcesViewNotFound.Error() {
-				if err := d.initialize(); err != nil {
-					err = errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
-					log.Logger.Err(err).Msg("msg1")
-					return nil, 0, err
-				}
-				if res = q.Count(&count); res.Error != nil {
-					log.Logger.Err(res.Error).Msg("msg2")
-					return nil, 0, res.Error
-				}
-			} else {
-				log.Logger.Err(res.Error).Msg("msg3")
-				return nil, 0, res.Error
-			}
+			return nil, 0, res.Error
 		}
 	}
 	if limit.Randomize {
@@ -426,24 +406,26 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 	}
 
 	var nodes []Node
-	res := q.Session(&gorm.Session{}).Scan(&nodes)
+	q = q.Session(&gorm.Session{})
+	res := q.Scan(&nodes)
+	if d.shouldRetry(res.Error) {
+		res = q.Scan(&nodes)
+	}
 	if res.Error != nil {
-		if res.Error.Error() == ErrNodeResourcesViewNotFound.Error() {
-			if err := d.initialize(); err != nil {
-				err = errors.Wrap(res.Error, errors.Wrap(err, "failed to setup tables").Error())
-				log.Logger.Err(err).Msg("scan1")
-				return nil, 0, err
-			}
-			if res = q.Scan(&nodes); res.Error != nil {
-				log.Logger.Err(res.Error).Msg("scan2")
-				return nil, 0, res.Error
-			}
-		} else {
-			log.Logger.Err(res.Error).Msg("scan3")
-			return nil, 0, res.Error
-		}
+		return nil, 0, res.Error
 	}
 	return nodes, uint(count), nil
+}
+
+func (d *PostgresDatabase) shouldRetry(resError error) bool {
+	if resError.Error() == ErrNodeResourcesViewNotFound.Error() {
+		if err := d.initialize(); err != nil {
+			log.Logger.Err(err).Msg("")
+		} else {
+			return true
+		}
+	}
+	return false
 }
 
 // GetFarms return farms filtered and paginated
