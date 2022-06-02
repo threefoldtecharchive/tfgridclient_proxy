@@ -203,6 +203,9 @@ func (d *PostgresDatabase) GetNode(nodeID uint32) (Node, error) {
 	if res := q.Scan(&node); res.Error != nil {
 		return node, errors.Wrap(res.Error, "failed to scan returned node from database")
 	}
+	if node.ID == "" {
+		return Node{}, ErrNodeNotFound
+	}
 	return node, nil
 }
 

@@ -27,6 +27,10 @@ const (
 	Tests           = 2000
 )
 
+var (
+	ErrNodeNotFound = errors.New("node not found")
+)
+
 type NodesAggregate struct {
 	countries []string
 	cities    []string
@@ -443,6 +447,18 @@ func nodeStatusTest(data *DBData, proxyClient, localClient proxyclient.Client) e
 	return nil
 }
 
+func nodeNotFoundTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	nodeID := 1000000000
+	_, err := proxyClient.Node(uint32(nodeID))
+	if err != nil && err.Error() != ErrNodeNotFound.Error() {
+		return err
+	} else if err == nil {
+		return errors.New("should have returned node not found error")
+	}
+
+	return nil
+}
+
 func nodesTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
 	if err := nodePaginationTest(data, proxyClient, localClient); err != nil {
 		return err
@@ -457,6 +473,9 @@ func nodesTest(data *DBData, proxyClient, localClient proxyclient.Client) error 
 		return err
 	}
 	if err := nodeStressTest(data, proxyClient, localClient); err != nil {
+		return err
+	}
+	if err := nodeNotFoundTest(data, proxyClient, localClient); err != nil {
 		return err
 	}
 	keys := make([]int, 0)
