@@ -418,7 +418,7 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 }
 
 func (d *PostgresDatabase) shouldRetry(resError error) bool {
-	if resError.Error() == ErrNodeResourcesViewNotFound.Error() {
+	if resError != nil && resError.Error() == ErrNodeResourcesViewNotFound.Error() {
 		if err := d.initialize(); err != nil {
 			log.Logger.Err(err).Msg("")
 		} else {
