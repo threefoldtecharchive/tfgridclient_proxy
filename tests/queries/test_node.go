@@ -455,7 +455,26 @@ func nodeNotFoundTest(data *DBData, proxyClient, localClient proxyclient.Client)
 	} else if err == nil {
 		return errors.New("should have returned node not found error")
 	}
+	return nil
+}
 
+func nodesTestWithoutResourcesView(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	db := data.db
+	if _, err := db.Exec("drop view nodes_resources_view ;"); err != nil {
+		return err
+	}
+	err := singleNodeTest(data, proxyClient, localClient)
+	if err != nil {
+		return err
+	}
+
+	if _, err := db.Exec("drop view nodes_resources_view ;"); err != nil {
+		return err
+	}
+	err = nodePaginationTest(data, proxyClient, localClient)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -476,6 +495,9 @@ func nodesTest(data *DBData, proxyClient, localClient proxyclient.Client) error 
 		return err
 	}
 	if err := nodeNotFoundTest(data, proxyClient, localClient); err != nil {
+		return err
+	}
+	if err := nodesTestWithoutResourcesView(data, proxyClient, localClient); err != nil {
 		return err
 	}
 	keys := make([]int, 0)

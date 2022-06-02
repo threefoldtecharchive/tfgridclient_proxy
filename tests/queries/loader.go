@@ -27,6 +27,8 @@ type DBData struct {
 	nameContracts      map[uint64]name_contract
 	billings           map[uint64][]contract_bill_report
 	contractResources  map[string]contract_resources
+
+	db *sql.DB
 }
 
 func loadNodes(db *sql.DB, data *DBData) error {
@@ -478,6 +480,7 @@ func load(db *sql.DB) (DBData, error) {
 		contractResources:  make(map[string]contract_resources),
 		nodeTotalResources: make(map[uint64]node_resources_total),
 		nodeUsedResources:  make(map[uint64]node_resources_total),
+		db:                 db,
 	}
 	if err := loadNodes(db, &data); err != nil {
 		return data, err

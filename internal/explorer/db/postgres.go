@@ -12,6 +12,7 @@ import (
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -22,6 +23,8 @@ var (
 	ErrNodeNotFound = errors.New("node not found")
 	// ErrFarmNotFound farm not found
 	ErrFarmNotFound = errors.New("farm not found")
+	//ErrViewNotFound
+	ErrNodeResourcesViewNotFound = errors.New("ERROR: relation \"nodes_resources_view\" does not exist (SQLSTATE 42P01)")
 )
 
 const (
@@ -199,9 +202,14 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 func (d *PostgresDatabase) GetNode(nodeID uint32) (Node, error) {
 	q := d.nodeTableQuery()
 	q = q.Where("node.node_id = ?", nodeID)
+	q = q.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
 	var node Node
-	if res := q.Scan(&node); res.Error != nil {
-		return node, errors.Wrap(res.Error, "failed to scan returned node from database")
+	res := q.Scan(&node)
+	if d.shouldRetry(res.Error) {
+		res = q.Scan(&node)
+	}
+	if res.Error != nil {
+		return Node{}, res.Error
 	}
 	if node.ID == "" {
 		return Node{}, ErrNodeNotFound
@@ -321,6 +329,7 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 // GetNodes returns nodes filtered and paginated
 func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) ([]Node, uint, error) {
 	q := d.nodeTableQuery()
+	q = q.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
 	if filter.Status != nil {
 		// TODO: this shouldn't be in db
 		threshold := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
@@ -375,9 +384,15 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 	if filter.AvailableFor != nil {
 		q = q.Where(`(COALESCE(rent_contract.twin_id, 0) = ? OR farm.dedicated_farm = false)`, *filter.AvailableFor)
 	}
+
 	var count int64
 	if limit.Randomize || limit.RetCount {
-		if res := q.Count(&count); res.Error != nil {
+		q = q.Session(&gorm.Session{})
+		res := q.Count(&count)
+		if d.shouldRetry(res.Error) {
+			res = q.Count(&count)
+		}
+		if res.Error != nil {
 			return nil, 0, res.Error
 		}
 	}
@@ -389,11 +404,28 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 			Offset(int(limit.Page-1) * int(limit.Size)).
 			Order("node_id")
 	}
+
 	var nodes []Node
-	if res := q.Scan(&nodes); res.Error != nil {
+	q = q.Session(&gorm.Session{})
+	res := q.Scan(&nodes)
+	if d.shouldRetry(res.Error) {
+		res = q.Scan(&nodes)
+	}
+	if res.Error != nil {
 		return nil, 0, res.Error
 	}
 	return nodes, uint(count), nil
+}
+
+func (d *PostgresDatabase) shouldRetry(resError error) bool {
+	if resError != nil && resError.Error() == ErrNodeResourcesViewNotFound.Error() {
+		if err := d.initialize(); err != nil {
+			log.Logger.Err(err).Msg("failed to reinitialize database")
+		} else {
+			return true
+		}
+	}
+	return false
 }
 
 // GetFarms return farms filtered and paginated
