@@ -1,0 +1,36 @@
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+    ldflags:
+      - -X main.GitCommit={{ .Commit }}
+    main: ./cmds/proxy_server
+    binary: server
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+dockers:
+  -
+    goos: linux
+    goarch: amd64
+    dockerfile: "./releaseDockerfile"
+    image_templates:
+      - "docker.io/threefolddev/gridproxy:{{ .Tag }}"
+    extra_files:
+      - ygg_entrypoint.sh
+      - rootfs
+
