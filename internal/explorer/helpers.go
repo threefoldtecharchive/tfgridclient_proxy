@@ -175,10 +175,10 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (types.FarmFilter, 
 		"twin_id":           &filter.TwinID,
 	}
 	strs := map[string]**string{
-		"name":            &filter.Name,
-		"name_contains":   &filter.NameContains,
-		"certification":   &filter.CertificationType,
-		"stellar_address": &filter.StellarAddress,
+		"name":               &filter.Name,
+		"name_contains":      &filter.NameContains,
+		"certification_type": &filter.CertificationType,
+		"stellar_address":    &filter.StellarAddress,
 	}
 	bools := map[string]**bool{
 		"dedicated": &filter.Dedicated,
