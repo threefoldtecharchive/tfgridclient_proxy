@@ -74,7 +74,7 @@ func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytyp
 					Gw6:    g.data.publicConfigs[node.node_id].gw6,
 				},
 				Status:            status,
-				CertificationType: node.certification_type,
+				CertificationType: node.certification,
 				UpdatedAt:         int64(math.Round(float64(node.updated_at) / 1000.0)),
 				Dedicated:         g.data.farms[node.farm_id].dedicated_farm,
 				RentedByTwinID:    uint(g.data.nodeRentedBy[node.node_id]),
@@ -127,7 +127,7 @@ func (g *GridProxyClientimpl) Farms(filter proxytypes.FarmFilter, limit proxytyp
 				StellarAddress:    farm.stellar_address,
 				PublicIps:         publicIPs[farm.farm_id],
 				Dedicated:         farm.dedicated_farm,
-				CertificationType: farm.certification_type,
+				CertificationType: farm.certification,
 			})
 		}
 	}
@@ -316,7 +316,7 @@ func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.NodeWithNested
 			Gw6:    g.data.publicConfigs[node.node_id].gw6,
 		},
 		Status:            status,
-		CertificationType: node.certification_type,
+		CertificationType: node.certification,
 		UpdatedAt:         int64(math.Round(float64(node.updated_at) / 1000.0)),
 		Dedicated:         g.data.farms[node.farm_id].dedicated_farm,
 		RentedByTwinID:    uint(g.data.nodeRentedBy[node.node_id]),

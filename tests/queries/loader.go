@@ -44,7 +44,7 @@ func loadNodes(db *sql.DB, data *DBData) error {
 		COALESCE(uptime, 0),
 		COALESCE(created, 0),
 		COALESCE(farming_policy_id, 0),
-		COALESCE(certification_type, ''),
+		COALESCE(certification, ''),
 		COALESCE(secure, false),
 		COALESCE(virtualized, false),
 		COALESCE(serial_number, ''),
@@ -69,7 +69,7 @@ func loadNodes(db *sql.DB, data *DBData) error {
 			&node.uptime,
 			&node.created,
 			&node.farming_policy_id,
-			&node.certification_type,
+			&node.certification,
 			&node.secure,
 			&node.virtualized,
 			&node.serial_number,
@@ -176,7 +176,7 @@ func loadFarms(db *sql.DB, data *DBData) error {
 		COALESCE(name, ''),
 		COALESCE(twin_id, 0),
 		COALESCE(pricing_policy_id, 0),
-		COALESCE(certification_type, ''),
+		COALESCE(certification, ''),
 		COALESCE(stellar_address, ''),
 		COALESCE(dedicated_farm, false)
 	FROM
@@ -193,7 +193,7 @@ func loadFarms(db *sql.DB, data *DBData) error {
 			&farm.name,
 			&farm.twin_id,
 			&farm.pricing_policy_id,
-			&farm.certification_type,
+			&farm.certification,
 			&farm.stellar_address,
 			&farm.dedicated_farm,
 		); err != nil {

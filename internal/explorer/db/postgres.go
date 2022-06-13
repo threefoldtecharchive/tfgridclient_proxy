@@ -263,7 +263,7 @@ func (d *PostgresDatabase) farmTableQuery() *gorm.DB {
 			"name",
 			"twin_id",
 			"pricing_policy_id",
-			"certification_type",
+			"certification",
 			"stellar_address",
 			"dedicated_farm as dedicated",
 			"COALESCE(public_ip.public_ips, '[]') as public_ips",
@@ -307,7 +307,7 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 			"public_config.gw6",
 			"public_config.ipv4",
 			"public_config.ipv6",
-			"node.certification_type",
+			"node.certification",
 			"farm.dedicated_farm as dedicated",
 			"rent_contract.contract_id as rent_contract_id",
 			"rent_contract.twin_id as rented_by_twin_id",
@@ -460,7 +460,7 @@ func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) 
 	}
 
 	if filter.CertificationType != nil {
-		q = q.Where("certification_type = ?", *filter.CertificationType)
+		q = q.Where("certification = ?", *filter.CertificationType)
 	}
 
 	if filter.Dedicated != nil {

@@ -25,6 +25,9 @@ CREATE SCHEMA substrate_threefold_status;
 
 ALTER SCHEMA substrate_threefold_status OWNER TO postgres;
 
+--
+-- Name: node_resources(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
 
 SET default_tablespace = '';
 
@@ -162,9 +165,9 @@ CREATE TABLE public.farm (
     name text NOT NULL,
     twin_id integer NOT NULL,
     pricing_policy_id integer NOT NULL,
-    certification_type character varying(9) NOT NULL,
     stellar_address text,
-    dedicated_farm boolean
+    dedicated_farm boolean,
+    certification character varying(12)
 );
 
 
@@ -178,13 +181,18 @@ CREATE TABLE public.farming_policy (
     id character varying NOT NULL,
     grid_version integer NOT NULL,
     farming_policy_id integer NOT NULL,
-    name text NOT NULL,
-    cu integer NOT NULL,
-    su integer NOT NULL,
-    nu integer NOT NULL,
-    ipv4 integer NOT NULL,
-    "timestamp" numeric NOT NULL,
-    certification_type character varying(9) NOT NULL
+    name text,
+    cu integer,
+    su integer,
+    nu integer,
+    ipv4 integer,
+    minimal_uptime integer,
+    policy_created integer,
+    policy_end integer,
+    immutable boolean,
+    "default" boolean,
+    node_certification character varying(9),
+    farm_certification character varying(12)
 );
 
 
@@ -291,8 +299,8 @@ CREATE TABLE public.name_contract (
     contract_id numeric NOT NULL,
     twin_id integer NOT NULL,
     name text NOT NULL,
-    state character varying(10) NOT NULL,
-    created_at numeric NOT NULL
+    created_at numeric NOT NULL,
+    state character varying(11) NOT NULL
 );
 
 
@@ -313,13 +321,14 @@ CREATE TABLE public.node (
     uptime numeric,
     created integer NOT NULL,
     farming_policy_id integer NOT NULL,
-    certification_type character varying(9),
     secure boolean,
     virtualized boolean,
     serial_number text,
     created_at numeric NOT NULL,
     updated_at numeric NOT NULL,
-    location_id character varying NOT NULL
+    location_id character varying NOT NULL,
+    certification character varying(9),
+    connection_price integer
 );
 
 
@@ -338,9 +347,9 @@ CREATE TABLE public.node_contract (
     deployment_data text NOT NULL,
     deployment_hash text NOT NULL,
     number_of_public_i_ps integer NOT NULL,
-    state character varying(10) NOT NULL,
     created_at numeric NOT NULL,
-    resources_used_id character varying
+    resources_used_id character varying,
+    state character varying(11) NOT NULL
 );
 
 
@@ -393,6 +402,32 @@ CREATE TABLE public.node_resources_used (
 
 
 ALTER TABLE public.node_resources_used OWNER TO postgres;
+
+--
+-- Name: nodes_resources_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.nodes_resources_view AS
+ SELECT node.node_id,
+    COALESCE(sum(contract_resources.cru), (0)::numeric) AS used_cru,
+    (COALESCE(sum(contract_resources.mru), (0)::numeric) + (GREATEST(((node_resources_total.mru / (10)::numeric))::bigint, '2147483648'::bigint))::numeric) AS used_mru,
+    COALESCE(sum(contract_resources.hru), (0)::numeric) AS used_hru,
+    (COALESCE(sum(contract_resources.sru), (0)::numeric) + ('107374182400'::bigint)::numeric) AS used_sru,
+    ((node_resources_total.mru - COALESCE(sum(contract_resources.mru), (0)::numeric)) - (GREATEST(((node_resources_total.mru / (10)::numeric))::bigint, '2147483648'::bigint))::numeric) AS free_mru,
+    (node_resources_total.hru - COALESCE(sum(contract_resources.hru), (0)::numeric)) AS free_hru,
+    ((node_resources_total.sru - COALESCE(sum(contract_resources.sru), (0)::numeric)) - ('107374182400'::bigint)::numeric) AS free_sru,
+    COALESCE(node_resources_total.cru, (0)::numeric) AS total_cru,
+    COALESCE(node_resources_total.mru, (0)::numeric) AS total_mru,
+    COALESCE(node_resources_total.hru, (0)::numeric) AS total_hru,
+    COALESCE(node_resources_total.sru, (0)::numeric) AS total_sru
+   FROM (((public.contract_resources
+     JOIN public.node_contract node_contract ON ((((node_contract.resources_used_id)::text = (contract_resources.id)::text) AND ((node_contract.state)::text = 'Created'::text))))
+     RIGHT JOIN public.node node ON ((node.node_id = node_contract.node_id)))
+     JOIN public.node_resources_total node_resources_total ON (((node_resources_total.node_id)::text = (node.id)::text)))
+  GROUP BY node.node_id, node_resources_total.mru, node_resources_total.sru, node_resources_total.hru, node_resources_total.cru;
+
+
+ALTER TABLE public.nodes_resources_view OWNER TO postgres;
 
 --
 -- Name: nru_consumption; Type: TABLE; Schema: public; Owner: postgres
@@ -487,8 +522,8 @@ CREATE TABLE public.rent_contract (
     contract_id numeric NOT NULL,
     twin_id integer NOT NULL,
     node_id integer NOT NULL,
-    state character varying(10) NOT NULL,
-    created_at numeric NOT NULL
+    created_at numeric NOT NULL,
+    state character varying(11) NOT NULL
 );
 
 
@@ -1021,4 +1056,3 @@ ALTER TABLE ONLY public.node_resources_total
 --
 -- PostgreSQL database dump complete
 --
-

@@ -21,12 +21,12 @@ const (
 )
 
 type FarmsAggregate struct {
-	stellarAddresses   []string
-	pricingPolicyIDs   []uint64
-	farmNames          []string
-	farmIDs            []uint64
-	twinIDs            []uint64
-	certificationTypes []string
+	stellarAddresses []string
+	pricingPolicyIDs []uint64
+	farmNames        []string
+	farmIDs          []uint64
+	twinIDs          []uint64
+	certifications   []string
 
 	maxFreeIPs  uint64
 	maxTotalIPs uint64
@@ -57,7 +57,7 @@ func farmSatisfies(data *DBData, farm farm, f proxytypes.FarmFilter) bool {
 	if f.NameContains != nil && !strings.Contains(farm.name, *f.NameContains) {
 		return false
 	}
-	if f.CertificationType != nil && *f.CertificationType != farm.certification_type {
+	if f.CertificationType != nil && *f.CertificationType != farm.certification {
 		return false
 	}
 	if f.Dedicated != nil && *f.Dedicated != farm.dedicated_farm {
@@ -131,7 +131,7 @@ func calcFarmsAggregates(data *DBData) (res FarmsAggregate) {
 		res.farmNames = append(res.farmNames, farm.name)
 		res.stellarAddresses = append(res.farmNames, farm.stellar_address)
 		res.pricingPolicyIDs = append(res.pricingPolicyIDs, farm.pricing_policy_id)
-		res.certificationTypes = append(res.certificationTypes, farm.certification_type)
+		res.certifications = append(res.certifications, farm.certification)
 		res.farmIDs = append(res.farmIDs, farm.farm_id)
 		res.twinIDs = append(res.twinIDs, farm.twin_id)
 	}
@@ -191,7 +191,7 @@ func randomFarmsFilter(agg *FarmsAggregate) proxytypes.FarmFilter {
 		f.NameContains = &c
 	}
 	if flip(.5) {
-		c := agg.certificationTypes[rand.Intn(len(agg.certificationTypes))]
+		c := agg.certifications[rand.Intn(len(agg.certifications))]
 		f.CertificationType = &c
 	}
 	if flip(.5) {
@@ -232,7 +232,7 @@ func serializeFarmsFilter(f proxytypes.FarmFilter) string {
 		res = fmt.Sprintf("%sNameContains: %s\n", res, *f.NameContains)
 	}
 	if f.CertificationType != nil {
-		res = fmt.Sprintf("%sCertificationType: %s\n", res, *f.CertificationType)
+		res = fmt.Sprintf("%sCertification: %s\n", res, *f.CertificationType)
 	}
 	if f.Dedicated != nil {
 		res = fmt.Sprintf("%sDedicated: %t\n", res, *f.Dedicated)
