@@ -30,46 +30,46 @@ type DBContract struct {
 
 // Node data about a node which is calculated from the chain
 type Node struct {
-	ID                string
-	NodeID            int64
-	FarmID            int64
-	TwinID            int64
-	Country           string
-	GridVersion       int64
-	City              string
-	Uptime            int64
-	Created           int64
-	FarmingPolicyID   int64
-	UpdatedAt         int64
-	TotalCru          int64
-	TotalMru          int64
-	TotalSru          int64
-	TotalHru          int64
-	UsedCru           int64
-	UsedMru           int64
-	UsedSru           int64
-	UsedHru           int64
-	Domain            string
-	Gw4               string
-	Gw6               string
-	Ipv4              string
-	Ipv6              string
-	CertificationType string
-	Dedicated         bool
-	RentContractID    int64
-	RentedByTwinID    int64
+	ID              string
+	NodeID          int64
+	FarmID          int64
+	TwinID          int64
+	Country         string
+	GridVersion     int64
+	City            string
+	Uptime          int64
+	Created         int64
+	FarmingPolicyID int64
+	UpdatedAt       int64
+	TotalCru        int64
+	TotalMru        int64
+	TotalSru        int64
+	TotalHru        int64
+	UsedCru         int64
+	UsedMru         int64
+	UsedSru         int64
+	UsedHru         int64
+	Domain          string
+	Gw4             string
+	Gw6             string
+	Ipv4            string
+	Ipv6            string
+	Certification   string
+	Dedicated       bool
+	RentContractID  int64
+	RentedByTwinID  int64
 }
 
 // Farm data about a farm which is calculated from the chain
 type Farm struct {
-	Name              string
-	FarmID            int
-	TwinID            int
-	PricingPolicyID   int
-	CertificationType string
-	StellarAddress    string
-	Dedicated         bool
-	PublicIps         string
+	Name            string
+	FarmID          int
+	TwinID          int
+	PricingPolicyID int
+	Certification   string
+	StellarAddress  string
+	Dedicated       bool
+	PublicIps       string
 }
 
 // NodesDistribution is the number of nodes per each country

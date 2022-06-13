@@ -9,35 +9,35 @@ type contract_resources struct {
 	contract_id string
 }
 type farm struct {
-	id                 string
-	grid_version       uint64
-	farm_id            uint64
-	name               string
-	twin_id            uint64
-	pricing_policy_id  uint64
-	certification_type string
-	stellar_address    string
-	dedicated_farm     bool
+	id                string
+	grid_version      uint64
+	farm_id           uint64
+	name              string
+	twin_id           uint64
+	pricing_policy_id uint64
+	certification     string
+	stellar_address   string
+	dedicated_farm    bool
 }
 
 type node struct {
-	id                 string
-	grid_version       uint64
-	node_id            uint64
-	farm_id            uint64
-	twin_id            uint64
-	country            string
-	city               string
-	uptime             uint64
-	created            uint64
-	farming_policy_id  uint64
-	certification_type string
-	secure             bool
-	virtualized        bool
-	serial_number      string
-	created_at         uint64
-	updated_at         uint64
-	location_id        string
+	id                string
+	grid_version      uint64
+	node_id           uint64
+	farm_id           uint64
+	twin_id           uint64
+	country           string
+	city              string
+	uptime            uint64
+	created           uint64
+	farming_policy_id uint64
+	certification     string
+	secure            bool
+	virtualized       bool
+	serial_number     string
+	created_at        uint64
+	updated_at        uint64
+	location_id       string
 }
 type twin struct {
 	id           string
