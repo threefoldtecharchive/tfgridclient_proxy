@@ -69,7 +69,7 @@ func (g *Clientimpl) url(sub string, args ...interface{}) string {
 
 // Ping makes sure the server is up
 func (g *Clientimpl) Ping() error {
-	req, err := http.Get(g.url(""))
+	req, err := http.Get(g.url("version"))
 	if err != nil {
 		return err
 	}
