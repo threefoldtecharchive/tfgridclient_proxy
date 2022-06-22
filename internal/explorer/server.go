@@ -8,7 +8,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 	"github.com/threefoldtech/grid_proxy_server/pkg/types"
-	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
 const (
@@ -358,17 +356,10 @@ func (a *App) version(r *http.Request) (interface{}, mw.Response) {
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @BasePath /
-func Setup(router *mux.Router, redisServer string, gitCommit string, database db.Database) error {
-	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
-
-	rmbClient, err := rmb.NewClient(redisServer, 500)
-	if err != nil {
-		return errors.Wrap(err, "couldn't connect to rmb")
-	}
+func Setup(router *mux.Router, gitCommit string, database db.Database) error {
 	c := cache.New(2*time.Minute, 3*time.Minute)
 	a := App{
 		db:             database,
-		rmb:            rmbClient,
 		lruCache:       c,
 		releaseVersion: gitCommit,
 	}

@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/pkg/types"
-	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
 // ErrNodeNotFound creates new error type to define node existence or server problem
@@ -24,7 +23,6 @@ var (
 // App is the main app objects
 type App struct {
 	db             db.Database
-	rmb            rmb.Client
 	lruCache       *cache.Cache
 	releaseVersion string
 }

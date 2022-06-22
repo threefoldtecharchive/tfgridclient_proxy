@@ -38,8 +38,12 @@ require (
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
+<<<<<<< HEAD
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
+=======
+	github.com/go-stack/stack v1.8.0 // indirect
+>>>>>>> 4877a50 (remove rmb client from explorer as it's not used anymore...)
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
