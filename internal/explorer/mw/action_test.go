@@ -3,11 +3,9 @@ package mw
 import (
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -51,7 +49,7 @@ var (
 	}
 )
 
-func proxyFailureHandler(r *http.Request) (*http.Response, Response) {
+func proxyFailureHandler(r *http.Request) (interface{}, Response) {
 	resp := Error(ErrExample1)
 	for k, v := range ProxyHeaderExample1 {
 		resp = resp.WithHeader(k, v[0])
@@ -59,37 +57,21 @@ func proxyFailureHandler(r *http.Request) (*http.Response, Response) {
 	return nil, resp
 }
 
-func upstreamFailureHandler(r *http.Request) (*http.Response, Response) {
-	resp := http.Response{
-		StatusCode: http.StatusBadRequest,
-		Header:     HeaderExample1,
-		Body:       io.NopCloser(strings.NewReader(ResponseTextExample1)),
-	}
-	return &resp, nil
+func successHandler(r *http.Request) (interface{}, Response) {
+	// should return a valid object
+	obj := map[string]string{"test": "test"}
+	return obj, nil
 }
 
-func successHandler(r *http.Request) (*http.Response, Response) {
-	resp := http.Response{
-		StatusCode: http.StatusOK,
-		Header:     HeaderExample2,
-		Body:       io.NopCloser(strings.NewReader(ResponseTextExample2)),
-	}
-	return &resp, nil
-}
-
-// returns the mw.Response
-func bothResponsesPresnet(r *http.Request) (*http.Response, Response) {
-	httpResp := http.Response{
-		StatusCode: http.StatusOK,
-		Header:     HeaderExample3,
-		Body:       io.NopCloser(strings.NewReader(ResponseTextExample3)),
-	}
+// returns both a valid object and a response
+func bothResultsPresent(r *http.Request) (interface{}, Response) {
+	obj := map[string]string{"test": "test"}
 	resp := Error(ErrEaxmple2)
 	for k, v := range ProxyHeaderExample2 {
 		resp = resp.WithHeader(k, v[0])
 	}
 
-	return &httpResp, resp
+	return obj, resp
 }
 
 func TestProxyGridProxyError(t *testing.T) {
@@ -120,28 +102,6 @@ func TestProxyGridProxyError(t *testing.T) {
 	}
 }
 
-func TestProxyUpstreamError(t *testing.T) {
-	handler := AsProxyHandlerFunc(upstreamFailureHandler)
-	w := httptest.NewRecorder()
-	handler(w, httptest.NewRequest(http.MethodGet, "/", nil))
-
-	header := w.Header()
-	if header["Access-Control-Allow-Origin"][0] != "*" {
-		t.Fatalf("invalid Access-Control-Allow-Origin header: %+v", header)
-	}
-	delete(header, "Access-Control-Allow-Origin")
-	if w.Result().StatusCode != http.StatusBadRequest {
-		t.Fatalf("upstream error status code mismatch: expected: %d, found: %d", http.StatusBadRequest, w.Result().StatusCode)
-	}
-	if !reflect.DeepEqual(w.Header(), HeaderExample1) {
-		t.Fatalf("upstream error header mismatch: expected: %v, found: %v", HeaderExample1, w.Header())
-	}
-	body := w.Body.String()
-	if body != ResponseTextExample1 {
-		t.Fatalf("upstream error error mismatch: expected: %v, found: %v", ResponseTextExample1, body)
-	}
-}
-
 func TestProxySuccess(t *testing.T) {
 	handler := AsProxyHandlerFunc(successHandler)
 	w := httptest.NewRecorder()
@@ -163,8 +123,8 @@ func TestProxySuccess(t *testing.T) {
 	}
 }
 
-func TestBothResponses(t *testing.T) {
-	handler := AsProxyHandlerFunc(bothResponsesPresnet)
+func TestBothResults(t *testing.T) {
+	handler := AsProxyHandlerFunc(bothResultsPresent)
 	w := httptest.NewRecorder()
 	handler(w, httptest.NewRequest(http.MethodGet, "/", nil))
 	if w.Result().StatusCode != http.StatusInternalServerError {
