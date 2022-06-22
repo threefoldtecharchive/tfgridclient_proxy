@@ -25,9 +25,7 @@ var (
 		"I": []string{"J", "K"},
 	}
 
-	ResponseTextExample1 = "Hello world"
-	ResponseTextExample2 = "Hello world2"
-	ResponseTextExample3 = "Hello world3"
+	ExampleResponseText = "Hello world"
 
 	ErrExample1 = errors.New("internal grid proxy failure")
 	ErrEaxmple2 = errors.New("another internal grid proxy failure")
@@ -58,9 +56,8 @@ func proxyFailureHandler(r *http.Request) (interface{}, Response) {
 }
 
 func successHandler(r *http.Request) (interface{}, Response) {
-	// should return a valid object
-	obj := map[string]string{"test": "test"}
-	return obj, nil
+	// should return a valid serializable json
+	return ExampleResponseText, nil
 }
 
 // returns both a valid object and a response
@@ -109,17 +106,15 @@ func TestProxySuccess(t *testing.T) {
 	if w.Result().StatusCode != http.StatusOK {
 		t.Fatalf("upstream success status code mismatch: expected: %d, found: %d", http.StatusOK, w.Result().StatusCode)
 	}
-	header := w.Header()
-	if header["Access-Control-Allow-Origin"][0] != "*" {
-		t.Fatalf("invalid Access-Control-Allow-Origin header: %+v", header)
+	body := w.Body
+	// response should be json
+	var responseText string
+	err := json.Unmarshal(body.Bytes(), &responseText)
+	if err != nil {
+		t.Fatalf("cannot decode upstream result of %v (must be a valid json)", body.String())
 	}
-	delete(header, "Access-Control-Allow-Origin")
-	if !reflect.DeepEqual(w.Header(), HeaderExample2) {
-		t.Fatalf("upstream success header mismatch: expected: %v, found: %v", HeaderExample2, w.Header())
-	}
-	body := w.Body.String()
-	if body != ResponseTextExample2 {
-		t.Fatalf("upstream success error mismatch: expected: %v, found: %v", ResponseTextExample2, body)
+	if responseText != ExampleResponseText {
+		t.Fatalf("upstream success error mismatch: expected: %v, found: %v", ExampleResponseText, body)
 	}
 }
 
