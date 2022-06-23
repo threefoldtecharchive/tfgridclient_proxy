@@ -125,8 +125,12 @@ func generateContracts(db *sql.DB) error {
 	for i := uint64(1); i <= contractCount; i++ {
 		nodeID := rnd(1, nodeCount)
 		state := "Deleted"
-		if nodeUP[nodeID] && flip(contractCreatedRatio) {
-			state = "Created"
+		if nodeUP[nodeID] {
+			if flip(contractCreatedRatio) {
+				state = "Created"
+			} else {
+				state = "GracePeriod"
+			}
 		}
 		twinID := rnd(1100, 3100)
 		if renter, ok := renter[nodeID]; ok {
