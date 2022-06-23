@@ -38,12 +38,17 @@ func NewRmb(redis *redis.Client, ttl time.Duration) *Rmb {
 }
 
 func (r *Rmb) envelope(msg *rmb.Message) rmb.Message {
+	expiration := msg.Expiration
+	if expiration <= 0 {
+		expiration = int64(r.ttl.Seconds())
+	}
+
 	return rmb.Message{
 		Version:    1,
 		ID:         "",
 		Command:    "system.proxy.request",
-		Expiration: int64(r.ttl.Seconds()),
-		Retry:      5,
+		Expiration: expiration,
+		Retry:      msg.Retry,
 		// data will be overridden by client.Send method for now anyway
 		Data:     "",
 		TwinSrc:  0,
