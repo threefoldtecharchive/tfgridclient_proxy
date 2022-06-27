@@ -100,7 +100,7 @@ func calcNodesUsedResources(data *DBData) error {
 	}
 
 	for _, contract := range data.nodeContracts {
-		if contract.state != "Created" {
+		if contract.state == "Deleted" {
 			continue
 		}
 		contratResourceID := contract.resources_used_id
@@ -117,7 +117,7 @@ func calcNodesUsedResources(data *DBData) error {
 
 func calcRentInfo(data *DBData) error {
 	for _, contract := range data.rentContracts {
-		if contract.state != "Created" {
+		if contract.state == "Deleted" {
 			continue
 		}
 		data.nodeRentedBy[contract.node_id] = contract.twin_id
