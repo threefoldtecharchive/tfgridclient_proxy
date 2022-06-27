@@ -133,6 +133,7 @@ func generateContracts(db *sql.DB) error {
 			}
 		}
 		if state != "Deleted" && (minContractHRU > nodesHRU[nodeID] || minContractMRU > nodesMRU[nodeID] || minContractSRU > nodesSRU[nodeID]) {
+			i--
 			continue
 		}
 		twinID := rnd(1100, 3100)
