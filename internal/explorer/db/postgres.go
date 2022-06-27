@@ -51,7 +51,7 @@ const (
 		COALESCE(node_resources_total.sru, 0) as total_sru
 	FROM contract_resources
 	JOIN node_contract as node_contract
-	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state IN ('Created')
+	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state IN ('Created', 'GracePeriod')
 	RIGHT JOIN node as node
 	ON node.node_id = node_contract.node_id
 	JOIN node_resources_total AS node_resources_total
