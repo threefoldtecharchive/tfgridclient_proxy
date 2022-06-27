@@ -125,8 +125,16 @@ func generateContracts(db *sql.DB) error {
 	for i := uint64(1); i <= contractCount; i++ {
 		nodeID := rnd(1, nodeCount)
 		state := "Deleted"
-		if nodeUP[nodeID] && flip(contractCreatedRatio) {
-			state = "Created"
+		if nodeUP[nodeID] {
+			if flip(contractCreatedRatio) {
+				state = "Created"
+			} else if flip(0.05) {
+				state = "GracePeriod"
+			}
+		}
+		if state != "Deleted" && (minContractHRU > nodesHRU[nodeID] || minContractMRU > nodesMRU[nodeID] || minContractSRU > nodesSRU[nodeID]) {
+			i--
+			continue
 		}
 		twinID := rnd(1100, 3100)
 		if renter, ok := renter[nodeID]; ok {
@@ -161,7 +169,7 @@ func generateContracts(db *sql.DB) error {
 			mru:         mru,
 			contract_id: fmt.Sprintf("node-contract-%d", contractCnt),
 		}
-		if state == "Created" {
+		if contract.state != "Deleted" {
 			nodesHRU[nodeID] -= hru
 			nodesSRU[nodeID] -= sru
 			nodesMRU[nodeID] -= mru
@@ -198,8 +206,12 @@ func generateNameContracts(db *sql.DB) error {
 	for i := uint64(1); i <= nameContractCount; i++ {
 		nodeID := rnd(1, nodeCount)
 		state := "Deleted"
-		if nodeUP[nodeID] && flip(contractCreatedRatio) {
-			state = "Created"
+		if nodeUP[nodeID] {
+			if flip(contractCreatedRatio) {
+				state = "Created"
+			} else if flip(0.05) {
+				state = "GracePeriod"
+			}
 		}
 		twinID := rnd(1100, 3100)
 		if renter, ok := renter[nodeID]; ok {
@@ -244,8 +256,12 @@ func generateRentContracts(db *sql.DB) error {
 		nodeID := randomKey(availableRentNodes)
 		delete(availableRentNodes, nodeID)
 		state := "Deleted"
-		if nodeUP[nodeID] && flip(.9) {
-			state = "Created"
+		if nodeUP[nodeID] {
+			if flip(0.9) {
+				state = "Created"
+			} else if flip(0.05) {
+				state = "GracePeriod"
+			}
 		}
 		contract := rent_contract{
 			id:           fmt.Sprintf("rent-contract-%d", contractCnt),
