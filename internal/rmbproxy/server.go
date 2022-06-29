@@ -17,8 +17,11 @@ import (
 // NewTwinClient : create new TwinClient
 func (a *App) NewTwinClient(twinID int) (TwinClient, error) {
 	log.Debug().Int("twin", twinID).Msg("resolving twin")
-
-	twin, err := a.resolver.client.GetTwin(uint32(twinID))
+	client, err := a.resolver.manager.Substrate()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create substrate client")
+	}
+	twin, err := client.GetTwin(uint32(twinID))
 	if err != nil {
 		return nil, err
 	}
