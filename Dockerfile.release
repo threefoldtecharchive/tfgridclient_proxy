@@ -21,7 +21,8 @@ COPY --from=builder /src/genkeys /usr/bin/genkeys
 
 
 RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.2.0/msgbusd && \
-    mv msgbusd /usr/bin/msgbusd
+    mv msgbusd /usr/bin/msgbusd &&\
+    chmod +x /usr/bin/msgbusd
 
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.6/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
