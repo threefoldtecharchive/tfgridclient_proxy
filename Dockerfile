@@ -26,8 +26,8 @@ RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.2.0/msgbus
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.6/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
-RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/v1.5.4/tfgridclient_proxy_1.5.3_linux_amd64.tar.gz \
-    && tar -xzf tfgridclient_proxy_1.5.3_linux_amd64.tar.gz \
+RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/v1.5.4/tfgridclient_proxy_1.5.4_linux_amd64.tar.gz \
+    && tar -xzf tfgridclient_proxy_1.5.4_linux_amd64.tar.gz \
     && chmod +x server \
     && mv server /usr/bin/server
 
