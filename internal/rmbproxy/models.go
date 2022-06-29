@@ -30,7 +30,7 @@ type Flags struct {
 
 // TwinExplorerResolver is Substrate resolver
 type TwinExplorerResolver struct {
-	client *substrate.Substrate
+	manager substrate.Manager
 }
 
 type twinClient struct {

@@ -19,13 +19,9 @@ func resultURL(twinIP string) string {
 
 // NewTwinResolver : create a new substrate resolver
 func NewTwinResolver(substrateURL string) (*TwinExplorerResolver, error) {
-	client, err := substrate.NewSubstrate(substrateURL)
-	if err != nil {
-		return nil, err
-	}
 
 	return &TwinExplorerResolver{
-		client: client,
+		manager: substrate.NewManager(substrateURL),
 	}, nil
 }
 
