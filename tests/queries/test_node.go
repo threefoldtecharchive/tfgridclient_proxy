@@ -129,11 +129,10 @@ func calcNodesAggregates(data *DBData) (res NodesAggregate) {
 	for _, node := range data.nodes {
 		cities[node.city] = struct{}{}
 		countries[node.country] = struct{}{}
-		countries[data.farms[node.farm_id].name] = struct{}{}
 		free := calcFreeResources(data.nodeTotalResources[node.node_id], data.nodeUsedResources[node.node_id])
-		res.maxFreeHRU = max(free.hru, free.hru)
-		res.maxFreeSRU = max(free.hru, free.sru)
-		res.maxFreeMRU = max(free.hru, free.mru)
+		res.maxFreeHRU = max(res.maxFreeHRU, free.hru)
+		res.maxFreeSRU = max(res.maxFreeSRU, free.sru)
+		res.maxFreeMRU = max(res.maxFreeMRU, free.mru)
 		res.freeMRUs = append(res.freeMRUs, free.mru)
 		res.freeSRUs = append(res.freeSRUs, free.sru)
 		res.freeHRUs = append(res.freeHRUs, free.hru)
@@ -167,10 +166,37 @@ func calcNodesAggregates(data *DBData) (res NodesAggregate) {
 	for _, cnt := range farmIPs {
 		res.maxFreeIPs = max(res.maxFreeIPs, cnt)
 	}
+	sort.Slice(res.countries, func(i, j int) bool {
+		return res.countries[i] < res.countries[j]
+	})
+	sort.Slice(res.cities, func(i, j int) bool {
+		return res.cities[i] < res.cities[j]
+	})
+	sort.Slice(res.farmNames, func(i, j int) bool {
+		return res.farmNames[i] < res.farmNames[j]
+	})
+	sort.Slice(res.farmIDs, func(i, j int) bool {
+		return res.farmIDs[i] < res.farmIDs[j]
+	})
+	sort.Slice(res.freeMRUs, func(i, j int) bool {
+		return res.freeMRUs[i] < res.freeMRUs[j]
+	})
+	sort.Slice(res.freeSRUs, func(i, j int) bool {
+		return res.freeSRUs[i] < res.freeSRUs[j]
+	})
+	sort.Slice(res.freeHRUs, func(i, j int) bool {
+		return res.freeHRUs[i] < res.freeHRUs[j]
+	})
+	sort.Slice(res.nodeRenters, func(i, j int) bool {
+		return res.nodeRenters[i] < res.nodeRenters[j]
+	})
+	sort.Slice(res.twins, func(i, j int) bool {
+		return res.twins[i] < res.twins[j]
+	})
 	return
 }
 
-func nodeUpTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+func nodeUpTest(proxyClient, localClient proxyclient.Client) error {
 	f := proxytypes.NodeFilter{
 		Status: &statusUP,
 	}
@@ -367,7 +393,7 @@ func nodeStressTest(data *DBData, proxyClient, localClient proxyclient.Client) e
 	return nil
 }
 
-func nodePaginationTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+func nodePaginationTest(proxyClient, localClient proxyclient.Client) error {
 	f := proxytypes.NodeFilter{
 		Status: &statusDown,
 	}
@@ -413,6 +439,9 @@ func singleNodeTest(data *DBData, proxyClient, localClient proxyclient.Client) e
 	for _, node := range data.nodes {
 		nodeIDs = append(nodeIDs, node.node_id)
 	}
+	sort.Slice(nodeIDs, func(i, j int) bool {
+		return nodeIDs[i] < nodeIDs[j]
+	})
 	nodeID := rand.Intn(len(nodeIDs))
 	localNode, err := localClient.Node(uint32(nodeID))
 	if err != nil {
@@ -428,26 +457,34 @@ func singleNodeTest(data *DBData, proxyClient, localClient proxyclient.Client) e
 	return nil
 }
 func nodeStatusTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+	nodeIDs := make([]uint64, 0, len(data.nodes))
 	for _, node := range data.nodes {
+		nodeIDs = append(nodeIDs, node.node_id)
+	}
+	sort.Slice(nodeIDs, func(i, j int) bool {
+		return nodeIDs[i] < nodeIDs[j]
+	})
+
+	for id := range nodeIDs {
 		if flip(.3) {
-			localNodeStatus, err := localClient.NodeStatus(uint32(node.node_id))
+			localNodeStatus, err := localClient.NodeStatus(uint32(id))
 			if err != nil {
 				return err
 			}
-			remoteNodeStatus, err := proxyClient.NodeStatus(uint32(node.node_id))
+			remoteNodeStatus, err := proxyClient.NodeStatus(uint32(id))
 			if err != nil {
 				return err
 			}
 
 			if !reflect.DeepEqual(localNodeStatus, remoteNodeStatus) {
-				return fmt.Errorf("single node %d mismatch: local: %+v, remote: %+v", node.node_id, localNodeStatus, remoteNodeStatus)
+				return fmt.Errorf("single node %d mismatch: local: %+v, remote: %+v", id, localNodeStatus, remoteNodeStatus)
 			}
 		}
 	}
 	return nil
 }
 
-func nodeNotFoundTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+func nodeNotFoundTest(proxyClient proxyclient.Client) error {
 	nodeID := 1000000000
 	_, err := proxyClient.Node(uint32(nodeID))
 	if err != nil && err.Error() != ErrNodeNotFound.Error() {
@@ -471,7 +508,7 @@ func nodesTestWithoutResourcesView(data *DBData, proxyClient, localClient proxyc
 	if _, err := db.Exec("drop view nodes_resources_view ;"); err != nil {
 		return err
 	}
-	err = nodePaginationTest(data, proxyClient, localClient)
+	err = nodePaginationTest(proxyClient, localClient)
 	if err != nil {
 		return err
 	}
@@ -479,13 +516,13 @@ func nodesTestWithoutResourcesView(data *DBData, proxyClient, localClient proxyc
 }
 
 func nodesTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
-	if err := nodePaginationTest(data, proxyClient, localClient); err != nil {
+	if err := nodePaginationTest(proxyClient, localClient); err != nil {
 		return err
 	}
 	if err := singleNodeTest(data, proxyClient, localClient); err != nil {
 		return err
 	}
-	if err := nodeUpTest(data, proxyClient, localClient); err != nil {
+	if err := nodeUpTest(proxyClient, localClient); err != nil {
 		return err
 	}
 	if err := nodeStatusTest(data, proxyClient, localClient); err != nil {
@@ -494,7 +531,7 @@ func nodesTest(data *DBData, proxyClient, localClient proxyclient.Client) error 
 	if err := nodeStressTest(data, proxyClient, localClient); err != nil {
 		return err
 	}
-	if err := nodeNotFoundTest(data, proxyClient, localClient); err != nil {
+	if err := nodeNotFoundTest(proxyClient); err != nil {
 		return err
 	}
 	if err := nodesTestWithoutResourcesView(data, proxyClient, localClient); err != nil {

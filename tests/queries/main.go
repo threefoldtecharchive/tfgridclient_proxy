@@ -93,7 +93,7 @@ func main() {
 		}
 	}
 	if f.counters {
-		if err := countersTest(&data, proxyClient, localClient); err != nil {
+		if err := countersTest(proxyClient, localClient); err != nil {
 			panic(err)
 		}
 	}

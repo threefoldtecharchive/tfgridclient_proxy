@@ -310,7 +310,7 @@ func generateNodes(db *sql.DB) error {
 		if up {
 			updatedAt = time.Now().Unix()*1000 - int64(rnd(0, 1000*60*60*1))
 		}
-		nodesMRU[i] = mru - 2*uint64(gridtypes.Gigabyte)
+		nodesMRU[i] = mru - max(2*uint64(gridtypes.Gigabyte), mru/10)
 		nodesSRU[i] = sru - 100*uint64(gridtypes.Gigabyte)
 		nodesHRU[i] = hru
 		nodeUP[i] = up

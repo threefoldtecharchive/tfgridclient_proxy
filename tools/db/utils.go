@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net"
 	"reflect"
+	"sort"
 )
 
 func rnd(min, max uint64) uint64 {
@@ -31,6 +32,12 @@ func IPv4Subnet(ip net.IP) *net.IPNet {
 
 func min(a, b uint64) uint64 {
 	if a < b {
+		return a
+	}
+	return b
+}
+func max(a, b uint64) uint64 {
+	if a > b {
 		return a
 	}
 	return b
@@ -68,8 +75,12 @@ func insertQuery(v interface{}) string {
 }
 
 func randomKey(m map[uint64]struct{}) uint64 {
+	keys := []uint64{}
 	for k := range m {
-		return k
+		keys = append(keys, k)
 	}
-	return 0
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	return keys[rnd(0, uint64(len(keys)-1))]
 }
