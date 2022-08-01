@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"net"
 	"reflect"
-	"sort"
 )
 
 func rnd(min, max uint64) uint64 {
@@ -73,14 +72,9 @@ func insertQuery(v interface{}) string {
 	query = fmt.Sprintf("%s) VALUES %s);", query, vals)
 	return query
 }
-
-func randomKey(m map[uint64]struct{}) uint64 {
-	keys := []uint64{}
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
-	return keys[rnd(0, uint64(len(keys)-1))]
+func popRandom(l []uint64) ([]uint64, uint64) {
+	idx := rnd(0, uint64(len(l)-1))
+	e := l[idx]
+	l[idx], l[len(l)-1] = l[len(l)-1], l[idx]
+	return l[:len(l)-1], e
 }

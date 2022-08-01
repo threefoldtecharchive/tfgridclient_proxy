@@ -11,16 +11,17 @@ import (
 )
 
 var (
-	nodesMRU             = make(map[uint64]uint64)
-	nodesSRU             = make(map[uint64]uint64)
-	nodesHRU             = make(map[uint64]uint64)
-	nodeUP               = make(map[uint64]bool)
-	createdNodeContracts = make([]uint64, 0)
-	dedicatedFarms       = make(map[uint64]struct{})
-	availableRentNodes   = make(map[uint64]struct{})
-	renter               = make(map[uint64]uint64)
-	billCnt              = 1
-	contractCnt          = uint64(1)
+	nodesMRU               = make(map[uint64]uint64)
+	nodesSRU               = make(map[uint64]uint64)
+	nodesHRU               = make(map[uint64]uint64)
+	nodeUP                 = make(map[uint64]bool)
+	createdNodeContracts   = make([]uint64, 0)
+	dedicatedFarms         = make(map[uint64]struct{})
+	availableRentNodes     = make(map[uint64]struct{})
+	availableRentNodesList = make([]uint64, 0)
+	renter                 = make(map[uint64]uint64)
+	billCnt                = 1
+	contractCnt            = uint64(1)
 )
 
 const (
@@ -253,7 +254,8 @@ func generateNameContracts(db *sql.DB) error {
 }
 func generateRentContracts(db *sql.DB) error {
 	for i := uint64(1); i <= rentContractCount; i++ {
-		nodeID := randomKey(availableRentNodes)
+		nl, nodeID := popRandom(availableRentNodesList)
+		availableRentNodesList = nl
 		delete(availableRentNodes, nodeID)
 		state := "Deleted"
 		if nodeUP[nodeID] {
@@ -348,6 +350,7 @@ func generateNodes(db *sql.DB) error {
 		}
 		if _, ok := dedicatedFarms[node.farm_id]; ok {
 			availableRentNodes[i] = struct{}{}
+			availableRentNodesList = append(availableRentNodesList, i)
 		}
 		if _, err := db.Exec(insertQuery(&location)); err != nil {
 			panic(err)

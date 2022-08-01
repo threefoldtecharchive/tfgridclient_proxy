@@ -202,12 +202,7 @@ func randomFarmsFilter(agg *FarmsAggregate) proxytypes.FarmFilter {
 		f.Name = &c
 	}
 	if flip(.05) {
-		idx := rand.Intn(len(agg.farmNames))
-		c := agg.farmNames[idx]
-		if c == "" {
-			fmt.Printf("%d %s %+v\n", idx, c, agg.farmNames[:5])
-			panic("length is 0 of a farm name")
-		}
+		c := agg.farmNames[rand.Intn(len(agg.farmNames))]
 		a, b := rand.Intn(len(c)), rand.Intn(len(c))
 		if a > b {
 			a, b = b, a
