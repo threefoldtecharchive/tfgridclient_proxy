@@ -48,7 +48,8 @@ const (
 		COALESCE(node_resources_total.cru, 0) as total_cru,
 		COALESCE(node_resources_total.mru, 0) as total_mru,
 		COALESCE(node_resources_total.hru, 0) as total_hru,
-		COALESCE(node_resources_total.sru, 0) as total_sru
+		COALESCE(node_resources_total.sru, 0) as total_sru,
+		coalesce(count(distinct state), 0) as states
 	FROM contract_resources
 	JOIN node_contract as node_contract
 	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state IN ('Created', 'GracePeriod')
@@ -58,8 +59,9 @@ const (
 	ON node_resources_total.node_id = node.id
 	GROUP BY node.node_id, node_resources_total.mru, node_resources_total.sru, node_resources_total.hru, node_resources_total.cru;
 
+	DROP FUNCTION node_resources(query_node_id INTEGER);
 	CREATE OR REPLACE function node_resources(query_node_id INTEGER)
-	returns table (node_id INTEGER, used_cru NUMERIC, used_mru NUMERIC, used_hru NUMERIC, used_sru NUMERIC, free_mru NUMERIC, free_hru NUMERIC, free_sru NUMERIC, total_cru NUMERIC, total_mru NUMERIC, total_hru NUMERIC, total_sru NUMERIC)
+	returns table (node_id INTEGER, used_cru NUMERIC, used_mru NUMERIC, used_hru NUMERIC, used_sru NUMERIC, free_mru NUMERIC, free_hru NUMERIC, free_sru NUMERIC, total_cru NUMERIC, total_mru NUMERIC, total_hru NUMERIC, total_sru NUMERIC, states BIGINT)
 	as
 	$body$
 	SELECT
@@ -74,7 +76,8 @@ const (
 		COALESCE(node_resources_total.cru, 0) as total_cru,
 		COALESCE(node_resources_total.mru, 0) as total_mru,
 		COALESCE(node_resources_total.hru, 0) as total_hru,
-		COALESCE(node_resources_total.sru, 0) as total_sru
+		COALESCE(node_resources_total.sru, 0) as total_sru,
+		coalesce(count(distinct state), 0) as states
 	FROM contract_resources
 	JOIN node_contract as node_contract
 	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state IN ('Created', 'GracePeriod')
@@ -376,7 +379,7 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 		q = q.Where("farm.dedicated_farm = ?", *filter.Dedicated)
 	}
 	if filter.Rentable != nil {
-		q = q.Where(`? = (farm.dedicated_farm = true AND COALESCE(rent_contract.contract_id, 0) = 0)`, *filter.Rentable)
+		q = q.Where(`? = ((farm.dedicated_farm = true OR nodes_resources_view.states = 0) AND COALESCE(rent_contract.contract_id, 0) = 0)`, *filter.Rentable)
 	}
 	if filter.RentedBy != nil {
 		q = q.Where(`COALESCE(rent_contract.twin_id, 0) = ?`, *filter.RentedBy)
