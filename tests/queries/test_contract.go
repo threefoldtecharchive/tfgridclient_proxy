@@ -32,7 +32,7 @@ type ContractsAggregate struct {
 	maxNumberOfPublicIPs uint64
 }
 
-func nodeContractsSatisfies(data *DBData, contract node_contract, f proxytypes.ContractFilter) bool {
+func nodeContractsSatisfies(contract node_contract, f proxytypes.ContractFilter) bool {
 	if f.ContractID != nil && contract.contract_id != *f.ContractID {
 		return false
 	}
@@ -63,7 +63,7 @@ func nodeContractsSatisfies(data *DBData, contract node_contract, f proxytypes.C
 	return true
 }
 
-func nameContractsSatisfies(data *DBData, contract name_contract, f proxytypes.ContractFilter) bool {
+func nameContractsSatisfies(contract name_contract, f proxytypes.ContractFilter) bool {
 	if f.ContractID != nil && contract.contract_id != *f.ContractID {
 		return false
 	}
@@ -94,7 +94,7 @@ func nameContractsSatisfies(data *DBData, contract name_contract, f proxytypes.C
 	return true
 }
 
-func rentContractsSatisfies(data *DBData, contract rent_contract, f proxytypes.ContractFilter) bool {
+func rentContractsSatisfies(contract rent_contract, f proxytypes.ContractFilter) bool {
 	if f.ContractID != nil && contract.contract_id != *f.ContractID {
 		return false
 	}
@@ -205,6 +205,30 @@ func calcContractsAggregates(data *DBData) (res ContractsAggregate) {
 	for typ := range types {
 		res.Types = append(res.Types, typ)
 	}
+	sort.Slice(res.contractIDs, func(i, j int) bool {
+		return res.contractIDs[i] < res.contractIDs[j]
+	})
+	sort.Slice(res.TwinIDs, func(i, j int) bool {
+		return res.TwinIDs[i] < res.TwinIDs[j]
+	})
+	sort.Slice(res.NodeIDs, func(i, j int) bool {
+		return res.NodeIDs[i] < res.NodeIDs[j]
+	})
+	sort.Slice(res.Types, func(i, j int) bool {
+		return res.Types[i] < res.Types[j]
+	})
+	sort.Slice(res.States, func(i, j int) bool {
+		return res.States[i] < res.States[j]
+	})
+	sort.Slice(res.Names, func(i, j int) bool {
+		return res.Names[i] < res.Names[j]
+	})
+	sort.Slice(res.DeploymentDatas, func(i, j int) bool {
+		return res.DeploymentDatas[i] < res.DeploymentDatas[j]
+	})
+	sort.Slice(res.DeploymentHashes, func(i, j int) bool {
+		return res.DeploymentHashes[i] < res.DeploymentHashes[j]
+	})
 	return
 }
 
@@ -280,7 +304,7 @@ func serializeContractsFilter(f proxytypes.ContractFilter) string {
 	return res
 }
 
-func contractsPaginationTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+func contractsPaginationTest(proxyClient, localClient proxyclient.Client) error {
 	node := "node"
 	f := proxytypes.ContractFilter{
 		Type: &node,
@@ -350,7 +374,7 @@ func ContractsStressTest(data *DBData, proxyClient, localClient proxyclient.Clie
 }
 
 func contractsTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
-	if err := contractsPaginationTest(data, proxyClient, localClient); err != nil {
+	if err := contractsPaginationTest(proxyClient, localClient); err != nil {
 		panic(err)
 	}
 	if err := ContractsStressTest(data, proxyClient, localClient); err != nil {

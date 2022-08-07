@@ -35,6 +35,12 @@ func min(a, b uint64) uint64 {
 	}
 	return b
 }
+func max(a, b uint64) uint64 {
+	if a > b {
+		return a
+	}
+	return b
+}
 
 func insertQuery(v interface{}) string {
 	query := fmt.Sprintf("INSERT INTO %s (", reflect.Indirect(reflect.ValueOf(v)).Type().Name())
@@ -66,10 +72,9 @@ func insertQuery(v interface{}) string {
 	query = fmt.Sprintf("%s) VALUES %s);", query, vals)
 	return query
 }
-
-func randomKey(m map[uint64]struct{}) uint64 {
-	for k := range m {
-		return k
-	}
-	return 0
+func popRandom(l []uint64) ([]uint64, uint64) {
+	idx := rnd(0, uint64(len(l)-1))
+	e := l[idx]
+	l[idx], l[len(l)-1] = l[len(l)-1], l[idx]
+	return l[:len(l)-1], e
 }

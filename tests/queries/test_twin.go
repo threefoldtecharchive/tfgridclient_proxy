@@ -24,10 +24,9 @@ type TwinsAggregate struct {
 	accountIDs []string
 	ip         []string
 	twins      map[uint64]twin
-	accToID    map[string]uint64
 }
 
-func twinSatisfies(data *DBData, twin twin, f proxytypes.TwinFilter) bool {
+func twinSatisfies(twin twin, f proxytypes.TwinFilter) bool {
 	if f.TwinID != nil && twin.twin_id != *f.TwinID {
 		return false
 	}
@@ -59,14 +58,21 @@ func validateTwinsResults(local, remote []proxytypes.Twin) error {
 }
 
 func calcTwinsAggregates(data *DBData) (res TwinsAggregate) {
-	res.accToID = make(map[string]uint64)
 	for _, twin := range data.twins {
 		res.twinIDs = append(res.twinIDs, twin.twin_id)
 		res.accountIDs = append(res.accountIDs, twin.account_id)
 		res.ip = append(res.ip, twin.ip)
-		res.accToID[twin.account_id] = twin.twin_id
 	}
 	res.twins = data.twins
+	sort.Slice(res.twinIDs, func(i, j int) bool {
+		return res.twinIDs[i] < res.twinIDs[j]
+	})
+	sort.Slice(res.accountIDs, func(i, j int) bool {
+		return res.accountIDs[i] < res.accountIDs[j]
+	})
+	sort.Slice(res.ip, func(i, j int) bool {
+		return res.ip[i] < res.ip[j]
+	})
 	return
 }
 
@@ -100,7 +106,7 @@ func serializeTwinsFilter(f proxytypes.TwinFilter) string {
 	return res
 }
 
-func twinsPaginationTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+func twinsPaginationTest(proxyClient, localClient proxyclient.Client) error {
 	f := proxytypes.TwinFilter{}
 	l := proxytypes.Limit{
 		Size:     5,
@@ -167,7 +173,7 @@ func TwinsStressTest(data *DBData, proxyClient, localClient proxyclient.Client) 
 }
 
 func twinsTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
-	if err := twinsPaginationTest(data, proxyClient, localClient); err != nil {
+	if err := twinsPaginationTest(proxyClient, localClient); err != nil {
 		panic(err)
 	}
 	if err := TwinsStressTest(data, proxyClient, localClient); err != nil {

@@ -16,7 +16,7 @@ func validateCountersResults(local, remote proxytypes.Counters) error {
 	return nil
 }
 
-func countersAllTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+func countersAllTest(proxyClient, localClient proxyclient.Client) error {
 	f := proxytypes.StatsFilter{}
 	counters, err := localClient.Counters(f)
 	if err != nil {
@@ -32,7 +32,7 @@ func countersAllTest(data *DBData, proxyClient, localClient proxyclient.Client) 
 	return nil
 }
 
-func countersUpTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+func countersUpTest(proxyClient, localClient proxyclient.Client) error {
 	f := proxytypes.StatsFilter{
 		Status: &statusUP,
 	}
@@ -50,11 +50,11 @@ func countersUpTest(data *DBData, proxyClient, localClient proxyclient.Client) e
 	return nil
 }
 
-func countersTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
-	if err := countersUpTest(data, proxyClient, localClient); err != nil {
+func countersTest(proxyClient, localClient proxyclient.Client) error {
+	if err := countersUpTest(proxyClient, localClient); err != nil {
 		return err
 	}
-	if err := countersAllTest(data, proxyClient, localClient); err != nil {
+	if err := countersAllTest(proxyClient, localClient); err != nil {
 		return err
 	}
 	return nil

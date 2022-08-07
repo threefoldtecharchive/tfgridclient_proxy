@@ -51,13 +51,13 @@ func farmSatisfies(data *DBData, farm farm, f proxytypes.FarmFilter) bool {
 	if f.TwinID != nil && *f.TwinID != farm.twin_id {
 		return false
 	}
-	if f.Name != nil && *f.Name != farm.name {
+	if f.Name != nil && *f.Name != "" && *f.Name != farm.name {
 		return false
 	}
-	if f.NameContains != nil && !strings.Contains(farm.name, *f.NameContains) {
+	if f.NameContains != nil && *f.NameContains != "" && !strings.Contains(farm.name, *f.NameContains) {
 		return false
 	}
-	if f.CertificationType != nil && *f.CertificationType != farm.certification {
+	if f.CertificationType != nil && *f.CertificationType != "" && *f.CertificationType != farm.certification {
 		return false
 	}
 	if f.Dedicated != nil && *f.Dedicated != farm.dedicated_farm {
@@ -129,7 +129,7 @@ func validateFarmsResults(local, remote []proxytypes.Farm) error {
 func calcFarmsAggregates(data *DBData) (res FarmsAggregate) {
 	for _, farm := range data.farms {
 		res.farmNames = append(res.farmNames, farm.name)
-		res.stellarAddresses = append(res.farmNames, farm.stellar_address)
+		res.stellarAddresses = append(res.stellarAddresses, farm.stellar_address)
 		res.pricingPolicyIDs = append(res.pricingPolicyIDs, farm.pricing_policy_id)
 		res.certifications = append(res.certifications, farm.certification)
 		res.farmIDs = append(res.farmIDs, farm.farm_id)
@@ -150,6 +150,26 @@ func calcFarmsAggregates(data *DBData) (res FarmsAggregate) {
 	for _, cnt := range farmTotalIPs {
 		res.maxTotalIPs = max(res.maxTotalIPs, cnt)
 	}
+
+	sort.Slice(res.stellarAddresses, func(i, j int) bool {
+		return res.stellarAddresses[i] < res.stellarAddresses[j]
+	})
+	sort.Slice(res.pricingPolicyIDs, func(i, j int) bool {
+		return res.pricingPolicyIDs[i] < res.pricingPolicyIDs[j]
+	})
+	sort.Slice(res.farmNames, func(i, j int) bool {
+		return res.farmNames[i] < res.farmNames[j]
+	})
+	sort.Slice(res.farmIDs, func(i, j int) bool {
+		return res.farmIDs[i] < res.farmIDs[j]
+	})
+	sort.Slice(res.twinIDs, func(i, j int) bool {
+		return res.twinIDs[i] < res.twinIDs[j]
+	})
+	sort.Slice(res.certifications, func(i, j int) bool {
+		return res.certifications[i] < res.certifications[j]
+	})
+
 	return
 }
 
@@ -266,7 +286,7 @@ func FarmsStressTest(data *DBData, proxyClient, localClient proxyclient.Client) 
 	return nil
 }
 
-func farmsPaginationTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
+func farmsPaginationTest(proxyClient, localClient proxyclient.Client) error {
 	one := uint64(1)
 	f := proxytypes.FarmFilter{
 		TotalIPs: &one,
@@ -308,7 +328,7 @@ func farmsPaginationTest(data *DBData, proxyClient, localClient proxyclient.Clie
 	return nil
 }
 func farmsTest(data *DBData, proxyClient, localClient proxyclient.Client) error {
-	if err := farmsPaginationTest(data, proxyClient, localClient); err != nil {
+	if err := farmsPaginationTest(proxyClient, localClient); err != nil {
 		return err
 	}
 	if err := FarmsStressTest(data, proxyClient, localClient); err != nil {

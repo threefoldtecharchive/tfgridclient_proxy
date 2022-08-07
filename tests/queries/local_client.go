@@ -171,7 +171,7 @@ func (g *GridProxyClientimpl) Contracts(filter proxytypes.ContractFilter, limit 
 		})
 	}
 	for _, contract := range g.data.nodeContracts {
-		if nodeContractsSatisfies(&g.data, contract, filter) {
+		if nodeContractsSatisfies(contract, filter) {
 			contract := proxytypes.Contract{
 				ContractID: uint(contract.contract_id),
 				TwinID:     uint(contract.twin_id),
@@ -190,7 +190,7 @@ func (g *GridProxyClientimpl) Contracts(filter proxytypes.ContractFilter, limit 
 		}
 	}
 	for _, contract := range g.data.rentContracts {
-		if rentContractsSatisfies(&g.data, contract, filter) {
+		if rentContractsSatisfies(contract, filter) {
 			contract := proxytypes.Contract{
 				ContractID: uint(contract.contract_id),
 				TwinID:     uint(contract.twin_id),
@@ -206,7 +206,7 @@ func (g *GridProxyClientimpl) Contracts(filter proxytypes.ContractFilter, limit 
 		}
 	}
 	for _, contract := range g.data.nameContracts {
-		if nameContractsSatisfies(&g.data, contract, filter) {
+		if nameContractsSatisfies(contract, filter) {
 			contract := proxytypes.Contract{
 				ContractID: uint(contract.contract_id),
 				TwinID:     uint(contract.twin_id),
@@ -248,7 +248,7 @@ func (g *GridProxyClientimpl) Twins(filter proxytypes.TwinFilter, limit proxytyp
 		limit.Size = 50
 	}
 	for _, twin := range g.data.twins {
-		if twinSatisfies(&g.data, twin, filter) {
+		if twinSatisfies(twin, filter) {
 			res = append(res, proxytypes.Twin{
 				TwinID:    uint(twin.twin_id),
 				AccountID: twin.account_id,
