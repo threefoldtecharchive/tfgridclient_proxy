@@ -77,7 +77,7 @@ const (
 		COALESCE(node_resources_total.mru, 0) as total_mru,
 		COALESCE(node_resources_total.hru, 0) as total_hru,
 		COALESCE(node_resources_total.sru, 0) as total_sru,
-		coalesce(count(distinct state), 0) as states
+		COALESCE(COUNT(DISTINCT state), 0) as states
 	FROM contract_resources
 	JOIN node_contract as node_contract
 	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state IN ('Created', 'GracePeriod')

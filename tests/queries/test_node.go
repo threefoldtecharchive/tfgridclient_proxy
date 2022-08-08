@@ -88,7 +88,6 @@ func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.Domain != nil && *f.Domain && data.publicConfigs[node.node_id].domain == "" {
 		return false
 	}
-	// rentable := checkIfRentable(data, node)
 	rentable := data.nodeRentedBy[node.node_id] == 0 &&
 		(data.farms[node.farm_id].dedicated_farm || len(data.nonDeletedContracts[node.node_id]) == 0)
 	if f.Rentable != nil && *f.Rentable != rentable {
