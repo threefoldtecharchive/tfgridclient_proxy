@@ -456,7 +456,7 @@ func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) 
 	if filter.NameContains != nil {
 		escaped := strings.Replace(*filter.NameContains, "%", "\\%", -1)
 		escaped = strings.Replace(escaped, "_", "\\_", -1)
-		q = q.Where("name LIKE ?", fmt.Sprintf("%%%s%%", escaped))
+		q = q.Where("name ILIKE ?", fmt.Sprintf("%%%s%%", escaped))
 	}
 
 	if filter.CertificationType != nil {
