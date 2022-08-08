@@ -16,19 +16,19 @@ type DBData struct {
 	nodeRentedBy       map[uint64]uint64
 	nodeRentContractID map[uint64]uint64
 
-	nodes              map[uint64]node
-	nodeTotalResources map[uint64]node_resources_total
-	farms              map[uint64]farm
-	twins              map[uint64]twin
-	publicIPs          map[string]public_ip
-	publicConfigs      map[uint64]public_config
-	nodeContracts      map[uint64]node_contract
-	rentContracts      map[uint64]rent_contract
-	nameContracts      map[uint64]name_contract
-	billings           map[uint64][]contract_bill_report
-	contractResources  map[string]contract_resources
-
-	db *sql.DB
+	nodes               map[uint64]node
+	nodeTotalResources  map[uint64]node_resources_total
+	farms               map[uint64]farm
+	twins               map[uint64]twin
+	publicIPs           map[string]public_ip
+	publicConfigs       map[uint64]public_config
+	nodeContracts       map[uint64]node_contract
+	rentContracts       map[uint64]rent_contract
+	nameContracts       map[uint64]name_contract
+	billings            map[uint64][]contract_bill_report
+	contractResources   map[string]contract_resources
+	nonDeletedContracts map[uint64][]uint64
+	db                  *sql.DB
 }
 
 func loadNodes(db *sql.DB, data *DBData) error {
@@ -332,6 +332,10 @@ func loadContracts(db *sql.DB, data *DBData) error {
 			return err
 		}
 		data.nodeContracts[contract.contract_id] = contract
+		if contract.state != "Deleted" {
+			data.nonDeletedContracts[contract.node_id] = append(data.nonDeletedContracts[contract.node_id], contract.contract_id)
+		}
+
 	}
 	return nil
 }
@@ -462,25 +466,26 @@ func loadContractBillingReports(db *sql.DB, data *DBData) error {
 
 func load(db *sql.DB) (DBData, error) {
 	data := DBData{
-		nodeIDMap:          make(map[string]uint64),
-		farmIDMap:          make(map[string]uint64),
-		FreeIPs:            make(map[uint64]uint64),
-		TotalIPs:           make(map[uint64]uint64),
-		nodes:              make(map[uint64]node),
-		farms:              make(map[uint64]farm),
-		twins:              make(map[uint64]twin),
-		publicIPs:          make(map[string]public_ip),
-		publicConfigs:      make(map[uint64]public_config),
-		nodeContracts:      make(map[uint64]node_contract),
-		rentContracts:      make(map[uint64]rent_contract),
-		nameContracts:      make(map[uint64]name_contract),
-		nodeRentedBy:       make(map[uint64]uint64),
-		nodeRentContractID: make(map[uint64]uint64),
-		billings:           make(map[uint64][]contract_bill_report),
-		contractResources:  make(map[string]contract_resources),
-		nodeTotalResources: make(map[uint64]node_resources_total),
-		nodeUsedResources:  make(map[uint64]node_resources_total),
-		db:                 db,
+		nodeIDMap:           make(map[string]uint64),
+		farmIDMap:           make(map[string]uint64),
+		FreeIPs:             make(map[uint64]uint64),
+		TotalIPs:            make(map[uint64]uint64),
+		nodes:               make(map[uint64]node),
+		farms:               make(map[uint64]farm),
+		twins:               make(map[uint64]twin),
+		publicIPs:           make(map[string]public_ip),
+		publicConfigs:       make(map[uint64]public_config),
+		nodeContracts:       make(map[uint64]node_contract),
+		rentContracts:       make(map[uint64]rent_contract),
+		nameContracts:       make(map[uint64]name_contract),
+		nodeRentedBy:        make(map[uint64]uint64),
+		nodeRentContractID:  make(map[uint64]uint64),
+		billings:            make(map[uint64][]contract_bill_report),
+		contractResources:   make(map[string]contract_resources),
+		nodeTotalResources:  make(map[uint64]node_resources_total),
+		nodeUsedResources:   make(map[uint64]node_resources_total),
+		nonDeletedContracts: make(map[uint64][]uint64),
+		db:                  db,
 	}
 	if err := loadNodes(db, &data); err != nil {
 		return data, err
