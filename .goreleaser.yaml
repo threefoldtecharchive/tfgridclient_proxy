@@ -9,7 +9,7 @@ builds:
     goarch:
       - amd64
     ldflags:
-      - -X main.GitCommit={{ .Commit }}
+      - -X main.GitCommit={{ .Tag }}
     main: ./cmds/proxy_server
     binary: server
 
