@@ -142,6 +142,7 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (types.NodeFilter, 
 		"domain":    &filter.Domain,
 		"dedicated": &filter.Dedicated,
 		"rentable":  &filter.Rentable,
+		"rented":    &filter.Rented,
 	}
 	listOfInts := map[string]*[]uint64{
 		"farm_ids": &filter.FarmIDs,

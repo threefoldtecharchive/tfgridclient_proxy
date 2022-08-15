@@ -99,6 +99,10 @@ func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.AvailableFor != nil && (*f.AvailableFor != data.nodeRentedBy[node.node_id] && data.farms[node.farm_id].dedicated_farm) {
 		return false
 	}
+	if f.Rented != nil {
+		_, ok := data.nodeRentedBy[node.node_id]
+		return ok == *f.Rented
+	}
 	return true
 }
 
@@ -314,6 +318,13 @@ func randomNodeFilter(agg *NodesAggregate) proxytypes.NodeFilter {
 		}
 		f.AvailableFor = &c
 	}
+	if flip(.1) {
+		v := true
+		if flip(.5) {
+			v = false
+		}
+		f.Rented = &v
+	}
 	return f
 }
 
@@ -363,6 +374,9 @@ func serializeFilter(f proxytypes.NodeFilter) string {
 	}
 	if f.AvailableFor != nil {
 		res = fmt.Sprintf("%sAvailableFor: %d\n", res, *f.AvailableFor)
+	}
+	if f.Rented != nil {
+		res = fmt.Sprintf("%sRented: %t\n", res, *f.Rented)
 	}
 	return res
 }
