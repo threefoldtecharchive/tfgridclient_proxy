@@ -96,6 +96,7 @@ type NodeFilter struct {
 	Domain       *bool
 	Dedicated    *bool
 	Rentable     *bool
+	Rented       *bool
 	RentedBy     *uint64
 	AvailableFor *uint64
 }

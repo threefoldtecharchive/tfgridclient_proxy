@@ -61,6 +61,9 @@ func nodeParams(filter types.NodeFilter, limit types.Limit) string {
 	if filter.Rentable != nil {
 		fmt.Fprintf(&builder, "rentable=%t&", *filter.Rentable)
 	}
+	if filter.Rented != nil {
+		fmt.Fprintf(&builder, "rented=%t&", *filter.Rented)
+	}
 	if filter.RentedBy != nil {
 		// passing 0 might be helpful to get available non-rented nodes
 		fmt.Fprintf(&builder, "rented_by=%d&", *filter.RentedBy)

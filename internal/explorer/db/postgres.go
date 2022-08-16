@@ -387,6 +387,9 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 	if filter.AvailableFor != nil {
 		q = q.Where(`(COALESCE(rent_contract.twin_id, 0) = ? OR farm.dedicated_farm = false)`, *filter.AvailableFor)
 	}
+	if filter.Rented != nil {
+		q = q.Where(`? = (COALESCE(rent_contract.contract_id, 0) != 0)`, *filter.Rented)
+	}
 
 	var count int64
 	if limit.Randomize || limit.RetCount {
