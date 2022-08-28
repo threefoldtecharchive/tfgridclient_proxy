@@ -250,8 +250,9 @@ func convertParam(p interface{}) string {
 	return "0"
 }
 
+// nolint
+//
 //lint:ignore U1000 used for debugging
-//nolint
 func printQuery(query string, args ...interface{}) {
 	for i, e := range args {
 		query = strings.ReplaceAll(query, fmt.Sprintf("$%d", i+1), convertParam(e))
@@ -385,7 +386,7 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 		q = q.Where(`COALESCE(rent_contract.twin_id, 0) = ?`, *filter.RentedBy)
 	}
 	if filter.AvailableFor != nil {
-		q = q.Where(`(COALESCE(rent_contract.twin_id, 0) = ? OR farm.dedicated_farm = false)`, *filter.AvailableFor)
+		q = q.Where(`(COALESCE(rent_contract.twin_id, 0) IN (0, ?))`, *filter.AvailableFor)
 	}
 	if filter.Rented != nil {
 		q = q.Where(`? = (COALESCE(rent_contract.contract_id, 0) != 0)`, *filter.Rented)
