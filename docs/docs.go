@@ -113,7 +113,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/explorer.contract"
+                                "$ref": "#/definitions/types.Contract"
                             }
                         }
                     }
@@ -225,7 +225,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/explorer.farm"
+                                "$ref": "#/definitions/types.Farm"
                             }
                         }
                     }
@@ -343,6 +343,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Set to true to filter rented nodes",
+                        "name": "rented",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "rented by twin id",
                         "name": "rented_by",
@@ -367,7 +373,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/explorer.node"
+                                "$ref": "#/definitions/types.Node"
                             }
                         }
                     }
@@ -399,7 +405,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/explorer.node"
+                            "$ref": "#/definitions/types.NodeWithNestedCapacity"
                         }
                     }
                 }
@@ -516,6 +522,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Set to true to filter rented nodes",
+                        "name": "rented",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "rented by twin id",
                         "name": "rented_by",
@@ -540,7 +552,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/explorer.node"
+                                "$ref": "#/definitions/types.Node"
                             }
                         }
                     }
@@ -572,7 +584,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/explorer.node"
+                            "$ref": "#/definitions/types.NodeWithNestedCapacity"
                         }
                     }
                 }
@@ -628,7 +640,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/db.Counters"
+                                "$ref": "#/definitions/types.Counters"
                             }
                         }
                     }
@@ -769,7 +781,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/explorer.farm"
+                                "$ref": "#/definitions/types.Twin"
                             }
                         }
                     }
@@ -778,254 +790,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "db.Capacity": {
-            "type": "object",
-            "properties": {
-                "cru": {
-                    "type": "integer"
-                },
-                "hru": {
-                    "type": "integer"
-                },
-                "mru": {
-                    "type": "integer"
-                },
-                "sru": {
-                    "type": "integer"
-                }
-            }
-        },
-        "db.ContractBilling": {
-            "type": "object",
-            "properties": {
-                "amountBilled": {
-                    "type": "integer"
-                },
-                "discountReceived": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "integer"
-                }
-            }
-        },
-        "db.Counters": {
-            "type": "object",
-            "properties": {
-                "accessNodes": {
-                    "type": "integer"
-                },
-                "contracts": {
-                    "type": "integer"
-                },
-                "countries": {
-                    "type": "integer"
-                },
-                "farms": {
-                    "type": "integer"
-                },
-                "gateways": {
-                    "type": "integer"
-                },
-                "nodes": {
-                    "type": "integer"
-                },
-                "publicIps": {
-                    "type": "integer"
-                },
-                "totalCru": {
-                    "type": "integer"
-                },
-                "totalHru": {
-                    "type": "integer"
-                },
-                "totalMru": {
-                    "type": "integer"
-                },
-                "totalSru": {
-                    "type": "integer"
-                },
-                "twins": {
-                    "type": "integer"
-                }
-            }
-        },
-        "db.PublicConfig": {
-            "type": "object",
-            "properties": {
-                "domain": {
-                    "type": "string"
-                },
-                "gw4": {
-                    "type": "string"
-                },
-                "gw6": {
-                    "type": "string"
-                },
-                "ipv4": {
-                    "type": "string"
-                },
-                "ipv6": {
-                    "type": "string"
-                }
-            }
-        },
-        "db.PublicIP": {
-            "type": "object",
-            "properties": {
-                "contractId": {
-                    "type": "integer"
-                },
-                "farmId": {
-                    "type": "string"
-                },
-                "gateway": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ip": {
-                    "type": "string"
-                }
-            }
-        },
-        "explorer.contract": {
-            "type": "object",
-            "properties": {
-                "billing": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.ContractBilling"
-                    }
-                },
-                "contractId": {
-                    "type": "integer"
-                },
-                "created_at": {
-                    "type": "integer"
-                },
-                "details": {},
-                "state": {
-                    "type": "string"
-                },
-                "twinId": {
-                    "type": "integer"
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
-        },
-        "explorer.farm": {
-            "type": "object",
-            "properties": {
-                "certificationType": {
-                    "type": "string"
-                },
-                "dedicated": {
-                    "type": "boolean"
-                },
-                "farmId": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pricingPolicyId": {
-                    "type": "integer"
-                },
-                "publicIps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.PublicIP"
-                    }
-                },
-                "stellarAddress": {
-                    "type": "string"
-                },
-                "twinId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "explorer.location": {
-            "type": "object",
-            "properties": {
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                }
-            }
-        },
-        "explorer.node": {
-            "type": "object",
-            "properties": {
-                "certificationType": {
-                    "type": "string"
-                },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "integer"
-                },
-                "dedicated": {
-                    "type": "boolean"
-                },
-                "farmId": {
-                    "type": "integer"
-                },
-                "farmingPolicyId": {
-                    "type": "integer"
-                },
-                "gridVersion": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "location": {
-                    "$ref": "#/definitions/explorer.location"
-                },
-                "nodeId": {
-                    "type": "integer"
-                },
-                "publicConfig": {
-                    "$ref": "#/definitions/db.PublicConfig"
-                },
-                "rentContractId": {
-                    "type": "integer"
-                },
-                "rentedByTwinId": {
-                    "type": "integer"
-                },
-                "status": {
-                    "description": "added node status field for up or down",
-                    "type": "string"
-                },
-                "total_resources": {
-                    "$ref": "#/definitions/db.Capacity"
-                },
-                "twinId": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "integer"
-                },
-                "uptime": {
-                    "type": "integer"
-                },
-                "used_resources": {
-                    "$ref": "#/definitions/db.Capacity"
-                }
-            }
-        },
         "rmbproxy.Message": {
             "type": "object",
             "properties": {
@@ -1041,7 +805,11 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "integer"
-                    }
+                    },
+                    "example": [
+                        2,
+                        3
+                    ]
                 },
                 "err": {
                     "type": "string",
@@ -1087,6 +855,348 @@ const docTemplate = `{
                 "retqueue": {
                     "type": "string",
                     "example": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                }
+            }
+        },
+        "types.Capacity": {
+            "type": "object",
+            "properties": {
+                "cru": {
+                    "type": "integer"
+                },
+                "hru": {
+                    "type": "integer"
+                },
+                "mru": {
+                    "type": "integer"
+                },
+                "sru": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.CapacityResult": {
+            "type": "object",
+            "properties": {
+                "total_resources": {
+                    "$ref": "#/definitions/types.Capacity"
+                },
+                "used_resources": {
+                    "$ref": "#/definitions/types.Capacity"
+                }
+            }
+        },
+        "types.Contract": {
+            "type": "object",
+            "properties": {
+                "billing": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.ContractBilling"
+                    }
+                },
+                "contractId": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "details": {},
+                "state": {
+                    "type": "string"
+                },
+                "twinId": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.ContractBilling": {
+            "type": "object",
+            "properties": {
+                "amountBilled": {
+                    "type": "integer"
+                },
+                "discountReceived": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.Counters": {
+            "type": "object",
+            "properties": {
+                "accessNodes": {
+                    "type": "integer"
+                },
+                "contracts": {
+                    "type": "integer"
+                },
+                "countries": {
+                    "type": "integer"
+                },
+                "farms": {
+                    "type": "integer"
+                },
+                "gateways": {
+                    "type": "integer"
+                },
+                "nodes": {
+                    "type": "integer"
+                },
+                "nodesDistribution": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "publicIps": {
+                    "type": "integer"
+                },
+                "totalCru": {
+                    "type": "integer"
+                },
+                "totalHru": {
+                    "type": "integer"
+                },
+                "totalMru": {
+                    "type": "integer"
+                },
+                "totalSru": {
+                    "type": "integer"
+                },
+                "twins": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.Farm": {
+            "type": "object",
+            "properties": {
+                "certificationType": {
+                    "type": "string"
+                },
+                "dedicated": {
+                    "type": "boolean"
+                },
+                "farmId": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pricingPolicyId": {
+                    "type": "integer"
+                },
+                "publicIps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.PublicIP"
+                    }
+                },
+                "stellarAddress": {
+                    "type": "string"
+                },
+                "twinId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.Location": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.Node": {
+            "type": "object",
+            "properties": {
+                "certificationType": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "integer"
+                },
+                "dedicated": {
+                    "type": "boolean"
+                },
+                "farmId": {
+                    "type": "integer"
+                },
+                "farmingPolicyId": {
+                    "type": "integer"
+                },
+                "gridVersion": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/types.Location"
+                },
+                "nodeId": {
+                    "type": "integer"
+                },
+                "publicConfig": {
+                    "$ref": "#/definitions/types.PublicConfig"
+                },
+                "rentContractId": {
+                    "type": "integer"
+                },
+                "rentedByTwinId": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "added node status field for up or down",
+                    "type": "string"
+                },
+                "total_resources": {
+                    "$ref": "#/definitions/types.Capacity"
+                },
+                "twinId": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "integer"
+                },
+                "uptime": {
+                    "type": "integer"
+                },
+                "used_resources": {
+                    "$ref": "#/definitions/types.Capacity"
+                }
+            }
+        },
+        "types.NodeWithNestedCapacity": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "$ref": "#/definitions/types.CapacityResult"
+                },
+                "certificationType": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "integer"
+                },
+                "dedicated": {
+                    "type": "boolean"
+                },
+                "farmId": {
+                    "type": "integer"
+                },
+                "farmingPolicyId": {
+                    "type": "integer"
+                },
+                "gridVersion": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/types.Location"
+                },
+                "nodeId": {
+                    "type": "integer"
+                },
+                "publicConfig": {
+                    "$ref": "#/definitions/types.PublicConfig"
+                },
+                "rentContractId": {
+                    "type": "integer"
+                },
+                "rentedByTwinId": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "added node status field for up or down",
+                    "type": "string"
+                },
+                "twinId": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "integer"
+                },
+                "uptime": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.PublicConfig": {
+            "type": "object",
+            "properties": {
+                "domain": {
+                    "type": "string"
+                },
+                "gw4": {
+                    "type": "string"
+                },
+                "gw6": {
+                    "type": "string"
+                },
+                "ipv4": {
+                    "type": "string"
+                },
+                "ipv6": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.PublicIP": {
+            "type": "object",
+            "properties": {
+                "contractId": {
+                    "type": "integer"
+                },
+                "farmId": {
+                    "type": "string"
+                },
+                "gateway": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.Twin": {
+            "type": "object",
+            "properties": {
+                "accountId": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "twinId": {
+                    "type": "integer"
                 }
             }
         }
