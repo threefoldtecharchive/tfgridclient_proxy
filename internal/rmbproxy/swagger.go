@@ -9,7 +9,7 @@ type Message struct {
 	Retry      int      `json:"try" example:"2"`
 	Data       string   `json:"dat" example:""`
 	TwinSrc    uint32   `json:"src" example:"1"`
-	TwinDest   []uint32 `json:"dst" example:"[2]"`
+	TwinDest   []uint32 `json:"dst" example:"2,3"`
 	Retqueue   string   `json:"ret" example:""`
 	Schema     string   `json:"shm" example:""`
 	Epoch      int64    `json:"now" example:"1631078674"`

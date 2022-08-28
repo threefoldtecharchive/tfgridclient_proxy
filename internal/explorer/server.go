@@ -45,7 +45,7 @@ const (
 // @Param certification_type query string false "certificate type DIY or Certified"
 // @Param dedicated query bool false "farm is dedicated"
 // @Param stellar_address query string false "farm stellar_address"
-// @Success 200 {object} []farm
+// @Success 200 {object} []types.Farm
 // @Router /farms [get]
 func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleFarmRequestsQueryParams(r)
@@ -84,7 +84,7 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 // @Accept  json
 // @Produce  json
 // @Param status query string false "Node status filter, up/down."
-// @Success 200 {object} []db.Counters
+// @Success 200 {object} []types.Counters
 // @Router /stats [get]
 func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 	filter, err := a.handleStatsRequestsQueryParams(r)
@@ -120,10 +120,11 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Param domain query string false "Set to true to filter nodes with domain"
 // @Param dedicated query bool false "Set to true to get the dedicated nodes only"
 // @Param rentable query bool false "Set to true to filter the available nodes for renting"
+// @Param rented query bool false "Set to true to filter rented nodes"
 // @Param rented_by query int false "rented by twin id"
 // @Param available_for query int false "available for twin id"
 // @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
-// @Success 200 {object} []node
+// @Success 200 {object} []types.Node
 // @Router /nodes [get]
 // @Router /gateways [get]
 func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
@@ -158,7 +159,7 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 // @Param node_id path int false "Node ID"
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} node
+// @Success 200 {object} types.NodeWithNestedCapacity
 // @Router /nodes/{node_id} [get]
 // @Router /gateways/{node_id} [get]
 func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {
@@ -193,7 +194,7 @@ func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
 // @Param ret_count query string false "Set farms' count on headers based on filter"
 // @Param twin_id query int false "twin id"
 // @Param account_id query string false "account address"
-// @Success 200 {object} []farm
+// @Success 200 {object} []types.Twin
 // @Router /twins [get]
 func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleTwinRequestsQueryParams(r)
@@ -236,7 +237,7 @@ func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 // @Param deployment_data query string false "contract deployment data in case of 'node' contracts"
 // @Param deployment_hash query string false "contract deployment hash in case of 'node' contracts"
 // @Param number_of_public_ips query int false "Min number of public ips in the 'node' contract"
-// @Success 200 {object} []contract
+// @Success 200 {object} []types.Contract
 // @Router /contracts [get]
 func (a *App) listContracts(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleContractRequestsQueryParams(r)

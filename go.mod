@@ -10,7 +10,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.26.0
 	github.com/swaggo/http-swagger v1.1.1
-	github.com/swaggo/swag v1.8.1
+	github.com/swaggo/swag v1.8.6-0.20220826192336-007219f7b3f9
 	github.com/threefoldtech/substrate-client v0.0.0-20220629072807-544d41e5b81a
 	github.com/threefoldtech/zos v0.5.6-0.20220629073825-73f495f28c80
 	gorm.io/driver/postgres v1.3.5
@@ -50,7 +50,7 @@ require (
 	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14 // indirect
 	github.com/vedhavyas/go-subkey v1.0.3 // indirect
 	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
-	golang.org/x/net v0.0.0-20220403103023-749bd193bc2b // indirect
+	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
 	golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.10 // indirect

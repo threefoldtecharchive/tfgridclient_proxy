@@ -1,168 +1,5 @@
 basePath: /
 definitions:
-  db.Capacity:
-    properties:
-      cru:
-        type: integer
-      hru:
-        type: integer
-      mru:
-        type: integer
-      sru:
-        type: integer
-    type: object
-  db.ContractBilling:
-    properties:
-      amountBilled:
-        type: integer
-      discountReceived:
-        type: string
-      timestamp:
-        type: integer
-    type: object
-  db.Counters:
-    properties:
-      accessNodes:
-        type: integer
-      contracts:
-        type: integer
-      countries:
-        type: integer
-      farms:
-        type: integer
-      gateways:
-        type: integer
-      nodes:
-        type: integer
-      publicIps:
-        type: integer
-      totalCru:
-        type: integer
-      totalHru:
-        type: integer
-      totalMru:
-        type: integer
-      totalSru:
-        type: integer
-      twins:
-        type: integer
-    type: object
-  db.PublicConfig:
-    properties:
-      domain:
-        type: string
-      gw4:
-        type: string
-      gw6:
-        type: string
-      ipv4:
-        type: string
-      ipv6:
-        type: string
-    type: object
-  db.PublicIP:
-    properties:
-      contractId:
-        type: integer
-      farmId:
-        type: string
-      gateway:
-        type: string
-      id:
-        type: string
-      ip:
-        type: string
-    type: object
-  explorer.contract:
-    properties:
-      billing:
-        items:
-          $ref: '#/definitions/db.ContractBilling'
-        type: array
-      contractId:
-        type: integer
-      created_at:
-        type: integer
-      details: {}
-      state:
-        type: string
-      twinId:
-        type: integer
-      type:
-        type: string
-    type: object
-  explorer.farm:
-    properties:
-      certificationType:
-        type: string
-      dedicated:
-        type: boolean
-      farmId:
-        type: integer
-      name:
-        type: string
-      pricingPolicyId:
-        type: integer
-      publicIps:
-        items:
-          $ref: '#/definitions/db.PublicIP'
-        type: array
-      stellarAddress:
-        type: string
-      twinId:
-        type: integer
-    type: object
-  explorer.location:
-    properties:
-      city:
-        type: string
-      country:
-        type: string
-    type: object
-  explorer.node:
-    properties:
-      certificationType:
-        type: string
-      city:
-        type: string
-      country:
-        type: string
-      created:
-        type: integer
-      dedicated:
-        type: boolean
-      farmId:
-        type: integer
-      farmingPolicyId:
-        type: integer
-      gridVersion:
-        type: integer
-      id:
-        type: string
-      location:
-        $ref: '#/definitions/explorer.location'
-      nodeId:
-        type: integer
-      publicConfig:
-        $ref: '#/definitions/db.PublicConfig'
-      rentContractId:
-        type: integer
-      rentedByTwinId:
-        type: integer
-      status:
-        description: added node status field for up or down
-        type: string
-      total_resources:
-        $ref: '#/definitions/db.Capacity'
-      twinId:
-        type: integer
-      updatedAt:
-        type: integer
-      uptime:
-        type: integer
-      used_resources:
-        $ref: '#/definitions/db.Capacity'
-    type: object
   rmbproxy.Message:
     properties:
       cmd:
@@ -172,6 +9,9 @@ definitions:
         example: ""
         type: string
       dst:
+        example:
+        - 2
+        - 3
         items:
           type: integer
         type: array
@@ -208,6 +48,231 @@ definitions:
       retqueue:
         example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
         type: string
+    type: object
+  types.Capacity:
+    properties:
+      cru:
+        type: integer
+      hru:
+        type: integer
+      mru:
+        type: integer
+      sru:
+        type: integer
+    type: object
+  types.CapacityResult:
+    properties:
+      total_resources:
+        $ref: '#/definitions/types.Capacity'
+      used_resources:
+        $ref: '#/definitions/types.Capacity'
+    type: object
+  types.Contract:
+    properties:
+      billing:
+        items:
+          $ref: '#/definitions/types.ContractBilling'
+        type: array
+      contractId:
+        type: integer
+      created_at:
+        type: integer
+      details: {}
+      state:
+        type: string
+      twinId:
+        type: integer
+      type:
+        type: string
+    type: object
+  types.ContractBilling:
+    properties:
+      amountBilled:
+        type: integer
+      discountReceived:
+        type: string
+      timestamp:
+        type: integer
+    type: object
+  types.Counters:
+    properties:
+      accessNodes:
+        type: integer
+      contracts:
+        type: integer
+      countries:
+        type: integer
+      farms:
+        type: integer
+      gateways:
+        type: integer
+      nodes:
+        type: integer
+      nodesDistribution:
+        additionalProperties:
+          type: integer
+        type: object
+      publicIps:
+        type: integer
+      totalCru:
+        type: integer
+      totalHru:
+        type: integer
+      totalMru:
+        type: integer
+      totalSru:
+        type: integer
+      twins:
+        type: integer
+    type: object
+  types.Farm:
+    properties:
+      certificationType:
+        type: string
+      dedicated:
+        type: boolean
+      farmId:
+        type: integer
+      name:
+        type: string
+      pricingPolicyId:
+        type: integer
+      publicIps:
+        items:
+          $ref: '#/definitions/types.PublicIP'
+        type: array
+      stellarAddress:
+        type: string
+      twinId:
+        type: integer
+    type: object
+  types.Location:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+    type: object
+  types.Node:
+    properties:
+      certificationType:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      created:
+        type: integer
+      dedicated:
+        type: boolean
+      farmId:
+        type: integer
+      farmingPolicyId:
+        type: integer
+      gridVersion:
+        type: integer
+      id:
+        type: string
+      location:
+        $ref: '#/definitions/types.Location'
+      nodeId:
+        type: integer
+      publicConfig:
+        $ref: '#/definitions/types.PublicConfig'
+      rentContractId:
+        type: integer
+      rentedByTwinId:
+        type: integer
+      status:
+        description: added node status field for up or down
+        type: string
+      total_resources:
+        $ref: '#/definitions/types.Capacity'
+      twinId:
+        type: integer
+      updatedAt:
+        type: integer
+      uptime:
+        type: integer
+      used_resources:
+        $ref: '#/definitions/types.Capacity'
+    type: object
+  types.NodeWithNestedCapacity:
+    properties:
+      capacity:
+        $ref: '#/definitions/types.CapacityResult'
+      certificationType:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      created:
+        type: integer
+      dedicated:
+        type: boolean
+      farmId:
+        type: integer
+      farmingPolicyId:
+        type: integer
+      gridVersion:
+        type: integer
+      id:
+        type: string
+      location:
+        $ref: '#/definitions/types.Location'
+      nodeId:
+        type: integer
+      publicConfig:
+        $ref: '#/definitions/types.PublicConfig'
+      rentContractId:
+        type: integer
+      rentedByTwinId:
+        type: integer
+      status:
+        description: added node status field for up or down
+        type: string
+      twinId:
+        type: integer
+      updatedAt:
+        type: integer
+      uptime:
+        type: integer
+    type: object
+  types.PublicConfig:
+    properties:
+      domain:
+        type: string
+      gw4:
+        type: string
+      gw6:
+        type: string
+      ipv4:
+        type: string
+      ipv6:
+        type: string
+    type: object
+  types.PublicIP:
+    properties:
+      contractId:
+        type: integer
+      farmId:
+        type: string
+      gateway:
+        type: string
+      id:
+        type: string
+      ip:
+        type: string
+    type: object
+  types.Twin:
+    properties:
+      accountId:
+        type: string
+      ip:
+        type: string
+      twinId:
+        type: integer
     type: object
 info:
   contact: {}
@@ -281,7 +346,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/explorer.contract'
+              $ref: '#/definitions/types.Contract'
             type: array
       summary: Show contracts on the grid
       tags:
@@ -355,7 +420,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/explorer.farm'
+              $ref: '#/definitions/types.Farm'
             type: array
       summary: Show farms on the grid
       tags:
@@ -430,6 +495,10 @@ paths:
         in: query
         name: rentable
         type: boolean
+      - description: Set to true to filter rented nodes
+        in: query
+        name: rented
+        type: boolean
       - description: rented by twin id
         in: query
         name: rented_by
@@ -449,7 +518,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/explorer.node'
+              $ref: '#/definitions/types.Node'
             type: array
       summary: Show nodes on the grid
       tags:
@@ -470,7 +539,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/explorer.node'
+            $ref: '#/definitions/types.NodeWithNestedCapacity'
       summary: Show the details for specific node
       tags:
       - GridProxy
@@ -544,6 +613,10 @@ paths:
         in: query
         name: rentable
         type: boolean
+      - description: Set to true to filter rented nodes
+        in: query
+        name: rented
+        type: boolean
       - description: rented by twin id
         in: query
         name: rented_by
@@ -563,7 +636,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/explorer.node'
+              $ref: '#/definitions/types.Node'
             type: array
       summary: Show nodes on the grid
       tags:
@@ -584,7 +657,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/explorer.node'
+            $ref: '#/definitions/types.NodeWithNestedCapacity'
       summary: Show the details for specific node
       tags:
       - GridProxy
@@ -620,7 +693,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/db.Counters'
+              $ref: '#/definitions/types.Counters'
             type: array
       summary: Show stats about the grid
       tags:
@@ -713,7 +786,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/explorer.farm'
+              $ref: '#/definitions/types.Twin'
             type: array
       summary: Show twins on the grid
       tags:
