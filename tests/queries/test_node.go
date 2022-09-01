@@ -96,7 +96,9 @@ func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.RentedBy != nil && *f.RentedBy != data.nodeRentedBy[node.node_id] {
 		return false
 	}
-	if f.AvailableFor != nil && (*f.AvailableFor != data.nodeRentedBy[node.node_id] && data.nodeRentedBy[node.node_id] != 0) {
+	if f.AvailableFor != nil &&
+		((data.nodeRentedBy[node.node_id] != 0 && data.nodeRentedBy[node.node_id] != *f.AvailableFor) ||
+			(data.nodeRentedBy[node.node_id] != *f.AvailableFor && data.farms[node.farm_id].dedicated_farm)) {
 		return false
 	}
 	if f.Rented != nil {
