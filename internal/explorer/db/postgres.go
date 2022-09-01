@@ -386,7 +386,7 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 		q = q.Where(`COALESCE(rent_contract.twin_id, 0) = ?`, *filter.RentedBy)
 	}
 	if filter.AvailableFor != nil {
-		q = q.Where(`(COALESCE(rent_contract.twin_id, 0) IN (0, ?))`, *filter.AvailableFor)
+		q = q.Where(`COALESCE(rent_contract.twin_id, 0) = ? OR (COALESCE(rent_contract.twin_id, 0) = 0 AND farm.dedicated_farm = false)`, *filter.AvailableFor)
 	}
 	if filter.Rented != nil {
 		q = q.Where(`? = (COALESCE(rent_contract.contract_id, 0) != 0)`, *filter.Rented)
