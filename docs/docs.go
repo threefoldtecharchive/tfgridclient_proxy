@@ -84,7 +84,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "contract state 'Created', or 'Deleted'",
+                        "description": "contract state 'Created', 'GracePeriod', or 'Deleted'",
                         "name": "state",
                         "in": "query"
                     },

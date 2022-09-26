@@ -145,7 +145,7 @@ func calcNodesAggregates(data *DBData) (res NodesAggregate) {
 		res.freeHRUs = append(res.freeHRUs, free.hru)
 	}
 	for _, contract := range data.rentContracts {
-		if contract.state != "Created" {
+		if contract.state == "Deleted" {
 			continue
 		}
 		res.nodeRenters = append(res.nodeRenters, contract.twin_id)

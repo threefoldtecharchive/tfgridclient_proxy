@@ -323,7 +323,7 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 			"LEFT JOIN public_config ON node.id = public_config.node_id",
 		).
 		Joins(
-			"LEFT JOIN rent_contract ON rent_contract.state = 'Created' AND rent_contract.node_id = node.node_id",
+			"LEFT JOIN rent_contract ON rent_contract.state IN ('Created', 'GracePeriod') AND rent_contract.node_id = node.node_id",
 		).
 		Joins(
 			"LEFT JOIN farm ON node.farm_id = farm.farm_id",
