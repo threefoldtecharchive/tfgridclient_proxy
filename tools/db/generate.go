@@ -34,7 +34,7 @@ const (
 	publicIPCount        = 1000
 	twinCount            = nodeCount + farmCount + normalUsers
 	contractCount        = 3000
-	rentContractCount    = 20
+	rentContractCount    = 100
 	nameContractCount    = 300
 
 	maxContractHRU = 1024 * 1024 * 1024 * 300
@@ -129,7 +129,7 @@ func generateContracts(db *sql.DB) error {
 		if nodeUP[nodeID] {
 			if flip(contractCreatedRatio) {
 				state = "Created"
-			} else if flip(0.05) {
+			} else if flip(0.5) {
 				state = "GracePeriod"
 			}
 		}
@@ -210,7 +210,7 @@ func generateNameContracts(db *sql.DB) error {
 		if nodeUP[nodeID] {
 			if flip(contractCreatedRatio) {
 				state = "Created"
-			} else if flip(0.05) {
+			} else if flip(0.5) {
 				state = "GracePeriod"
 			}
 		}
@@ -261,7 +261,7 @@ func generateRentContracts(db *sql.DB) error {
 		if nodeUP[nodeID] {
 			if flip(0.9) {
 				state = "Created"
-			} else if flip(0.05) {
+			} else if flip(0.5) {
 				state = "GracePeriod"
 			}
 		}
@@ -274,7 +274,7 @@ func generateRentContracts(db *sql.DB) error {
 			node_id:      nodeID,
 			grid_version: 3,
 		}
-		if state == "Created" {
+		if state != "Deleted" {
 			renter[nodeID] = contract.twin_id
 		}
 		if _, err := db.Exec(insertQuery(&contract)); err != nil {

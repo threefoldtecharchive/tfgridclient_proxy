@@ -323,7 +323,7 @@ paths:
         in: query
         name: type
         type: string
-      - description: contract state 'Created', or 'Deleted'
+      - description: contract state 'Created', 'GracePeriod', or 'Deleted'
         in: query
         name: state
         type: string

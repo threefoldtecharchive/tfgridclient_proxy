@@ -233,7 +233,7 @@ func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 // @Param node_id query int false "node id which contract is deployed on in case of ('rent' or 'node' contracts)"
 // @Param name query string false "contract name in case of 'name' contracts"
 // @Param type query string false "contract type 'node', 'name', or 'rent'"
-// @Param state query string false "contract state 'Created', or 'Deleted'"
+// @Param state query string false "contract state 'Created', 'GracePeriod', or 'Deleted'"
 // @Param deployment_data query string false "contract deployment data in case of 'node' contracts"
 // @Param deployment_hash query string false "contract deployment hash in case of 'node' contracts"
 // @Param number_of_public_ips query int false "Min number of public ips in the 'node' contract"
