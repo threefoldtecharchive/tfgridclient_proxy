@@ -40,7 +40,7 @@ type PublicConfig struct {
 	Ipv6   string `json:"ipv6"`
 }
 
-//Capacity is the resources needed for workload(cpu, memory, SSD disk, HDD disks)
+// Capacity is the resources needed for workload(cpu, memory, SSD disk, HDD disks)
 type Capacity struct {
 	CRU uint64         `json:"cru"`
 	SRU gridtypes.Unit `json:"sru"`
@@ -99,6 +99,8 @@ type NodeFilter struct {
 	Rented       *bool
 	RentedBy     *uint64
 	AvailableFor *uint64
+	NodeID       *uint64
+	TwinID       *uint64
 }
 
 // FarmFilter farm filters
