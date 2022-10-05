@@ -129,6 +129,8 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (types.NodeFilter, 
 		"free_ips":      &filter.FreeIPs,
 		"rented_by":     &filter.RentedBy,
 		"available_for": &filter.AvailableFor,
+		"node_id":       &filter.NodeID,
+		"twin_id":       &filter.TwinID,
 	}
 	strs := map[string]**string{
 		"status":    &filter.Status,

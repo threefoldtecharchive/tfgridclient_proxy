@@ -358,6 +358,12 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 	if filter.City != nil {
 		q = q.Where("node.city = ?", *filter.City)
 	}
+	if filter.NodeID != nil {
+		q = q.Where("node.node_id = ?", *filter.NodeID)
+	}
+	if filter.TwinID != nil {
+		q = q.Where("node.twin_id = ?", *filter.TwinID)
+	}
 	if filter.FarmIDs != nil {
 		q = q.Where("node.farm_id IN ?", filter.FarmIDs)
 	}

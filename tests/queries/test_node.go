@@ -67,6 +67,12 @@ func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.Country != nil && *f.Country != node.country {
 		return false
 	}
+	if f.NodeID != nil && *f.NodeID != node.node_id {
+		return false
+	}
+	if f.TwinID != nil && *f.TwinID != node.twin_id {
+		return false
+	}
 	if f.City != nil && *f.City != node.city {
 		return false
 	}
@@ -298,6 +304,14 @@ func randomNodeFilter(agg *NodesAggregate) proxytypes.NodeFilter {
 		// 	v = false
 		// }
 		f.Domain = &v
+	}
+	if flip(.5) {
+		v := uint64(rand.Intn(1100)) // 1000 is the total nodes + 100 for non-existed cases
+		f.NodeID = &v
+	}
+	if flip(.5) {
+		v := uint64(rand.Intn(3500))
+		f.TwinID = &v
 	}
 	if flip(.05) {
 		v := true
