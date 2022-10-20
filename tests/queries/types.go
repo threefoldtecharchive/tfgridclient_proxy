@@ -113,3 +113,8 @@ type name_contract struct {
 	state        string
 	created_at   uint64
 }
+
+type node_status_cache struct {
+	id     uint64
+	status string
+}

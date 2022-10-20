@@ -36,7 +36,7 @@ func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytyp
 	for _, node := range g.data.nodes {
 		if nodeSatisfies(&g.data, node, filter) {
 			status := "down"
-			if isUp(node.updated_at) {
+			if isUp(node.node_id, g.data.nodeStatusCache, node.updated_at) {
 				status = "up"
 			}
 			res = append(res, proxytypes.Node{
@@ -276,7 +276,7 @@ func (g *GridProxyClientimpl) Twins(filter proxytypes.TwinFilter, limit proxytyp
 func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.NodeWithNestedCapacity, err error) {
 	node := g.data.nodes[uint64(nodeID)]
 	status := "down"
-	if isUp(node.updated_at) {
+	if isUp(node.node_id, g.data.nodeStatusCache, node.updated_at) {
 		status = "up"
 	}
 	res = proxytypes.NodeWithNestedCapacity{
@@ -327,10 +327,9 @@ func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.NodeWithNested
 
 func (g *GridProxyClientimpl) NodeStatus(nodeID uint32) (res proxytypes.NodeStatus, err error) {
 	node := g.data.nodes[uint64(nodeID)]
-	if isUp(node.updated_at) {
+	res.Status = "down"
+	if isUp(node.node_id, g.data.nodeStatusCache, node.updated_at) {
 		res.Status = "up"
-	} else {
-		res.Status = "down"
 	}
 	return
 }
@@ -344,7 +343,7 @@ func (g *GridProxyClientimpl) Counters(filter proxytypes.StatsFilter) (res proxy
 	res.Contracts += int64(len(g.data.nameContracts))
 	distribution := map[string]int64{}
 	for _, node := range g.data.nodes {
-		if filter.Status == nil || (filter.Status != nil && *filter.Status == "up" && isUp(node.updated_at)) {
+		if filter.Status == nil || (filter.Status != nil && *filter.Status == "up" && isUp(node.node_id, g.data.nodeStatusCache, node.updated_at)) {
 			res.Nodes++
 			distribution[node.country] += 1
 			res.TotalCRU += int64(g.data.nodeTotalResources[node.node_id].cru)

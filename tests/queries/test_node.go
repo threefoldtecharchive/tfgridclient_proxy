@@ -49,7 +49,7 @@ type NodesAggregate struct {
 }
 
 func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
-	if f.Status != nil && (*f.Status == "up") != isUp(node.updated_at) {
+	if f.Status != nil && (*f.Status == "up") != isUp(node.node_id, data.nodeStatusCache, node.updated_at) {
 		return false
 	}
 	total := data.nodeTotalResources[node.node_id]

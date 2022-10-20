@@ -379,6 +379,33 @@ func generateNodes(db *sql.DB) error {
 	return nil
 }
 
+func generateNodeStatusCache(db *sql.DB) error {
+	_, err := db.Exec(`
+		CREATE TABLE node_status_cache (
+			id INT PRIMARY KEY,
+			status VARCHAR(10)
+		)
+	`)
+	if err != nil {
+		return err
+	}
+	for i := 1; i < nodeCount; i++ {
+		var status string
+		if flip(.3) {
+			status = "up"
+		} else if flip(.5) {
+			status = "down"
+		} else {
+			continue
+		}
+		node_status := node_status_cache{id: uint64(i), status: status}
+		if _, err := db.Exec(insertQuery(&node_status)); err != nil {
+			panic(err)
+		}
+	}
+	return nil
+}
+
 func generateData(db *sql.DB) error {
 	if err := generateTwins(db); err != nil {
 		panic(err)
@@ -399,6 +426,9 @@ func generateData(db *sql.DB) error {
 		panic(err)
 	}
 	if err := generatePublicIPs(db); err != nil {
+		panic(err)
+	}
+	if err := generateNodeStatusCache(db); err != nil {
 		panic(err)
 	}
 	return nil

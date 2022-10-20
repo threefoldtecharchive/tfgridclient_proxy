@@ -1,6 +1,7 @@
 package explorer
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 	"github.com/threefoldtech/grid_proxy_server/pkg/types"
+	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
@@ -317,5 +319,33 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage))
 	router.HandleFunc("/version", mw.AsHandlerFunc(a.version))
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
+
+	go updateCacheRoutine(a)
+
 	return nil
+}
+
+func updateCacheRoutine(a App) {
+	// time to just pass tests before manipulating data
+	time.Sleep(time.Minute * 10)
+
+	for {
+		nodes, _, err := a.db.GetNodes(types.NodeFilter{}, types.Limit{})
+		for _, node := range nodes {
+			const cmd = "zos.statistics.get"
+			var result struct {
+				Total gridtypes.Capacity `json:"total"`
+				Used  gridtypes.Capacity `json:"used"`
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+			defer cancel()
+			err = a.rmb.Call(ctx, uint32(node.TwinID), cmd, nil, &result)
+			if err != nil {
+				a.db.SetNodeStatusCache(uint32(node.NodeID), "up")
+				continue
+			}
+			a.db.SetNodeStatusCache(uint32(node.NodeID), "down")
+		}
+		time.Sleep(time.Minute * 10)
+	}
 }

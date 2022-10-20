@@ -28,7 +28,33 @@ type DBData struct {
 	billings            map[uint64][]contract_bill_report
 	contractResources   map[string]contract_resources
 	nonDeletedContracts map[uint64][]uint64
+	nodeStatusCache     map[uint64]node_status_cache
 	db                  *sql.DB
+}
+
+func loadNodeStatusCache(db *sql.DB, data *DBData) error {
+	rows, err := db.Query(`
+		SELECT 
+			id,
+			status
+		FROM
+			node_status_cache
+	`)
+	if err != nil {
+		return err
+	}
+	data.nodeStatusCache = map[uint64]node_status_cache{}
+	for rows.Next() {
+		var node node_status_cache
+		if err := rows.Scan(
+			&node.id,
+			&node.status,
+		); err != nil {
+			return err
+		}
+		data.nodeStatusCache[node.id] = node
+	}
+	return nil
 }
 
 func loadNodes(db *sql.DB, data *DBData) error {
@@ -527,6 +553,9 @@ func load(db *sql.DB) (DBData, error) {
 		return data, err
 	}
 	if err := calcFreeIPs(&data); err != nil {
+		return data, err
+	}
+	if err := loadNodeStatusCache(db, &data); err != nil {
 		return data, err
 	}
 	return data, nil

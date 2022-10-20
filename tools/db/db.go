@@ -83,6 +83,7 @@ func main() {
 			DROP TABLE IF EXISTS typeorm_metadata CASCADE;
 			DROP TABLE IF EXISTS uptime_event CASCADE;
 			DROP SCHEMA IF EXISTS substrate_threefold_status CASCADE;
+			DROP TABLE IF EXISTS node_status_cache;
 			
 		`); err != nil {
 			panic(err)
