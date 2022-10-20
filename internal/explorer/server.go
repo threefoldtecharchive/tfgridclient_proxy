@@ -331,20 +331,27 @@ func updateCacheRoutine(a App) {
 
 	for {
 		nodes, _, err := a.db.GetNodes(types.NodeFilter{}, types.Limit{})
+		if err != nil {
+			continue
+		}
 		for _, node := range nodes {
 			const cmd = "zos.statistics.get"
 			var result struct {
 				Total gridtypes.Capacity `json:"total"`
 				Used  gridtypes.Capacity `json:"used"`
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
-			defer cancel()
-			err = a.rmb.Call(ctx, uint32(node.TwinID), cmd, nil, &result)
+			err = a.rmb.Call(context.Background(), uint32(node.TwinID), cmd, nil, &result)
 			if err != nil {
-				a.db.SetNodeStatusCache(uint32(node.NodeID), "up")
+				errSet := a.db.SetNodeStatusCache(uint32(node.NodeID), "up")
+				if errSet != nil {
+					log.Printf("error setting status cache: %+v", errSet)
+				}
 				continue
 			}
-			a.db.SetNodeStatusCache(uint32(node.NodeID), "down")
+			errSet := a.db.SetNodeStatusCache(uint32(node.NodeID), "down")
+			if errSet != nil {
+				log.Printf("error setting status cache: %+v", errSet)
+			}
 		}
 		time.Sleep(time.Minute * 10)
 	}

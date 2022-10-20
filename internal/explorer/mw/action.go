@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/rs/zerolog/log"
@@ -39,7 +38,7 @@ func exposeHeaders(w *http.ResponseWriter) {
 func AsProxyHandlerFunc(a ProxyAction) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
-			_, _ = ioutil.ReadAll(r.Body)
+			_, _ = io.ReadAll(r.Body)
 			_ = r.Body.Close()
 		}()
 		enableCors(&w)
@@ -105,7 +104,7 @@ func AsProxyHandlerFunc(a ProxyAction) http.HandlerFunc {
 func AsHandlerFunc(a Action) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
-			_, _ = ioutil.ReadAll(r.Body)
+			_, _ = io.ReadAll(r.Body)
 			_ = r.Body.Close()
 		}()
 		enableCors(&w)

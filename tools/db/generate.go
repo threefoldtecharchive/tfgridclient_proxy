@@ -3,7 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -48,7 +48,7 @@ const (
 )
 
 func initSchema(db *sql.DB) error {
-	schema, err := ioutil.ReadFile("./schema.sql")
+	schema, err := os.ReadFile("./schema.sql")
 	if err != nil {
 		panic(err)
 	}
