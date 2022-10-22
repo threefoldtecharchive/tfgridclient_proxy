@@ -3,6 +3,7 @@ package main
 import (
 	"math"
 	"sort"
+	"strings"
 
 	proxyclient "github.com/threefoldtech/grid_proxy_server/pkg/client"
 	proxytypes "github.com/threefoldtech/grid_proxy_server/pkg/types"
@@ -35,9 +36,9 @@ func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytyp
 	}
 	for _, node := range g.data.nodes {
 		if nodeSatisfies(&g.data, node, filter) {
-			status := "down"
+			status := STATUS_DOWN
 			if isUp(node.node_id, g.data.nodeStatusCache, node.updated_at) {
-				status = "up"
+				status = STATUS_UP
 			}
 			res = append(res, proxytypes.Node{
 				ID:              node.id,
@@ -275,9 +276,9 @@ func (g *GridProxyClientimpl) Twins(filter proxytypes.TwinFilter, limit proxytyp
 }
 func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.NodeWithNestedCapacity, err error) {
 	node := g.data.nodes[uint64(nodeID)]
-	status := "down"
+	status := STATUS_DOWN
 	if isUp(node.node_id, g.data.nodeStatusCache, node.updated_at) {
-		status = "up"
+		status = STATUS_UP
 	}
 	res = proxytypes.NodeWithNestedCapacity{
 		ID:              node.id,
@@ -327,9 +328,9 @@ func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.NodeWithNested
 
 func (g *GridProxyClientimpl) NodeStatus(nodeID uint32) (res proxytypes.NodeStatus, err error) {
 	node := g.data.nodes[uint64(nodeID)]
-	res.Status = "down"
+	res.Status = STATUS_DOWN
 	if isUp(node.node_id, g.data.nodeStatusCache, node.updated_at) {
-		res.Status = "up"
+		res.Status = STATUS_UP
 	}
 	return
 }
@@ -343,7 +344,7 @@ func (g *GridProxyClientimpl) Counters(filter proxytypes.StatsFilter) (res proxy
 	res.Contracts += int64(len(g.data.nameContracts))
 	distribution := map[string]int64{}
 	for _, node := range g.data.nodes {
-		if filter.Status == nil || (filter.Status != nil && *filter.Status == "up" && isUp(node.node_id, g.data.nodeStatusCache, node.updated_at)) {
+		if filter.Status == nil || (*filter.Status == "up" && isUp(node.node_id, g.data.nodeStatusCache, node.updated_at)) {
 			res.Nodes++
 			distribution[node.country] += 1
 			res.TotalCRU += int64(g.data.nodeTotalResources[node.node_id].cru)
@@ -362,4 +363,207 @@ func (g *GridProxyClientimpl) Counters(filter proxytypes.StatsFilter) (res proxy
 	res.NodesDistribution = distribution
 
 	return
+}
+
+func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
+	if f.Status != nil && (*f.Status == STATUS_UP) != isUp(node.node_id, data.nodeStatusCache, node.updated_at) {
+		return false
+	}
+	total := data.nodeTotalResources[node.node_id]
+	used := data.nodeUsedResources[node.node_id]
+	free := calcFreeResources(total, used)
+	if f.FreeMRU != nil && *f.FreeMRU > free.mru {
+		return false
+	}
+	if f.FreeHRU != nil && *f.FreeHRU > free.hru {
+		return false
+	}
+	if f.FreeSRU != nil && *f.FreeSRU > free.sru {
+		return false
+	}
+	if f.Country != nil && *f.Country != node.country {
+		return false
+	}
+	if f.NodeID != nil && *f.NodeID != node.node_id {
+		return false
+	}
+	if f.TwinID != nil && *f.TwinID != node.twin_id {
+		return false
+	}
+	if f.City != nil && *f.City != node.city {
+		return false
+	}
+	if f.FarmName != nil && *f.FarmName != data.farms[node.farm_id].name {
+		return false
+	}
+	if f.FarmIDs != nil && !isIn(f.FarmIDs, node.farm_id) {
+		return false
+	}
+	if f.FreeIPs != nil && *f.FreeIPs > data.FreeIPs[node.farm_id] {
+		return false
+	}
+	if f.IPv4 != nil && *f.IPv4 && data.publicConfigs[node.node_id].ipv4 == "" {
+		return false
+	}
+	if f.IPv6 != nil && *f.IPv6 && data.publicConfigs[node.node_id].ipv6 == "" {
+		return false
+	}
+	if f.Domain != nil && *f.Domain && data.publicConfigs[node.node_id].domain == "" {
+		return false
+	}
+	rentable := data.nodeRentedBy[node.node_id] == 0 &&
+		(data.farms[node.farm_id].dedicated_farm || len(data.nonDeletedContracts[node.node_id]) == 0)
+	if f.Rentable != nil && *f.Rentable != rentable {
+		return false
+	}
+	if f.RentedBy != nil && *f.RentedBy != data.nodeRentedBy[node.node_id] {
+		return false
+	}
+	if f.AvailableFor != nil &&
+		((data.nodeRentedBy[node.node_id] != 0 && data.nodeRentedBy[node.node_id] != *f.AvailableFor) ||
+			(data.nodeRentedBy[node.node_id] != *f.AvailableFor && data.farms[node.farm_id].dedicated_farm)) {
+		return false
+	}
+	if f.Rented != nil {
+		_, ok := data.nodeRentedBy[node.node_id]
+		return ok == *f.Rented
+	}
+	return true
+}
+
+func twinSatisfies(twin twin, f proxytypes.TwinFilter) bool {
+	if f.TwinID != nil && twin.twin_id != *f.TwinID {
+		return false
+	}
+	if f.AccountID != nil && twin.account_id != *f.AccountID {
+		return false
+	}
+	return true
+}
+
+func farmSatisfies(data *DBData, farm farm, f proxytypes.FarmFilter) bool {
+	if f.FreeIPs != nil && *f.FreeIPs > data.FreeIPs[farm.farm_id] {
+		return false
+	}
+	if f.TotalIPs != nil && *f.TotalIPs > data.TotalIPs[farm.farm_id] {
+		return false
+	}
+	if f.StellarAddress != nil && *f.StellarAddress != farm.stellar_address {
+		return false
+	}
+	if f.PricingPolicyID != nil && *f.PricingPolicyID != farm.pricing_policy_id {
+		return false
+	}
+	if f.FarmID != nil && *f.FarmID != farm.farm_id {
+		return false
+	}
+	if f.TwinID != nil && *f.TwinID != farm.twin_id {
+		return false
+	}
+	if f.Name != nil && *f.Name != "" && *f.Name != farm.name {
+		return false
+	}
+	if f.NameContains != nil && *f.NameContains != "" && !strings.Contains(farm.name, *f.NameContains) {
+		return false
+	}
+	if f.CertificationType != nil && *f.CertificationType != "" && *f.CertificationType != farm.certification {
+		return false
+	}
+	if f.Dedicated != nil && *f.Dedicated != farm.dedicated_farm {
+		return false
+	}
+	return true
+}
+
+func rentContractsSatisfies(contract rent_contract, f proxytypes.ContractFilter) bool {
+	if f.ContractID != nil && contract.contract_id != *f.ContractID {
+		return false
+	}
+	if f.TwinID != nil && contract.twin_id != *f.TwinID {
+		return false
+	}
+	if f.NodeID != nil && contract.node_id != *f.NodeID {
+		return false
+	}
+	if f.Type != nil && *f.Type != "rent" {
+		return false
+	}
+	if f.State != nil && contract.state != *f.State {
+		return false
+	}
+	if f.Name != nil && *f.Name != "" {
+		return false
+	}
+	if f.NumberOfPublicIps != nil && *f.NumberOfPublicIps != 0 {
+		return false
+	}
+	if f.DeploymentData != nil && *f.DeploymentData != "" {
+		return false
+	}
+	if f.DeploymentHash != nil && *f.DeploymentHash != "" {
+		return false
+	}
+	return true
+}
+
+func nameContractsSatisfies(contract name_contract, f proxytypes.ContractFilter) bool {
+	if f.ContractID != nil && contract.contract_id != *f.ContractID {
+		return false
+	}
+	if f.TwinID != nil && contract.twin_id != *f.TwinID {
+		return false
+	}
+	if f.NodeID != nil {
+		return false
+	}
+	if f.Type != nil && *f.Type != "name" {
+		return false
+	}
+	if f.State != nil && contract.state != *f.State {
+		return false
+	}
+	if f.Name != nil && *f.Name != contract.name {
+		return false
+	}
+	if f.NumberOfPublicIps != nil && *f.NumberOfPublicIps != 0 {
+		return false
+	}
+	if f.DeploymentData != nil && *f.DeploymentData != "" {
+		return false
+	}
+	if f.DeploymentHash != nil && *f.DeploymentHash != "" {
+		return false
+	}
+	return true
+}
+
+func nodeContractsSatisfies(contract node_contract, f proxytypes.ContractFilter) bool {
+	if f.ContractID != nil && contract.contract_id != *f.ContractID {
+		return false
+	}
+	if f.TwinID != nil && contract.twin_id != *f.TwinID {
+		return false
+	}
+	if f.NodeID != nil && contract.node_id != *f.NodeID {
+		return false
+	}
+	if f.Type != nil && *f.Type != "node" {
+		return false
+	}
+	if f.State != nil && contract.state != *f.State {
+		return false
+	}
+	if f.Name != nil && *f.Name != "" {
+		return false
+	}
+	if f.NumberOfPublicIps != nil && contract.number_of_public_i_ps < *f.NumberOfPublicIps { // TODO: fix
+		return false
+	}
+	if f.DeploymentData != nil && contract.deployment_data != *f.DeploymentData {
+		return false
+	}
+	if f.DeploymentHash != nil && contract.deployment_hash != *f.DeploymentHash {
+		return false
+	}
+	return true
 }
