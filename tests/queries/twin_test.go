@@ -78,7 +78,7 @@ func TestTwins(t *testing.T) {
 			remoteTwins, _, err := proxyClient.Twins(f, l)
 			assert.NoError(t, err)
 			err = validateTwinsResults(localTwins, remoteTwins)
-			assert.NoError(t, err)
+			assert.NoError(t, err, serializeTwinsFilter(f))
 		}
 	})
 }
@@ -140,4 +140,15 @@ func calcTwinsAggregates(data *DBData) (res TwinsAggregate) {
 		return res.ip[i] < res.ip[j]
 	})
 	return
+}
+
+func serializeTwinsFilter(f proxytypes.TwinFilter) string {
+	res := ""
+	if f.TwinID != nil {
+		res = fmt.Sprintf("%sTwinID: %d\n", res, *f.TwinID)
+	}
+	if f.AccountID != nil {
+		res = fmt.Sprintf("%sAccountID: %s\n", res, *f.AccountID)
+	}
+	return res
 }

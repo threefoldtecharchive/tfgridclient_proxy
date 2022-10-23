@@ -68,7 +68,7 @@ func TestContracts(t *testing.T) {
 			assert.Equal(t, localCount, remoteCount)
 
 			err = validateContractsResults(localContracts, remoteContracts)
-			assert.NoError(t, err)
+			assert.NoError(t, err, serializeContractsFilter(f))
 
 			if l.Page*l.Size >= uint64(localCount) {
 				break
@@ -93,7 +93,7 @@ func TestContracts(t *testing.T) {
 			assert.NoError(t, err)
 
 			err = validateContractsResults(localContracts, remoteContracts)
-			assert.NoError(t, err)
+			assert.NoError(t, err, serializeContractsFilter(f))
 
 		}
 	})
@@ -245,4 +245,36 @@ func validateContractBillings(local, remote []proxytypes.ContractBilling) error 
 	}
 
 	return nil
+}
+
+func serializeContractsFilter(f proxytypes.ContractFilter) string {
+	res := ""
+	if f.ContractID != nil {
+		res = fmt.Sprintf("%sContractID: %d\n", res, *f.ContractID)
+	}
+	if f.TwinID != nil {
+		res = fmt.Sprintf("%sTwinID: %d\n", res, *f.TwinID)
+	}
+	if f.NodeID != nil {
+		res = fmt.Sprintf("%sNodeID: %d\n", res, *f.NodeID)
+	}
+	if f.Type != nil {
+		res = fmt.Sprintf("%sType: %s\n", res, *f.Type)
+	}
+	if f.State != nil {
+		res = fmt.Sprintf("%sState: %s\n", res, *f.State)
+	}
+	if f.Name != nil {
+		res = fmt.Sprintf("%sName: %s\n", res, *f.Name)
+	}
+	if f.NumberOfPublicIps != nil {
+		res = fmt.Sprintf("%sNumberOfPublicIps: %d\n", res, *f.NumberOfPublicIps)
+	}
+	if f.DeploymentData != nil {
+		res = fmt.Sprintf("%sDeploymentData: %s\n", res, *f.DeploymentData)
+	}
+	if f.DeploymentHash != nil {
+		res = fmt.Sprintf("%sDeploymentHash: %s\n", res, *f.DeploymentHash)
+	}
+	return res
 }

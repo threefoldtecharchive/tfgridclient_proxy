@@ -75,7 +75,8 @@ func TestNode(t *testing.T) {
 		assert.NoError(t, err)
 		remoteNodes, _, err := proxyClient.Nodes(f, l)
 		assert.NoError(t, err)
-		assert.True(t, reflect.DeepEqual(localNodes, remoteNodes))
+		err = validateResults(localNodes, remoteNodes)
+		assert.NoError(t, err, serializeFilter(f))
 	})
 
 	t.Run("node status test", func(t *testing.T) {
@@ -104,12 +105,8 @@ func TestNode(t *testing.T) {
 			remoteNodes, _, err := proxyClient.Nodes(f, l)
 			assert.NoError(t, err)
 			assert.Equal(t, len(localNodes), len(remoteNodes))
-			if len(localNodes) != len(remoteNodes) {
-				continue
-			}
-			for id := 0; id < len(localNodes); id++ {
-				assert.True(t, reflect.DeepEqual(localNodes[id], remoteNodes[id]))
-			}
+			err = validateResults(localNodes, remoteNodes)
+			assert.NoError(t, err, serializeFilter(f))
 		}
 	})
 
@@ -155,7 +152,8 @@ func nodePaginationCheck(t *testing.T, localClient proxyclient.Client, proxyClie
 		remoteNodes, remoteCount, err := proxyClient.Nodes(f, l)
 		assert.NoError(t, err)
 		assert.Equal(t, remoteCount, localCount, "local and remote counts are not equal")
-		assert.True(t, reflect.DeepEqual(localNodes, remoteNodes))
+		err = validateResults(localNodes, remoteNodes)
+		assert.NoError(t, err, serializeFilter(f))
 		if l.Page*l.Size >= uint64(localCount) {
 			break
 		}
@@ -345,4 +343,79 @@ func calcNodesAggregates(data *DBData) (res NodesAggregate) {
 		return res.twins[i] < res.twins[j]
 	})
 	return
+}
+
+func validateResults(local, remote []proxytypes.Node) error {
+	iter := local
+	if len(remote) < len(local) {
+		iter = remote
+	}
+	for i := range iter {
+		if !reflect.DeepEqual(local[i], remote[i]) {
+			return fmt.Errorf("node %d mismatch: local: %+v, remote: %+v", i, local[i], remote[i])
+		}
+	}
+
+	if len(local) != len(remote) {
+		if len(local) == 0 {
+			return fmt.Errorf("local empty but remote returned: %+v", remote[0])
+		} else if len(remote) == 0 {
+			return fmt.Errorf("remote empty but local returned: %+v", local[0])
+		}
+		return errors.New("length mismatch")
+	}
+	return nil
+}
+
+func serializeFilter(f proxytypes.NodeFilter) string {
+	res := ""
+	if f.Status != nil {
+		res = fmt.Sprintf("%sstatus: %s\n", res, *f.Status)
+	}
+	if f.FreeMRU != nil {
+		res = fmt.Sprintf("%sFreeMRU: %d\n", res, *f.FreeMRU)
+	}
+	if f.FreeSRU != nil {
+		res = fmt.Sprintf("%sFreeSRU: %d\n", res, *f.FreeSRU)
+	}
+	if f.FreeHRU != nil {
+		res = fmt.Sprintf("%sFreeHRU: %d\n", res, *f.FreeHRU)
+	}
+	if f.Country != nil {
+		res = fmt.Sprintf("%sCountry: %s\n", res, *f.Country)
+	}
+	if f.City != nil {
+		res = fmt.Sprintf("%sCity: %s\n", res, *f.City)
+	}
+	if f.FarmName != nil {
+		res = fmt.Sprintf("%sFarmName: %s\n", res, *f.FarmName)
+	}
+	if f.FarmIDs != nil {
+		res = fmt.Sprintf("%sFarmIDs: %v\n", res, f.FarmIDs)
+	}
+	if f.FreeIPs != nil {
+		res = fmt.Sprintf("%sFreeIPs: %d\n", res, *f.FreeIPs)
+	}
+	if f.IPv4 != nil {
+		res = fmt.Sprintf("%sIPv4: %t\n", res, *f.IPv4)
+	}
+	if f.IPv6 != nil {
+		res = fmt.Sprintf("%sIPv6: %t\n", res, *f.IPv6)
+	}
+	if f.Domain != nil {
+		res = fmt.Sprintf("%sDomain: %t\n", res, *f.Domain)
+	}
+	if f.Rentable != nil {
+		res = fmt.Sprintf("%sRentable: %t\n", res, *f.Rentable)
+	}
+	if f.Rentable != nil {
+		res = fmt.Sprintf("%sRentable: %t\n", res, *f.Rentable)
+	}
+	if f.AvailableFor != nil {
+		res = fmt.Sprintf("%sAvailableFor: %d\n", res, *f.AvailableFor)
+	}
+	if f.Rented != nil {
+		res = fmt.Sprintf("%sRented: %t\n", res, *f.Rented)
+	}
+	return res
 }

@@ -64,7 +64,7 @@ func TestFarm(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, localCount, remoteCount)
 			err = validateFarmsResults(localFarms, remoteFarms)
-			assert.NoError(t, err)
+			assert.NoError(t, err, serializeFarmsFilter(f))
 			if l.Page*l.Size >= uint64(localCount) {
 				break
 			}
@@ -86,8 +86,7 @@ func TestFarm(t *testing.T) {
 			assert.NoError(t, err)
 
 			err = validateFarmsResults(localFarms, remoteFarms)
-			assert.NoError(t, err)
-
+			assert.NoError(t, err, serializeFarmsFilter(f))
 		}
 	})
 }
@@ -249,4 +248,39 @@ func validatePublicIPs(local, remote []proxytypes.PublicIP) error {
 		}
 	}
 	return nil
+}
+
+func serializeFarmsFilter(f proxytypes.FarmFilter) string {
+	res := ""
+	if f.FreeIPs != nil {
+		res = fmt.Sprintf("%sFreeIPs: %d\n", res, *f.FreeIPs)
+	}
+	if f.TotalIPs != nil {
+		res = fmt.Sprintf("%sTotalIPs: %d\n", res, *f.TotalIPs)
+	}
+	if f.StellarAddress != nil {
+		res = fmt.Sprintf("%sStellarAddress: %s\n", res, *f.StellarAddress)
+	}
+	if f.PricingPolicyID != nil {
+		res = fmt.Sprintf("%sPricingPolicyID: %d\n", res, *f.PricingPolicyID)
+	}
+	if f.FarmID != nil {
+		res = fmt.Sprintf("%sFarmID: %d\n", res, *f.FarmID)
+	}
+	if f.TwinID != nil {
+		res = fmt.Sprintf("%sTwinID: %d\n", res, *f.TwinID)
+	}
+	if f.Name != nil {
+		res = fmt.Sprintf("%sName: %s\n", res, *f.Name)
+	}
+	if f.NameContains != nil {
+		res = fmt.Sprintf("%sNameContains: %s\n", res, *f.NameContains)
+	}
+	if f.CertificationType != nil {
+		res = fmt.Sprintf("%sCertification: %s\n", res, *f.CertificationType)
+	}
+	if f.Dedicated != nil {
+		res = fmt.Sprintf("%sDedicated: %t\n", res, *f.Dedicated)
+	}
+	return res
 }
