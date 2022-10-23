@@ -3,6 +3,18 @@ package main
 
 // TODO: the one in tools/db/types.go is unexported but it's the same file
 
+var (
+	POSTGRES_HOST      string
+	POSTGRES_PORT      int
+	POSTGRES_USER      string
+	POSTGRES_PASSSWORD string
+	POSTGRES_DB        string
+	ENDPOINT           string
+	SEED               int
+	STATUS_DOWN        = "down"
+	STATUS_UP          = "up"
+)
+
 type contract_resources struct {
 	id          string
 	hru         uint64
@@ -112,4 +124,9 @@ type name_contract struct {
 	name         string
 	state        string
 	created_at   uint64
+}
+
+type node_status_cache struct {
+	id     uint64
+	status string
 }

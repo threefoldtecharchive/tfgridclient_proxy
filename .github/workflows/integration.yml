@@ -49,5 +49,5 @@ jobs:
         go run cmds/proxy_server/main.go -no-cert --address :8080 --log-level debug --postgres-host localhost --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres &
         sleep 6
         pushd tests/queries
-        go run . --seed 13 --postgres-host localhost --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres --endpoint http://localhost:8080
+        go test -v --seed 13 --postgres-host localhost --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres --endpoint http://localhost:8080
         popd

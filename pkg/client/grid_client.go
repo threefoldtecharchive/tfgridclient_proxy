@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -39,7 +38,7 @@ func NewClient(endpoint string) Client {
 }
 
 func parseError(body io.ReadCloser) error {
-	text, err := ioutil.ReadAll(body)
+	text, err := io.ReadAll(body)
 	if err != nil {
 		return errors.Wrap(err, "couldn't read body response")
 	}
@@ -194,7 +193,7 @@ func (g *Clientimpl) Node(nodeID uint32) (res types.NodeWithNestedCapacity, err 
 		err = parseError(req.Body)
 		return
 	}
-	data, err := ioutil.ReadAll(req.Body)
+	data, err := io.ReadAll(req.Body)
 	if err != nil {
 		return
 	}

@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+var (
+	nodeStateFactor int64 = 3
+	reportInterval        = time.Hour
+)
+
 func calcFreeResources(total node_resources_total, used node_resources_total) node_resources_total {
 	if total.mru < used.mru {
 		panic("total mru is less than mru")
@@ -31,7 +36,12 @@ func isIn(l []uint64, v uint64) bool {
 	return false
 }
 
-func isUp(timestamp uint64) bool {
+func isUp(nodeID uint64, cache map[uint64]node_status_cache, timestamp uint64) bool {
+	status := cache[nodeID].status
+	if status == "up" || status == "down" {
+		return status == "up"
+	}
+	// log.Printf("nodeid: %d has no status cache", nodeID)
 	return int64(timestamp) > time.Now().Unix()*1000-nodeStateFactor*int64(reportInterval/time.Millisecond)
 }
 

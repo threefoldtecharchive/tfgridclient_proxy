@@ -9,10 +9,11 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.26.0
+	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/http-swagger v1.1.1
 	github.com/swaggo/swag v1.8.6-0.20220826192336-007219f7b3f9
-	github.com/threefoldtech/substrate-client v0.0.0-20220629072807-544d41e5b81a
-	github.com/threefoldtech/zos v0.5.6-0.20220629073825-73f495f28c80
+	github.com/threefoldtech/substrate-client v0.0.0-20220927111941-026e0cf92661
+	github.com/threefoldtech/zos v0.5.6-0.20220823125932-7df5043ab018
 	gorm.io/driver/postgres v1.3.5
 	gorm.io/gorm v1.23.5
 )
@@ -60,7 +61,8 @@ require (
 )
 
 require (
-	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.2 // indirect
+	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.5 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -71,6 +73,8 @@ require (
 	github.com/jackc/pgx/v4 v4.16.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
-replace github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.2 => github.com/threefoldtech/go-substrate-rpc-client/v4 v4.0.3-0.20220629062423-919d421680f4
+replace github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.5 => github.com/threefoldtech/go-substrate-rpc-client/v4 v4.0.6-0.20220927094755-0f0d22c73cc7

@@ -39,6 +39,11 @@ type node struct {
 	updated_at        uint64
 	location_id       string
 }
+
+type node_status_cache struct {
+	id     uint64
+	status string
+}
 type twin struct {
 	id           string
 	grid_version uint64
