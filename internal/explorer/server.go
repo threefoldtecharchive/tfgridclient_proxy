@@ -138,9 +138,9 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, mw.Error(err)
 	}
-	nodes := make([]types.Node, len(dbNodes))
+	nodes := make([]types.NodeWithNestedCapacity, len(dbNodes))
 	for idx, node := range dbNodes {
-		nodes[idx] = nodeFromDBNode(node)
+		nodes[idx] = nodeWithNestedCapacityFromDBNode(node)
 	}
 	resp := mw.Ok()
 
