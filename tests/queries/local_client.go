@@ -27,7 +27,7 @@ func (g *GridProxyClientimpl) Ping() error {
 }
 
 // Nodes returns nodes with the given filters and pagination parameters
-func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytypes.Limit) (res []proxytypes.Node, totalCount int, err error) {
+func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytypes.Limit) (res []proxytypes.NodeWithNestedCapacity, totalCount int, err error) {
 	if limit.Page == 0 {
 		limit.Page = 1
 	}
@@ -40,7 +40,7 @@ func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytyp
 			if isUp(node.node_id, g.data.nodeStatusCache, node.updated_at) {
 				status = STATUS_UP
 			}
-			res = append(res, proxytypes.Node{
+			res = append(res, proxytypes.NodeWithNestedCapacity{
 				ID:              node.id,
 				NodeID:          int(node.node_id),
 				FarmID:          int(node.farm_id),
@@ -51,17 +51,19 @@ func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytyp
 				Uptime:          int64(node.uptime),
 				Created:         int64(node.created),
 				FarmingPolicyID: int(node.farming_policy_id),
-				TotalResources: proxytypes.Capacity{
-					CRU: g.data.nodeTotalResources[node.node_id].cru,
-					HRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].hru),
-					MRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].mru),
-					SRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].sru),
-				},
-				UsedResources: proxytypes.Capacity{
-					CRU: g.data.nodeUsedResources[node.node_id].cru,
-					HRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].hru),
-					MRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].mru),
-					SRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].sru),
+				Capacity: proxytypes.CapacityResult{
+					Total: proxytypes.Capacity{
+						CRU: g.data.nodeTotalResources[node.node_id].cru,
+						HRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].hru),
+						MRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].mru),
+						SRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].sru),
+					},
+					Used: proxytypes.Capacity{
+						CRU: g.data.nodeUsedResources[node.node_id].cru,
+						HRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].hru),
+						MRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].mru),
+						SRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].sru),
+					},
 				},
 				Location: proxytypes.Location{
 					Country: node.country,

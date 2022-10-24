@@ -14,7 +14,7 @@ import (
 // Client a client to communicate with the grid proxy
 type Client interface {
 	Ping() error
-	Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, totalCount int, err error)
+	Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.NodeWithNestedCapacity, totalCount int, err error)
 	Farms(filter types.FarmFilter, pagination types.Limit) (res []types.Farm, totalCount int, err error)
 	Contracts(filter types.ContractFilter, pagination types.Limit) (res []types.Contract, totalCount int, err error)
 	Twins(filter types.TwinFilter, pagination types.Limit) (res []types.Twin, totalCount int, err error)
@@ -79,7 +79,7 @@ func (g *Clientimpl) Ping() error {
 }
 
 // Nodes returns nodes with the given filters and pagination parameters
-func (g *Clientimpl) Nodes(filter types.NodeFilter, limit types.Limit) (res []types.Node, totalCount int, err error) {
+func (g *Clientimpl) Nodes(filter types.NodeFilter, limit types.Limit) (res []types.NodeWithNestedCapacity, totalCount int, err error) {
 	query := nodeParams(filter, limit)
 	req, err := http.Get(g.url("nodes%s", query))
 	if err != nil {

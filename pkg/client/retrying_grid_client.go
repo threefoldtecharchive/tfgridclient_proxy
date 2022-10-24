@@ -47,7 +47,7 @@ func (g *RetryingClient) Ping() error {
 }
 
 // Nodes returns nodes with the given filters and pagination parameters
-func (g *RetryingClient) Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, totalCount int, err error) {
+func (g *RetryingClient) Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.NodeWithNestedCapacity, totalCount int, err error) {
 	f := func() error {
 		res, totalCount, err = g.cl.Nodes(filter, pagination)
 		return err
