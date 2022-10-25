@@ -163,6 +163,7 @@ type Node struct {
 	Dedicated         bool         `json:"dedicated"`
 	RentContractID    uint         `json:"rentContractId"`
 	RentedByTwinID    uint         `json:"rentedByTwinId"`
+	SerialNumber      string       `json:"serialNumber"`
 }
 
 // CapacityResult is the NodeData capacity results to unmarshal json in it
@@ -192,6 +193,7 @@ type NodeWithNestedCapacity struct {
 	Dedicated         bool           `json:"dedicated"`
 	RentContractID    uint           `json:"rentContractId"`
 	RentedByTwinID    uint           `json:"rentedByTwinId"`
+	SerialNumber      string         `json:"serialNumber"`
 }
 
 type Twin struct {

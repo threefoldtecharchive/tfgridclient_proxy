@@ -336,6 +336,7 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 			"rent_contract.contract_id as rent_contract_id",
 			"rent_contract.twin_id as rented_by_twin_id",
 			"node_status_cache.status as node_status",
+			"node.serial_number",
 		).
 		Joins(
 			"LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id",

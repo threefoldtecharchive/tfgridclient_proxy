@@ -60,6 +60,7 @@ type Node struct {
 	RentContractID  int64
 	RentedByTwinID  int64
 	NodeStatus      string
+	SerialNumber    string
 }
 
 // Farm data about a farm which is calculated from the chain
