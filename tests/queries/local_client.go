@@ -80,6 +80,7 @@ func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytyp
 				Dedicated:         g.data.farms[node.farm_id].dedicated_farm,
 				RentedByTwinID:    uint(g.data.nodeRentedBy[node.node_id]),
 				RentContractID:    uint(g.data.nodeRentContractID[node.node_id]),
+				SerialNumber:      node.serial_number,
 			})
 		}
 	}
@@ -322,6 +323,7 @@ func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.NodeWithNested
 		Dedicated:         g.data.farms[node.farm_id].dedicated_farm,
 		RentedByTwinID:    uint(g.data.nodeRentedBy[node.node_id]),
 		RentContractID:    uint(g.data.nodeRentContractID[node.node_id]),
+		SerialNumber:      node.serial_number,
 	}
 	return
 }

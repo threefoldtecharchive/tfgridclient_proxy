@@ -51,6 +51,7 @@ func nodeFromDBNode(info db.Node) types.Node {
 		Dedicated:         info.Dedicated,
 		RentContractID:    uint(info.RentContractID),
 		RentedByTwinID:    uint(info.RentedByTwinID),
+		SerialNumber:      info.SerialNumber,
 	}
 	if info.NodeStatus != "" {
 		node.Status = info.NodeStatus
@@ -125,6 +126,7 @@ func nodeWithNestedCapacityFromDBNode(info db.Node) types.NodeWithNestedCapacity
 		RentContractID:    uint(info.RentContractID),
 		RentedByTwinID:    uint(info.RentedByTwinID),
 		Status:            info.NodeStatus,
+		SerialNumber:      info.SerialNumber,
 	}
 	if info.NodeStatus != "" {
 		node.Status = info.NodeStatus
