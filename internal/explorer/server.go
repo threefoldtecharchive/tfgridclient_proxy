@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -25,6 +26,11 @@ import (
 const (
 	// SSDOverProvisionFactor factor by which the ssd are allowed to be overprovisioned
 	SSDOverProvisionFactor = 2
+)
+
+var (
+	statusUp   = "up"
+	statusDown = "down"
 )
 
 // listFarms godoc
@@ -334,25 +340,42 @@ func updateCacheRoutine(a App) {
 		if err != nil {
 			continue
 		}
+		var wg sync.WaitGroup
+		beforeUpdate := time.Now()
 		for _, node := range nodes {
-			const cmd = "zos.statistics.get"
-			var result struct {
-				Total gridtypes.Capacity `json:"total"`
-				Used  gridtypes.Capacity `json:"used"`
-			}
-			err = a.rmb.Call(context.Background(), uint32(node.TwinID), cmd, nil, &result)
-			if err != nil {
-				errSet := a.db.SetNodeStatusCache(uint32(node.NodeID), "up")
+			wg.Add(1)
+			go func(node db.Node) {
+				defer wg.Done()
+				rmbErr := make(chan error)
+				go rmbCall(a, node.TwinID, rmbErr)
+				err := <-rmbErr
+				if err != nil {
+					errSet := a.db.SetNodeStatusCache(uint32(node.NodeID), statusDown)
+					if errSet != nil {
+						log.Printf("error setting status cache: %+v", errSet)
+					}
+					return
+				}
+				errSet := a.db.SetNodeStatusCache(uint32(node.NodeID), statusUp)
 				if errSet != nil {
 					log.Printf("error setting status cache: %+v", errSet)
 				}
-				continue
-			}
-			errSet := a.db.SetNodeStatusCache(uint32(node.NodeID), "down")
-			if errSet != nil {
-				log.Printf("error setting status cache: %+v", errSet)
-			}
+
+			}(node)
 		}
-		time.Sleep(time.Minute * 10)
+		wg.Wait()
+		time.Sleep(time.Minute*10 - (time.Now().Sub(beforeUpdate)))
 	}
+}
+
+func rmbCall(a App, twinID int64, rmbErr chan error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	const cmd = "zos.statistics.get"
+	var result struct {
+		Total gridtypes.Capacity `json:"total"`
+		Used  gridtypes.Capacity `json:"used"`
+	}
+	err := a.rmb.Call(ctx, uint32(twinID), cmd, nil, &result)
+	rmbErr <- err
 }
