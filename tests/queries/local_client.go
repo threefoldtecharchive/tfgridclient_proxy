@@ -365,6 +365,10 @@ func (g *GridProxyClientimpl) Counters(filter proxytypes.StatsFilter) (res proxy
 	return
 }
 
+func stringMatch(str string, sub_str string) bool {
+	return strings.Contains(strings.ToLower(str), strings.ToLower(sub_str))
+}
+
 func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.Status != nil && (*f.Status == STATUS_UP) != isUp(node.node_id, data.nodeStatusCache, node.updated_at) {
 		return false
@@ -381,7 +385,7 @@ func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.FreeSRU != nil && *f.FreeSRU > free.sru {
 		return false
 	}
-	if f.Country != nil && *f.Country != node.country {
+	if f.Country != nil && !stringMatch(node.country, *f.Country) {
 		return false
 	}
 	if f.NodeID != nil && *f.NodeID != node.node_id {
@@ -390,10 +394,10 @@ func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.TwinID != nil && *f.TwinID != node.twin_id {
 		return false
 	}
-	if f.City != nil && *f.City != node.city {
+	if f.City != nil && !stringMatch(node.city, *f.City) {
 		return false
 	}
-	if f.FarmName != nil && *f.FarmName != data.farms[node.farm_id].name {
+	if f.FarmName != nil && !stringMatch(data.farms[node.farm_id].name, *f.FarmName) {
 		return false
 	}
 	if f.FarmIDs != nil && !isIn(f.FarmIDs, node.farm_id) {
@@ -460,7 +464,7 @@ func farmSatisfies(data *DBData, farm farm, f proxytypes.FarmFilter) bool {
 	if f.TwinID != nil && *f.TwinID != farm.twin_id {
 		return false
 	}
-	if f.Name != nil && *f.Name != "" && *f.Name != farm.name {
+	if f.Name != nil && *f.Name != "" && !stringMatch(farm.name, *f.Name) {
 		return false
 	}
 	if f.NameContains != nil && *f.NameContains != "" && !strings.Contains(farm.name, *f.NameContains) {
