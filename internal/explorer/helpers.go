@@ -133,10 +133,13 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (types.NodeFilter, 
 		"twin_id":       &filter.TwinID,
 	}
 	strs := map[string]**string{
-		"status":    &filter.Status,
-		"city":      &filter.City,
-		"country":   &filter.Country,
-		"farm_name": &filter.FarmName,
+		"status":             &filter.Status,
+		"city":               &filter.City,
+		"city_contains":      &filter.CityContains,
+		"country":            &filter.Country,
+		"country_contains":   &filter.CountryContains,
+		"farm_name":          &filter.FarmName,
+		"farm_name_contains": &filter.FarmNameContains,
 	}
 	bools := map[string]**bool{
 		"ipv4":      &filter.IPv4,

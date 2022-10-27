@@ -37,11 +37,20 @@ func nodeParams(filter types.NodeFilter, limit types.Limit) string {
 	if filter.Country != nil && *filter.Country != "" {
 		fmt.Fprintf(&builder, "country=%s&", url.QueryEscape(*filter.Country))
 	}
+	if filter.CountryContains != nil && *filter.CountryContains != "" {
+		fmt.Fprintf(&builder, "country_contains=%s&", url.QueryEscape(*filter.CountryContains))
+	}
 	if filter.City != nil && *filter.City != "" {
 		fmt.Fprintf(&builder, "city=%s&", url.QueryEscape(*filter.City))
 	}
+	if filter.CityContains != nil && *filter.CityContains != "" {
+		fmt.Fprintf(&builder, "city_contains=%s&", url.QueryEscape(*filter.CityContains))
+	}
 	if filter.FarmName != nil && *filter.FarmName != "" {
 		fmt.Fprintf(&builder, "farm_name=%s&", url.QueryEscape(*filter.FarmName))
+	}
+	if filter.FarmNameContains != nil && *filter.FarmNameContains != "" {
+		fmt.Fprintf(&builder, "farm_name_contains=%s&", url.QueryEscape(*filter.FarmNameContains))
 	}
 	if filter.FarmIDs != nil && len(filter.FarmIDs) != 0 {
 		fmt.Fprintf(&builder, "farm_ids=%s&", url.QueryEscape(stringifyList(filter.FarmIDs)))
