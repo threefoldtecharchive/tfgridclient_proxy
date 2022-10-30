@@ -334,7 +334,8 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 func updateCacheRoutine(a App) {
 	// time to just pass tests before manipulating data
 	time.Sleep(time.Minute * 10)
-
+	batchSize := 100
+	currentBatch := 0
 	for {
 		nodes, _, err := a.db.GetNodes(types.NodeFilter{}, types.Limit{})
 		if err != nil {
@@ -342,13 +343,12 @@ func updateCacheRoutine(a App) {
 		}
 		var wg sync.WaitGroup
 		beforeUpdate := time.Now()
-		for _, node := range nodes {
+		for idx := range nodes {
 			wg.Add(1)
-			go func(node db.Node) {
+			currentBatch++
+			go func(a App, node db.Node) {
 				defer wg.Done()
-				rmbErr := make(chan error)
-				go rmbCall(a, node.TwinID, rmbErr)
-				err := <-rmbErr
+				err := rmbCall(a, node)
 				if err != nil {
 					errSet := a.db.SetNodeStatusCache(uint32(node.NodeID), statusDown)
 					if errSet != nil {
@@ -360,22 +360,25 @@ func updateCacheRoutine(a App) {
 				if errSet != nil {
 					log.Printf("error setting status cache: %+v", errSet)
 				}
-
-			}(node)
+			}(a, nodes[idx])
+			if currentBatch == batchSize {
+				wg.Wait()
+				currentBatch = 0
+			}
 		}
 		wg.Wait()
-		time.Sleep(time.Minute*10 - (time.Now().Sub(beforeUpdate)))
+		time.Sleep(time.Minute*10 - time.Since(beforeUpdate))
 	}
 }
 
-func rmbCall(a App, twinID int64, rmbErr chan error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+func rmbCall(a App, node db.Node) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	const cmd = "zos.statistics.get"
 	var result struct {
 		Total gridtypes.Capacity `json:"total"`
 		Used  gridtypes.Capacity `json:"used"`
 	}
-	err := a.rmb.Call(ctx, uint32(twinID), cmd, nil, &result)
-	rmbErr <- err
+	err := a.rmb.Call(ctx, uint32(node.TwinID), cmd, nil, &result)
+	return err
 }
