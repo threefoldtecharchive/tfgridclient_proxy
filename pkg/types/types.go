@@ -86,6 +86,10 @@ type NodeFilter struct {
 	FreeMRU      *uint64
 	FreeHRU      *uint64
 	FreeSRU      *uint64
+	TotalMRU     *uint64
+	TotalHRU     *uint64
+	TotalSRU     *uint64
+	TotalCRU     *uint64
 	Country      *string
 	City         *string
 	FarmName     *string

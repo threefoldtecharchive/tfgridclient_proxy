@@ -379,6 +379,18 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 	if filter.FreeSRU != nil {
 		q = q.Where("nodes_resources_view.free_sru >= ?", *filter.FreeSRU)
 	}
+	if filter.TotalCRU != nil {
+		q = q.Where("nodes_resources_view.total_cru >= ?", *filter.TotalCRU)
+	}
+	if filter.TotalHRU != nil {
+		q = q.Where("nodes_resources_view.total_hru >= ?", *filter.TotalHRU)
+	}
+	if filter.TotalMRU != nil {
+		q = q.Where("nodes_resources_view.total_mru >= ?", *filter.TotalMRU)
+	}
+	if filter.TotalSRU != nil {
+		q = q.Where("nodes_resources_view.total_sru >= ?", *filter.TotalSRU)
+	}
 	if filter.Country != nil {
 		q = q.Where("node.country = ?", *filter.Country)
 	}
