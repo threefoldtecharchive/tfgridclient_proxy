@@ -11,7 +11,6 @@ type Database interface {
 	GetFarms(filter types.FarmFilter, limit types.Limit) ([]Farm, uint, error)
 	GetTwins(filter types.TwinFilter, limit types.Limit) ([]types.Twin, uint, error)
 	GetContracts(filter types.ContractFilter, limit types.Limit) ([]DBContract, uint, error)
-	SetNodeStatusCache(nodeID uint32, status string) error
 }
 
 // DBContract is contract info
@@ -59,7 +58,6 @@ type Node struct {
 	Dedicated       bool
 	RentContractID  int64
 	RentedByTwinID  int64
-	NodeStatus      string
 	SerialNumber    string
 }
 

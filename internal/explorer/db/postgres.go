@@ -123,15 +123,6 @@ func (d *PostgresDatabase) Close() error {
 }
 
 func (d *PostgresDatabase) initialize() error {
-	tx := d.gormDB.Exec(`
-		CREATE TABLE IF NOT EXISTS node_status_cache (
-			id INT PRIMARY KEY,
-			status VARCHAR(10)
-		)
-	`)
-	if tx.Error != nil {
-		return tx.Error
-	}
 	res := d.gormDB.Exec(setupPostgresql)
 	return res.Error
 }
@@ -164,9 +155,7 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 	condition := "TRUE"
 	if filter.Status != nil && *filter.Status == "up" {
 		nodeUpInterval := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
-		condition = fmt.Sprintf(`node_status_cache.status = 'up' OR
-		(node_status_cache.status IS NULL AND node.updated_at >= %d)`, nodeUpInterval)
-
+		condition = fmt.Sprintf(`node.updated_at >= %d`, nodeUpInterval)
 	}
 	if res := d.gormDB.
 		Table("node").
@@ -177,18 +166,15 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 			"sum(node_resources_total.mru) as total_mru",
 		).
 		Joins("LEFT JOIN node_resources_total ON node.id = node_resources_total.node_id").
-		Joins("LEFT JOIN node_status_cache ON node.node_id = node_status_cache.id").
 		Where(condition).
 		Scan(&counters); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get nodes total resources")
 	}
 	if res := d.gormDB.Table("node").
-		Joins("LEFT JOIN node_status_cache ON node.node_id = node_status_cache.id").
 		Where(condition).Count(&counters.Nodes); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get node count")
 	}
 	if res := d.gormDB.Table("node").
-		Joins("LEFT JOIN node_status_cache ON node.node_id = node_status_cache.id").
 		Where(condition).Distinct("country").Count(&counters.Countries); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get country count")
 	}
@@ -198,8 +184,7 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 			`RIGHT JOIN public_config
 			ON node.id = public_config.node_id
 			`,
-		).
-		Joins("LEFT JOIN node_status_cache ON node.node_id = node_status_cache.id")
+		)
 
 	if res := query.Where(condition).Where("COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv6, '') != ''").Count(&counters.AccessNodes); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get access node count")
@@ -209,7 +194,6 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 	}
 	var distribution []NodesDistribution
 	if res := d.gormDB.Table("node").
-		Joins("LEFT JOIN node_status_cache ON node.node_id = node_status_cache.id").
 		Select("country, count(node_id) as nodes").Where(condition).Group("country").Scan(&distribution); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get nodes distribution")
 	}
@@ -335,7 +319,6 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 			"farm.dedicated_farm as dedicated",
 			"rent_contract.contract_id as rent_contract_id",
 			"rent_contract.twin_id as rented_by_twin_id",
-			"node_status_cache.status as node_status",
 			"node.serial_number",
 		).
 		Joins(
@@ -349,9 +332,6 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 		).
 		Joins(
 			"LEFT JOIN farm ON node.farm_id = farm.farm_id",
-		).
-		Joins(
-			"LEFT JOIN node_status_cache ON node.node_id = node_status_cache.id",
 		)
 }
 
@@ -363,11 +343,9 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 		// TODO: this shouldn't be in db
 		threshold := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
 		if *filter.Status == "down" {
-			q = q.Where(`node_status_cache.status = 'down' OR
-			(node_status_cache.status IS NULL AND (node.updated_at < ? OR node.updated_at IS NULL))`, threshold)
+			q = q.Where("node.updated_at < ? OR node.updated_at IS NULL", threshold)
 		} else {
-			q = q.Where(`node_status_cache.status = 'up' OR
-			(node_status_cache.status IS NULL AND node.updated_at >= ?)`, threshold)
+			q = q.Where("node.updated_at >= ?", threshold)
 		}
 	}
 	if filter.FreeMRU != nil {
@@ -645,14 +623,4 @@ func (d *PostgresDatabase) GetContracts(filter types.ContractFilter, limit types
 		return contracts, uint(count), errors.Wrap(res.Error, "failed to scan returned contracts from database")
 	}
 	return contracts, uint(count), nil
-}
-
-func (d *PostgresDatabase) SetNodeStatusCache(nodeID uint32, status string) error {
-	tx := d.gormDB.Exec(`
-		INSERT INTO node_status_cache (id, status)
-		VALUES (?, ?)
-		ON CONFLICT (id)
-		DO
-		UPDATE SET status = ?`, nodeID, status, status)
-	return tx.Error
 }
