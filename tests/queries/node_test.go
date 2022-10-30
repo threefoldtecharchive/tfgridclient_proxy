@@ -195,7 +195,8 @@ func randomNodeFilter(agg *NodesAggregate) proxytypes.NodeFilter {
 	}
 	if flip(.05) {
 		c := agg.countries[rand.Intn(len(agg.countries))]
-		f.Country = &c
+		v := changeCase(c)
+		f.Country = &v
 	}
 	if flip(.05) {
 		c := agg.countries[rand.Intn(len(agg.countries))]
@@ -208,7 +209,8 @@ func randomNodeFilter(agg *NodesAggregate) proxytypes.NodeFilter {
 	}
 	if flip(.05) {
 		c := agg.cities[rand.Intn(len(agg.cities))]
-		f.City = &c
+		v := changeCase(c)
+		f.City = &v
 	}
 	if flip(.05) {
 		c := agg.cities[rand.Intn(len(agg.cities))]
@@ -221,7 +223,8 @@ func randomNodeFilter(agg *NodesAggregate) proxytypes.NodeFilter {
 	}
 	if flip(.05) {
 		c := agg.farmNames[rand.Intn(len(agg.farmNames))]
-		f.FarmName = &c
+		v := changeCase(c)
+		f.FarmName = &v
 	}
 	if flip(.05) {
 		c := agg.farmNames[rand.Intn(len(agg.farmNames))]

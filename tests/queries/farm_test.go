@@ -164,7 +164,8 @@ func randomFarmsFilter(agg *FarmsAggregate) proxytypes.FarmFilter {
 	}
 	if flip(.05) {
 		c := agg.farmNames[rand.Intn(len(agg.farmNames))]
-		f.Name = &c
+		v := changeCase(c)
+		f.Name = &v
 	}
 	if flip(.05) {
 		c := agg.farmNames[rand.Intn(len(agg.farmNames))]
