@@ -383,6 +383,18 @@ func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.FreeSRU != nil && *f.FreeSRU > free.sru {
 		return false
 	}
+	if f.TotalCRU != nil && *f.TotalCRU > total.cru {
+		return false
+	}
+	if f.TotalHRU != nil && *f.TotalHRU > total.hru {
+		return false
+	}
+	if f.TotalMRU != nil && *f.TotalMRU > total.mru {
+		return false
+	}
+	if f.TotalSRU != nil && *f.TotalSRU > total.sru {
+		return false
+	}
 	if f.Country != nil && *f.Country != node.country {
 		return false
 	}
