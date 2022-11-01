@@ -112,7 +112,7 @@ systemctl daemon-reload
 
 ### `/farms`
 
-- Bring all nodes information and public ips
+- Bring all farms information and public ips
 
     Example
 
