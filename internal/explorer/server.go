@@ -83,7 +83,7 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 // @Tags GridProxy
 // @Accept  json
 // @Produce  json
-// @Param status query string false "Node status filter, up/down."
+// @Param status query string false "Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
 // @Success 200 {object} []types.Counters
 // @Router /stats [get]
 func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
@@ -111,7 +111,7 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Param free_hru query int false "Min free reservable hru in bytes"
 // @Param free_sru query int false "Min free reservable sru in bytes"
 // @Param free_ips query int false "Min number of free ips in the farm of the node"
-// @Param status query string false "Node status filter, up/down."
+// @Param status query string false "Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
 // @Param city query string false "Node city filter"
 // @Param country query string false "Node country filter"
 // @Param farm_name query string false "Get nodes for specific farm"
@@ -143,7 +143,7 @@ func (a *App) getNodes(r *http.Request) (interface{}, mw.Response) {
 // @Param free_hru query int false "Min free reservable hru in bytes"
 // @Param free_sru query int false "Min free reservable sru in bytes"
 // @Param free_ips query int false "Min number of free ips in the farm of the node"
-// @Param status query string false "Node status filter, up/down."
+// @Param status query string false "Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
 // @Param city query string false "Node city filter"
 // @Param country query string false "Node country filter"
 // @Param farm_name query string false "Get nodes for specific farm"

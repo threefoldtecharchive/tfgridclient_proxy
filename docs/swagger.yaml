@@ -469,7 +469,8 @@ paths:
         in: query
         name: free_ips
         type: integer
-      - description: Node status filter, up/down.
+      - description: 'Node status filter, ''up'': for only up nodes & ''down'': for
+          all up/down nodes.'
         in: query
         name: status
         type: string
@@ -587,7 +588,8 @@ paths:
         in: query
         name: free_ips
         type: integer
-      - description: Node status filter, up/down.
+      - description: 'Node status filter, ''up'': for only up nodes & ''down'': for
+          all up/down nodes.'
         in: query
         name: status
         type: string
@@ -692,7 +694,8 @@ paths:
       - application/json
       description: Get statistics about the grid
       parameters:
-      - description: Node status filter, up/down.
+      - description: 'Node status filter, ''up'': for only up nodes & ''down'': for
+          all up/down nodes.'
         in: query
         name: status
         type: string

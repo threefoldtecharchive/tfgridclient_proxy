@@ -290,7 +290,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Node status filter, up/down.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
                         "name": "status",
                         "in": "query"
                     },
@@ -469,7 +469,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Node status filter, up/down.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
                         "name": "status",
                         "in": "query"
                     },
@@ -629,7 +629,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Node status filter, up/down.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
                         "name": "status",
                         "in": "query"
                     }
