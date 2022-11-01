@@ -17,6 +17,10 @@ type App struct {
 	resolver TwinExplorerResolver
 }
 
+type PingMessage struct {
+	Ping string `json:"ping" example:"pong"`
+}
+
 // Flags for the App cmd command
 type Flags struct {
 	Debug        string

@@ -49,6 +49,12 @@ definitions:
         example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
         type: string
     type: object
+  rmbproxy.PingMessage:
+    properties:
+      ping:
+        example: pong
+        type: string
+    type: object
   types.Capacity:
     properties:
       cru:
@@ -183,6 +189,8 @@ definitions:
         type: integer
       rentedByTwinId:
         type: integer
+      serialNumber:
+        type: string
       status:
         description: added node status field for up or down
         type: string
@@ -229,6 +237,8 @@ definitions:
         type: integer
       rentedByTwinId:
         type: integer
+      serialNumber:
+        type: string
       status:
         description: added node status field for up or down
         type: string
@@ -665,14 +675,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: ping the server to check if it running
+      description: ping the server to check if it is running
       produces:
       - application/json
       responses:
         "200":
-          description: pong
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/rmbproxy.PingMessage'
       summary: ping the server
       tags:
       - ping

@@ -584,7 +584,7 @@
         },
         "/ping": {
             "get": {
-                "description": "ping the server to check if it running",
+                "description": "ping the server to check if it is running",
                 "consumes": [
                     "application/json"
                 ],
@@ -597,9 +597,9 @@
                 "summary": "ping the server",
                 "responses": {
                     "200": {
-                        "description": "pong",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/rmbproxy.PingMessage"
                         }
                     }
                 }
@@ -850,6 +850,15 @@
                 }
             }
         },
+        "rmbproxy.PingMessage": {
+            "type": "object",
+            "properties": {
+                "ping": {
+                    "type": "string",
+                    "example": "pong"
+                }
+            }
+        },
         "types.Capacity": {
             "type": "object",
             "properties": {
@@ -1054,6 +1063,9 @@
                 "rentedByTwinId": {
                     "type": "integer"
                 },
+                "serialNumber": {
+                    "type": "string"
+                },
                 "status": {
                     "description": "added node status field for up or down",
                     "type": "string"
@@ -1122,6 +1134,9 @@
                 },
                 "rentedByTwinId": {
                     "type": "integer"
+                },
+                "serialNumber": {
+                    "type": "string"
                 },
                 "status": {
                     "description": "added node status field for up or down",

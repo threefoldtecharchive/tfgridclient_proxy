@@ -592,7 +592,7 @@ const docTemplate = `{
         },
         "/ping": {
             "get": {
-                "description": "ping the server to check if it running",
+                "description": "ping the server to check if it is running",
                 "consumes": [
                     "application/json"
                 ],
@@ -605,9 +605,9 @@ const docTemplate = `{
                 "summary": "ping the server",
                 "responses": {
                     "200": {
-                        "description": "pong",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/rmbproxy.PingMessage"
                         }
                     }
                 }
@@ -858,6 +858,15 @@ const docTemplate = `{
                 }
             }
         },
+        "rmbproxy.PingMessage": {
+            "type": "object",
+            "properties": {
+                "ping": {
+                    "type": "string",
+                    "example": "pong"
+                }
+            }
+        },
         "types.Capacity": {
             "type": "object",
             "properties": {
@@ -1062,6 +1071,9 @@ const docTemplate = `{
                 "rentedByTwinId": {
                     "type": "integer"
                 },
+                "serialNumber": {
+                    "type": "string"
+                },
                 "status": {
                     "description": "added node status field for up or down",
                     "type": "string"
@@ -1130,6 +1142,9 @@ const docTemplate = `{
                 },
                 "rentedByTwinId": {
                     "type": "integer"
+                },
+                "serialNumber": {
+                    "type": "string"
                 },
                 "status": {
                     "description": "added node status field for up or down",
