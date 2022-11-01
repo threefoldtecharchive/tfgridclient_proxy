@@ -234,7 +234,7 @@ const docTemplate = `{
         },
         "/gateways": {
             "get": {
-                "description": "Get all nodes on the grid, It has pagination",
+                "description": "Get all gateways on the grid, It has pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -244,7 +244,7 @@ const docTemplate = `{
                 "tags": [
                     "GridProxy"
                 ],
-                "summary": "Show nodes on the grid",
+                "summary": "Show gateways on the grid",
                 "parameters": [
                     {
                         "type": "integer",
@@ -259,7 +259,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set nodes' count on headers based on filter",
                         "name": "ret_count",
                         "in": "query"
@@ -382,7 +382,7 @@ const docTemplate = `{
         },
         "/gateways/{node_id}": {
             "get": {
-                "description": "Get all details for specific node hardware, capacity, DMI, hypervisor",
+                "description": "Get all details for specific gateway hardware, capacity, DMI, hypervisor",
                 "consumes": [
                     "application/json"
                 ],
@@ -392,7 +392,7 @@ const docTemplate = `{
                 "tags": [
                     "GridProxy"
                 ],
-                "summary": "Show the details for specific node",
+                "summary": "Show the details for specific gateway",
                 "parameters": [
                     {
                         "type": "integer",
@@ -438,7 +438,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set nodes' count on headers based on filter",
                         "name": "ret_count",
                         "in": "query"

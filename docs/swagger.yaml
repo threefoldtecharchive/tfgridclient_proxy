@@ -439,7 +439,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all nodes on the grid, It has pagination
+      description: Get all gateways on the grid, It has pagination
       parameters:
       - description: Page number
         in: query
@@ -452,7 +452,7 @@ paths:
       - description: Set nodes' count on headers based on filter
         in: query
         name: ret_count
-        type: string
+        type: boolean
       - description: Min free reservable mru in bytes
         in: query
         name: free_mru
@@ -530,14 +530,14 @@ paths:
             items:
               $ref: '#/definitions/types.Node'
             type: array
-      summary: Show nodes on the grid
+      summary: Show gateways on the grid
       tags:
       - GridProxy
   /gateways/{node_id}:
     get:
       consumes:
       - application/json
-      description: Get all details for specific node hardware, capacity, DMI, hypervisor
+      description: Get all details for specific gateway hardware, capacity, DMI, hypervisor
       parameters:
       - description: Node ID
         in: path
@@ -550,7 +550,7 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/types.NodeWithNestedCapacity'
-      summary: Show the details for specific node
+      summary: Show the details for specific gateway
       tags:
       - GridProxy
   /nodes:
@@ -570,7 +570,7 @@ paths:
       - description: Set nodes' count on headers based on filter
         in: query
         name: ret_count
-        type: string
+        type: boolean
       - description: Min free reservable mru in bytes
         in: query
         name: free_mru

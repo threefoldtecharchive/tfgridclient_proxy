@@ -98,7 +98,7 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 	return counters, nil
 }
 
-// listNodes godoc
+// getNodes godoc
 // @Summary Show nodes on the grid
 // @Description Get all nodes on the grid, It has pagination
 // @Tags GridProxy
@@ -106,7 +106,7 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
-// @Param ret_count query string false "Set nodes' count on headers based on filter"
+// @Param ret_count query boolean false "Set nodes' count on headers based on filter"
 // @Param free_mru query int false "Min free reservable mru in bytes"
 // @Param free_hru query int false "Min free reservable hru in bytes"
 // @Param free_sru query int false "Min free reservable sru in bytes"
@@ -126,7 +126,42 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
 // @Success 200 {object} []types.Node
 // @Router /nodes [get]
+func (a *App) getNodes(r *http.Request) (interface{}, mw.Response) {
+	return a.listNodes(r)
+}
+
+// getGateways godoc
+// @Summary Show gateways on the grid
+// @Description Get all gateways on the grid, It has pagination
+// @Tags GridProxy
+// @Accept  json
+// @Produce  json
+// @Param page query int false "Page number"
+// @Param size query int false "Max result per page"
+// @Param ret_count query boolean false "Set nodes' count on headers based on filter"
+// @Param free_mru query int false "Min free reservable mru in bytes"
+// @Param free_hru query int false "Min free reservable hru in bytes"
+// @Param free_sru query int false "Min free reservable sru in bytes"
+// @Param free_ips query int false "Min number of free ips in the farm of the node"
+// @Param status query string false "Node status filter, up/down."
+// @Param city query string false "Node city filter"
+// @Param country query string false "Node country filter"
+// @Param farm_name query string false "Get nodes for specific farm"
+// @Param ipv4 query string false "Set to true to filter nodes with ipv4"
+// @Param ipv6 query string false "Set to true to filter nodes with ipv6"
+// @Param domain query string false "Set to true to filter nodes with domain"
+// @Param dedicated query bool false "Set to true to get the dedicated nodes only"
+// @Param rentable query bool false "Set to true to filter the available nodes for renting"
+// @Param rented query bool false "Set to true to filter rented nodes"
+// @Param rented_by query int false "rented by twin id"
+// @Param available_for query int false "available for twin id"
+// @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
+// @Success 200 {object} []types.Node
 // @Router /gateways [get]
+func (a *App) getGateways(r *http.Request) (interface{}, mw.Response) {
+	return a.listNodes(r)
+}
+
 func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleNodeRequestsQueryParams(r)
 	if err != nil {
@@ -161,8 +196,24 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 // @Produce  json
 // @Success 200 {object} types.NodeWithNestedCapacity
 // @Router /nodes/{node_id} [get]
-// @Router /gateways/{node_id} [get]
 func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {
+	return a._getNode(r)
+}
+
+// getGateway godoc
+// @Summary Show the details for specific gateway
+// @Description Get all details for specific gateway hardware, capacity, DMI, hypervisor
+// @Tags GridProxy
+// @Param node_id path int false "Node ID"
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} types.NodeWithNestedCapacity
+// @Router /gateways/{node_id} [get]
+func (a *App) getGateway(r *http.Request) (interface{}, mw.Response) {
+	return a._getNode(r)
+}
+
+func (a *App) _getNode(r *http.Request) (interface{}, mw.Response) {
 	nodeID := mux.Vars(r)["node_id"]
 	nodeData, err := a.getNodeData(nodeID)
 	if err != nil {
@@ -306,12 +357,12 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 
 	router.HandleFunc("/farms", mw.AsHandlerFunc(a.listFarms))
 	router.HandleFunc("/stats", mw.AsHandlerFunc(a.getStats))
-	router.HandleFunc("/nodes", mw.AsHandlerFunc(a.listNodes))
-	router.HandleFunc("/gateways", mw.AsHandlerFunc(a.listNodes))
+	router.HandleFunc("/nodes", mw.AsHandlerFunc(a.getNodes))
+	router.HandleFunc("/gateways", mw.AsHandlerFunc(a.getGateways))
 	router.HandleFunc("/twins", mw.AsHandlerFunc(a.listTwins))
 	router.HandleFunc("/contracts", mw.AsHandlerFunc(a.listContracts))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
-	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
+	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getGateway))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage))
