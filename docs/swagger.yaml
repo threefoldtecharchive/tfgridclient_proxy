@@ -358,6 +358,14 @@ paths:
             items:
               $ref: '#/definitions/types.Contract'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show contracts on the grid
       tags:
       - GridProxy
@@ -432,6 +440,14 @@ paths:
             items:
               $ref: '#/definitions/types.Farm'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show farms on the grid
       tags:
       - GridProxy
@@ -531,6 +547,14 @@ paths:
             items:
               $ref: '#/definitions/types.Node'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show gateways on the grid
       tags:
       - GridProxy
@@ -551,6 +575,18 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/types.NodeWithNestedCapacity'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show the details for specific gateway
       tags:
       - GridProxy
@@ -650,6 +686,14 @@ paths:
             items:
               $ref: '#/definitions/types.Node'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show nodes on the grid
       tags:
       - GridProxy
@@ -670,6 +714,18 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/types.NodeWithNestedCapacity'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show the details for specific node
       tags:
       - GridProxy
@@ -708,6 +764,14 @@ paths:
             items:
               $ref: '#/definitions/types.Counters'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show stats about the grid
       tags:
       - GridProxy
@@ -735,6 +799,18 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rmbproxy.MessageIdentifier'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+        "502":
+          description: Bad Gateway
+          schema:
+            type: string
       summary: submit the message
       tags:
       - RMB
@@ -763,6 +839,18 @@ paths:
             items:
               $ref: '#/definitions/rmbproxy.Message'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+        "502":
+          description: Bad Gateway
+          schema:
+            type: string
       summary: Get the message result
       tags:
       - RMB
@@ -801,6 +889,14 @@ paths:
             items:
               $ref: '#/definitions/types.Twin'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show twins on the grid
       tags:
       - GridProxy

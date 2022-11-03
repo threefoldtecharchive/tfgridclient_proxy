@@ -46,6 +46,8 @@ const (
 // @Param dedicated query bool false "farm is dedicated"
 // @Param stellar_address query string false "farm stellar_address"
 // @Success 200 {object} []types.Farm
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /farms [get]
 func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleFarmRequestsQueryParams(r)
@@ -85,6 +87,8 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 // @Produce  json
 // @Param status query string false "Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
 // @Success 200 {object} []types.Counters
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /stats [get]
 func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 	filter, err := a.handleStatsRequestsQueryParams(r)
@@ -125,6 +129,8 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Param available_for query int false "available for twin id"
 // @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
 // @Success 200 {object} []types.Node
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /nodes [get]
 func (a *App) getNodes(r *http.Request) (interface{}, mw.Response) {
 	return a.listNodes(r)
@@ -157,6 +163,8 @@ func (a *App) getNodes(r *http.Request) (interface{}, mw.Response) {
 // @Param available_for query int false "available for twin id"
 // @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
 // @Success 200 {object} []types.Node
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /gateways [get]
 func (a *App) getGateways(r *http.Request) (interface{}, mw.Response) {
 	return a.listNodes(r)
@@ -195,6 +203,9 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} types.NodeWithNestedCapacity
+// @Failure 400 {object} string
+// @Failure 404 {object} string
+// @Failure 500 {object} string
 // @Router /nodes/{node_id} [get]
 func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {
 	return a._getNode(r)
@@ -208,6 +219,9 @@ func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} types.NodeWithNestedCapacity
+// @Failure 400 {object} string
+// @Failure 404 {object} string
+// @Failure 500 {object} string
 // @Router /gateways/{node_id} [get]
 func (a *App) getGateway(r *http.Request) (interface{}, mw.Response) {
 	return a._getNode(r)
@@ -246,6 +260,8 @@ func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
 // @Param twin_id query int false "twin id"
 // @Param account_id query string false "account address"
 // @Success 200 {object} []types.Twin
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /twins [get]
 func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleTwinRequestsQueryParams(r)
@@ -289,6 +305,8 @@ func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 // @Param deployment_hash query string false "contract deployment hash in case of 'node' contracts"
 // @Param number_of_public_ips query int false "Min number of public ips in the 'node' contract"
 // @Success 200 {object} []types.Contract
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /contracts [get]
 func (a *App) listContracts(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleContractRequestsQueryParams(r)
