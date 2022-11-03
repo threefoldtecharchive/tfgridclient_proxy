@@ -308,13 +308,13 @@ paths:
         in: query
         name: size
         type: integer
-      - description: Set farms' count on headers based on filter
+      - description: Set contracts' count on headers based on filter
         in: query
         name: ret_count
-        type: string
+        type: boolean
       - description: contract id
         in: query
-        name: contract_id_id
+        name: contract_id
         type: integer
       - description: twin id
         in: query
@@ -386,7 +386,7 @@ paths:
       - description: Set farms' count on headers based on filter
         in: query
         name: ret_count
-        type: string
+        type: boolean
       - description: Min number of free ips in the farm
         in: query
         name: free_ips
@@ -505,15 +505,15 @@ paths:
       - description: Set to true to filter nodes with ipv4
         in: query
         name: ipv4
-        type: string
+        type: boolean
       - description: Set to true to filter nodes with ipv6
         in: query
         name: ipv6
-        type: string
+        type: boolean
       - description: Set to true to filter nodes with domain
         in: query
         name: domain
-        type: string
+        type: boolean
       - description: Set to true to get the dedicated nodes only
         in: query
         name: dedicated
@@ -644,15 +644,15 @@ paths:
       - description: Set to true to filter nodes with ipv4
         in: query
         name: ipv4
-        type: string
+        type: boolean
       - description: Set to true to filter nodes with ipv6
         in: query
         name: ipv6
-        type: string
+        type: boolean
       - description: Set to true to filter nodes with domain
         in: query
         name: domain
-        type: string
+        type: boolean
       - description: Set to true to get the dedicated nodes only
         in: query
         name: dedicated
@@ -868,10 +868,10 @@ paths:
         in: query
         name: size
         type: integer
-      - description: Set farms' count on headers based on filter
+      - description: Set twins' count on headers based on filter
         in: query
         name: ret_count
-        type: string
+        type: boolean
       - description: twin id
         in: query
         name: twin_id

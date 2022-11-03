@@ -47,15 +47,15 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "Set farms' count on headers based on filter",
+                        "type": "boolean",
+                        "description": "Set contracts' count on headers based on filter",
                         "name": "ret_count",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "description": "contract id",
-                        "name": "contract_id_id",
+                        "name": "contract_id",
                         "in": "query"
                     },
                     {
@@ -159,7 +159,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set farms' count on headers based on filter",
                         "name": "ret_count",
                         "in": "query"
@@ -337,19 +337,19 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with ipv4",
                         "name": "ipv4",
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with ipv6",
                         "name": "ipv6",
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with domain",
                         "name": "domain",
                         "in": "query"
@@ -546,19 +546,19 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with ipv4",
                         "name": "ipv4",
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with ipv6",
                         "name": "ipv6",
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with domain",
                         "name": "domain",
                         "in": "query"
@@ -889,8 +889,8 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "Set farms' count on headers based on filter",
+                        "type": "boolean",
+                        "description": "Set twins' count on headers based on filter",
                         "name": "ret_count",
                         "in": "query"
                     },
