@@ -405,7 +405,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/types.NodeWithNestedCapacity"
+                            "$ref": "#/definitions/types.Node"
                         }
                     }
                 }
@@ -584,7 +584,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/types.NodeWithNestedCapacity"
+                            "$ref": "#/definitions/types.Node"
                         }
                     }
                 }
@@ -1020,72 +1020,6 @@ const docTemplate = `{
         "types.Node": {
             "type": "object",
             "properties": {
-                "certificationType": {
-                    "type": "string"
-                },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "integer"
-                },
-                "dedicated": {
-                    "type": "boolean"
-                },
-                "farmId": {
-                    "type": "integer"
-                },
-                "farmingPolicyId": {
-                    "type": "integer"
-                },
-                "gridVersion": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "location": {
-                    "$ref": "#/definitions/types.Location"
-                },
-                "nodeId": {
-                    "type": "integer"
-                },
-                "publicConfig": {
-                    "$ref": "#/definitions/types.PublicConfig"
-                },
-                "rentContractId": {
-                    "type": "integer"
-                },
-                "rentedByTwinId": {
-                    "type": "integer"
-                },
-                "status": {
-                    "description": "added node status field for up or down",
-                    "type": "string"
-                },
-                "total_resources": {
-                    "$ref": "#/definitions/types.Capacity"
-                },
-                "twinId": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "integer"
-                },
-                "uptime": {
-                    "type": "integer"
-                },
-                "used_resources": {
-                    "$ref": "#/definitions/types.Capacity"
-                }
-            }
-        },
-        "types.NodeWithNestedCapacity": {
-            "type": "object",
-            "properties": {
                 "capacity": {
                     "$ref": "#/definitions/types.CapacityResult"
                 },
@@ -1130,6 +1064,9 @@ const docTemplate = `{
                 },
                 "rentedByTwinId": {
                     "type": "integer"
+                },
+                "serialNumber": {
+                    "type": "string"
                 },
                 "status": {
                     "description": "added node status field for up or down",

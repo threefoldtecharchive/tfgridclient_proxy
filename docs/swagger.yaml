@@ -155,50 +155,6 @@ definitions:
     type: object
   types.Node:
     properties:
-      certificationType:
-        type: string
-      city:
-        type: string
-      country:
-        type: string
-      created:
-        type: integer
-      dedicated:
-        type: boolean
-      farmId:
-        type: integer
-      farmingPolicyId:
-        type: integer
-      gridVersion:
-        type: integer
-      id:
-        type: string
-      location:
-        $ref: '#/definitions/types.Location'
-      nodeId:
-        type: integer
-      publicConfig:
-        $ref: '#/definitions/types.PublicConfig'
-      rentContractId:
-        type: integer
-      rentedByTwinId:
-        type: integer
-      status:
-        description: added node status field for up or down
-        type: string
-      total_resources:
-        $ref: '#/definitions/types.Capacity'
-      twinId:
-        type: integer
-      updatedAt:
-        type: integer
-      uptime:
-        type: integer
-      used_resources:
-        $ref: '#/definitions/types.Capacity'
-    type: object
-  types.NodeWithNestedCapacity:
-    properties:
       capacity:
         $ref: '#/definitions/types.CapacityResult'
       certificationType:
@@ -229,6 +185,8 @@ definitions:
         type: integer
       rentedByTwinId:
         type: integer
+      serialNumber:
+        type: string
       status:
         description: added node status field for up or down
         type: string
@@ -539,7 +497,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/types.NodeWithNestedCapacity'
+            $ref: '#/definitions/types.Node'
       summary: Show the details for specific node
       tags:
       - GridProxy
@@ -657,7 +615,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/types.NodeWithNestedCapacity'
+            $ref: '#/definitions/types.Node'
       summary: Show the details for specific node
       tags:
       - GridProxy

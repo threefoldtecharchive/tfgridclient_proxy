@@ -267,18 +267,18 @@ func (a *App) handleStatsRequestsQueryParams(r *http.Request) (types.StatsFilter
 
 // getNodeData is a helper function that wraps fetch node data
 // it caches the results in redis to save time
-func (a *App) getNodeData(nodeIDStr string) (types.NodeWithNestedCapacity, error) {
+func (a *App) getNodeData(nodeIDStr string) (types.Node, error) {
 	nodeID, err := strconv.Atoi(nodeIDStr)
 	if err != nil {
-		return types.NodeWithNestedCapacity{}, errors.Wrap(ErrBadGateway, fmt.Sprintf("invalid node id %d: %s", nodeID, err.Error()))
+		return types.Node{}, errors.Wrap(ErrBadGateway, fmt.Sprintf("invalid node id %d: %s", nodeID, err.Error()))
 	}
 	info, err := a.db.GetNode(uint32(nodeID))
 	if errors.Is(err, db.ErrNodeNotFound) {
-		return types.NodeWithNestedCapacity{}, ErrNodeNotFound
+		return types.Node{}, ErrNodeNotFound
 	} else if err != nil {
 		// TODO: wrapping
-		return types.NodeWithNestedCapacity{}, err
+		return types.Node{}, err
 	}
-	apiNode := nodeWithNestedCapacityFromDBNode(info)
+	apiNode := nodeFromDBNode(info)
 	return apiNode, nil
 }

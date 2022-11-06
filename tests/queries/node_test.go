@@ -396,7 +396,7 @@ func calcNodesAggregates(data *DBData) (res NodesAggregate) {
 	return
 }
 
-func validateResults(local, remote []proxytypes.NodeWithNestedCapacity) error {
+func validateResults(local, remote []proxytypes.Node) error {
 	iter := local
 	if len(remote) < len(local) {
 		iter = remote

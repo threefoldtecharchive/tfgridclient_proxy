@@ -27,7 +27,7 @@ func (g *GridProxyClientimpl) Ping() error {
 }
 
 // Nodes returns nodes with the given filters and pagination parameters
-func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytypes.Limit) (res []proxytypes.NodeWithNestedCapacity, totalCount int, err error) {
+func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytypes.Limit) (res []proxytypes.Node, totalCount int, err error) {
 	if limit.Page == 0 {
 		limit.Page = 1
 	}
@@ -40,7 +40,7 @@ func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytyp
 			if isUp(node.updated_at) {
 				status = STATUS_UP
 			}
-			res = append(res, proxytypes.NodeWithNestedCapacity{
+			res = append(res, proxytypes.Node{
 				ID:              node.id,
 				NodeID:          int(node.node_id),
 				FarmID:          int(node.farm_id),
@@ -277,13 +277,13 @@ func (g *GridProxyClientimpl) Twins(filter proxytypes.TwinFilter, limit proxytyp
 	res = res[start:end]
 	return
 }
-func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.NodeWithNestedCapacity, err error) {
+func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.Node, err error) {
 	node := g.data.nodes[uint64(nodeID)]
 	status := STATUS_DOWN
 	if isUp(node.updated_at) {
 		status = STATUS_UP
 	}
-	res = proxytypes.NodeWithNestedCapacity{
+	res = proxytypes.Node{
 		ID:              node.id,
 		NodeID:          int(node.node_id),
 		FarmID:          int(node.farm_id),

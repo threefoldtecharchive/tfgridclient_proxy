@@ -136,9 +136,9 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, mw.Error(err)
 	}
-	nodes := make([]types.NodeWithNestedCapacity, len(dbNodes))
+	nodes := make([]types.Node, len(dbNodes))
 	for idx, node := range dbNodes {
-		nodes[idx] = nodeWithNestedCapacityFromDBNode(node)
+		nodes[idx] = nodeFromDBNode(node)
 	}
 	resp := mw.Ok()
 
@@ -159,7 +159,7 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 // @Param node_id path int false "Node ID"
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} types.NodeWithNestedCapacity
+// @Success 200 {object} types.Node
 // @Router /nodes/{node_id} [get]
 // @Router /gateways/{node_id} [get]
 func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {

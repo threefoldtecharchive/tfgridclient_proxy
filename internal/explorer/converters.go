@@ -11,59 +11,6 @@ import (
 	"github.com/threefoldtech/zos/pkg/gridtypes"
 )
 
-// func nodeFromDBNode(info db.Node) types.Node {
-// 	node := types.Node{
-// 		ID:              info.ID,
-// 		NodeID:          int(info.NodeID),
-// 		FarmID:          int(info.FarmID),
-// 		TwinID:          int(info.TwinID),
-// 		Country:         info.Country,
-// 		GridVersion:     int(info.GridVersion),
-// 		City:            info.City,
-// 		Uptime:          info.Uptime,
-// 		Created:         info.Created,
-// 		FarmingPolicyID: int(info.FarmingPolicyID),
-// 		UpdatedAt:       int64(math.Round(float64(info.UpdatedAt) / 1000)),
-// 		TotalResources: types.Capacity{
-// 			CRU: uint64(info.TotalCru),
-// 			SRU: gridtypes.Unit(info.TotalSru),
-// 			HRU: gridtypes.Unit(info.TotalHru),
-// 			MRU: gridtypes.Unit(info.TotalMru),
-// 		},
-// 		UsedResources: types.Capacity{
-// 			CRU: uint64(info.UsedCru),
-// 			SRU: gridtypes.Unit(info.UsedSru),
-// 			HRU: gridtypes.Unit(info.UsedHru),
-// 			MRU: gridtypes.Unit(info.UsedMru),
-// 		},
-// 		Location: types.Location{
-// 			Country: info.Country,
-// 			City:    info.City,
-// 		},
-// 		PublicConfig: types.PublicConfig{
-// 			Domain: info.Domain,
-// 			Gw4:    info.Gw4,
-// 			Gw6:    info.Gw6,
-// 			Ipv4:   info.Ipv4,
-// 			Ipv6:   info.Ipv6,
-// 		},
-// 		CertificationType: info.Certification,
-// 		Dedicated:         info.Dedicated,
-// 		RentContractID:    uint(info.RentContractID),
-// 		RentedByTwinID:    uint(info.RentedByTwinID),
-// 	}
-// 	if info.NodeStatus != "" {
-// 		node.Status = info.NodeStatus
-// 	} else {
-// 		if node.UpdatedAt >= time.Now().Add(-3*time.Hour).Unix() {
-// 			node.Status = "up"
-// 		} else {
-// 			node.Status = "down"
-// 		}
-// 	}
-// 	return node
-// }
-
 func farmFromDBFarm(info db.Farm) (types.Farm, error) {
 	farm := types.Farm{
 		Name:              info.Name,
@@ -80,9 +27,9 @@ func farmFromDBFarm(info db.Farm) (types.Farm, error) {
 	return farm, nil
 }
 
-func nodeWithNestedCapacityFromDBNode(info db.Node) types.NodeWithNestedCapacity {
+func nodeFromDBNode(info db.Node) types.Node {
 
-	node := types.NodeWithNestedCapacity{
+	node := types.Node{
 		ID:              info.ID,
 		NodeID:          int(info.NodeID),
 		FarmID:          int(info.FarmID),

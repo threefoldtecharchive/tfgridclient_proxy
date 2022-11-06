@@ -21,7 +21,7 @@ func (r *requestCounter) Ping() error {
 	r.Counter++
 	return errors.New("error")
 }
-func (r *requestCounter) Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.NodeWithNestedCapacity, totalCount int, err error) {
+func (r *requestCounter) Nodes(filter types.NodeFilter, pagination types.Limit) (res []types.Node, totalCount int, err error) {
 	r.Counter++
 	return nil, 0, errors.New("error")
 }
@@ -37,9 +37,9 @@ func (r *requestCounter) Twins(filter types.TwinFilter, pagination types.Limit) 
 	r.Counter++
 	return nil, 0, errors.New("error")
 }
-func (r *requestCounter) Node(nodeID uint32) (res types.NodeWithNestedCapacity, err error) {
+func (r *requestCounter) Node(nodeID uint32) (res types.Node, err error) {
 	r.Counter++
-	return types.NodeWithNestedCapacity{}, errors.New("error")
+	return types.Node{}, errors.New("error")
 }
 func (r *requestCounter) NodeStatus(nodeID uint32) (res types.NodeStatus, err error) {
 	r.Counter++
