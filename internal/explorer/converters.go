@@ -124,16 +124,12 @@ func nodeWithNestedCapacityFromDBNode(info db.Node) types.NodeWithNestedCapacity
 		Dedicated:         info.Dedicated,
 		RentContractID:    uint(info.RentContractID),
 		RentedByTwinID:    uint(info.RentedByTwinID),
-		Status:            info.NodeStatus,
+		SerialNumber:      info.SerialNumber,
 	}
-	if info.NodeStatus != "" {
-		node.Status = info.NodeStatus
+	if node.UpdatedAt >= time.Now().Add(-3*time.Hour).Unix() {
+		node.Status = "up"
 	} else {
-		if node.UpdatedAt >= time.Now().Add(-3*time.Hour).Unix() {
-			node.Status = "up"
-		} else {
-			node.Status = "down"
-		}
+		node.Status = "down"
 	}
 	return node
 }

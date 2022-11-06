@@ -34,6 +34,18 @@ func nodeParams(filter types.NodeFilter, limit types.Limit) string {
 	if filter.FreeSRU != nil && *filter.FreeSRU != 0 {
 		fmt.Fprintf(&builder, "free_sru=%d&", *filter.FreeSRU)
 	}
+	if filter.TotalCRU != nil && *filter.TotalCRU != 0 {
+		fmt.Fprintf(&builder, "total_cru=%d&", *filter.TotalCRU)
+	}
+	if filter.TotalHRU != nil && *filter.TotalHRU != 0 {
+		fmt.Fprintf(&builder, "total_hru=%d&", *filter.TotalHRU)
+	}
+	if filter.TotalMRU != nil && *filter.TotalMRU != 0 {
+		fmt.Fprintf(&builder, "total_mru=%d&", *filter.TotalMRU)
+	}
+	if filter.TotalSRU != nil && *filter.TotalSRU != 0 {
+		fmt.Fprintf(&builder, "total_sru=%d&", *filter.TotalSRU)
+	}
 	if filter.Country != nil && *filter.Country != "" {
 		fmt.Fprintf(&builder, "country=%s&", url.QueryEscape(*filter.Country))
 	}
