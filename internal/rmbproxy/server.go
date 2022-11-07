@@ -41,6 +41,9 @@ func (a *App) NewTwinClient(twinID int) (TwinClient, error) {
 // @Param msg body Message true "rmb.Message"
 // @Param twin_id path int true "twin id"
 // @Success 200 {object} MessageIdentifier
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Failure 502 {object} string
 // @Router /twin/{twin_id} [post]
 func (a *App) sendMessage(r *http.Request) (*http.Response, mw.Response) {
 	twinIDString := mux.Vars(r)["twin_id"]
@@ -77,6 +80,9 @@ func (a *App) sendMessage(r *http.Request) (*http.Response, mw.Response) {
 // @Param twin_id path int true "twin id"
 // @Param retqueue path string true "message retqueue"
 // @Success 200 {array} Message
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Failure 502 {object} string
 // @Router /twin/{twin_id}/{retqueue} [get]
 func (a *App) getResult(r *http.Request) (*http.Response, mw.Response) {
 	twinIDString := mux.Vars(r)["twin_id"]
@@ -106,14 +112,14 @@ func (a *App) getResult(r *http.Request) (*http.Response, mw.Response) {
 
 // ping godoc
 // @Summary ping the server
-// @Description ping the server to check if it running
+// @Description ping the server to check if it is running
 // @Tags ping
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} string "pong"
+// @Success 200 {object} PingMessage
 // @Router /ping [get]
 func (a *App) ping(r *http.Request) (interface{}, mw.Response) {
-	return map[string]string{"ping": "pong"}, mw.Ok()
+	return PingMessage{Ping: "pong"}, mw.Ok()
 }
 
 // Setup : sets rmb routes
