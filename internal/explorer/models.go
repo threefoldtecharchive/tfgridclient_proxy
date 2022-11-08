@@ -29,6 +29,10 @@ type App struct {
 	releaseVersion string
 }
 
+type ErrorMessage struct {
+	Message string `json:"message"`
+}
+
 // NodeInfo is node specific info, queried directly from the node
 type NodeInfo struct {
 	Capacity   types.CapacityResult `json:"capacity"`

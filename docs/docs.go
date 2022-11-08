@@ -47,15 +47,15 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "Set farms' count on headers based on filter",
+                        "type": "boolean",
+                        "description": "Set contracts' count on headers based on filter",
                         "name": "ret_count",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "description": "contract id",
-                        "name": "contract_id_id",
+                        "name": "contract_id",
                         "in": "query"
                     },
                     {
@@ -116,6 +116,18 @@ const docTemplate = `{
                                 "$ref": "#/definitions/types.Contract"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -147,7 +159,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set farms' count on headers based on filter",
                         "name": "ret_count",
                         "in": "query"
@@ -228,13 +240,25 @@ const docTemplate = `{
                                 "$ref": "#/definitions/types.Farm"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
         },
         "/gateways": {
             "get": {
-                "description": "Get all nodes on the grid, It has pagination",
+                "description": "Get all gateways on the grid, It has pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -244,7 +268,7 @@ const docTemplate = `{
                 "tags": [
                     "GridProxy"
                 ],
-                "summary": "Show nodes on the grid",
+                "summary": "Show gateways on the grid",
                 "parameters": [
                     {
                         "type": "integer",
@@ -259,7 +283,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set nodes' count on headers based on filter",
                         "name": "ret_count",
                         "in": "query"
@@ -290,7 +314,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Node status filter, up/down.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
                         "name": "status",
                         "in": "query"
                     },
@@ -313,19 +337,19 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with ipv4",
                         "name": "ipv4",
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with ipv6",
                         "name": "ipv6",
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with domain",
                         "name": "domain",
                         "in": "query"
@@ -376,13 +400,25 @@ const docTemplate = `{
                                 "$ref": "#/definitions/types.Node"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
         },
         "/gateways/{node_id}": {
             "get": {
-                "description": "Get all details for specific node hardware, capacity, DMI, hypervisor",
+                "description": "Get all details for specific gateway hardware, capacity, DMI, hypervisor",
                 "consumes": [
                     "application/json"
                 ],
@@ -392,7 +428,7 @@ const docTemplate = `{
                 "tags": [
                     "GridProxy"
                 ],
-                "summary": "Show the details for specific node",
+                "summary": "Show the details for specific gateway",
                 "parameters": [
                     {
                         "type": "integer",
@@ -406,6 +442,24 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/types.NodeWithNestedCapacity"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -438,7 +492,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set nodes' count on headers based on filter",
                         "name": "ret_count",
                         "in": "query"
@@ -469,7 +523,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Node status filter, up/down.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
                         "name": "status",
                         "in": "query"
                     },
@@ -492,19 +546,19 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with ipv4",
                         "name": "ipv4",
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with ipv6",
                         "name": "ipv6",
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Set to true to filter nodes with domain",
                         "name": "domain",
                         "in": "query"
@@ -555,6 +609,18 @@ const docTemplate = `{
                                 "$ref": "#/definitions/types.Node"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -586,13 +652,31 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/types.NodeWithNestedCapacity"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
         },
         "/ping": {
             "get": {
-                "description": "ping the server to check if it running",
+                "description": "ping the server to check if it is running",
                 "consumes": [
                     "application/json"
                 ],
@@ -605,9 +689,9 @@ const docTemplate = `{
                 "summary": "ping the server",
                 "responses": {
                     "200": {
-                        "description": "pong",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/rmbproxy.PingMessage"
                         }
                     }
                 }
@@ -629,7 +713,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Node status filter, up/down.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
                         "name": "status",
                         "in": "query"
                     }
@@ -642,6 +726,18 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/types.Counters"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -683,6 +779,24 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/rmbproxy.MessageIdentifier"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -726,6 +840,24 @@ const docTemplate = `{
                                 "$ref": "#/definitions/rmbproxy.Message"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -757,8 +889,8 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "Set farms' count on headers based on filter",
+                        "type": "boolean",
+                        "description": "Set twins' count on headers based on filter",
                         "name": "ret_count",
                         "in": "query"
                     },
@@ -783,6 +915,18 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/types.Twin"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -855,6 +999,15 @@ const docTemplate = `{
                 "retqueue": {
                     "type": "string",
                     "example": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                }
+            }
+        },
+        "rmbproxy.PingMessage": {
+            "type": "object",
+            "properties": {
+                "ping": {
+                    "type": "string",
+                    "example": "pong"
                 }
             }
         },
@@ -1062,6 +1215,9 @@ const docTemplate = `{
                 "rentedByTwinId": {
                     "type": "integer"
                 },
+                "serialNumber": {
+                    "type": "string"
+                },
                 "status": {
                     "description": "added node status field for up or down",
                     "type": "string"
@@ -1130,6 +1286,9 @@ const docTemplate = `{
                 },
                 "rentedByTwinId": {
                     "type": "integer"
+                },
+                "serialNumber": {
+                    "type": "string"
                 },
                 "status": {
                     "description": "added node status field for up or down",

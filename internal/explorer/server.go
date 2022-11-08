@@ -1,7 +1,6 @@
 package explorer
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"net/http"
@@ -18,7 +17,6 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 	"github.com/threefoldtech/grid_proxy_server/pkg/types"
-	"github.com/threefoldtech/zos/pkg/gridtypes"
 	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
@@ -35,7 +33,7 @@ const (
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
-// @Param ret_count query string false "Set farms' count on headers based on filter"
+// @Param ret_count query bool false "Set farms' count on headers based on filter"
 // @Param free_ips query int false "Min number of free ips in the farm"
 // @Param total_ips query int false "Min number of total ips in the farm"
 // @Param pricing_policy_id query int false "Pricing policy id"
@@ -48,6 +46,8 @@ const (
 // @Param dedicated query bool false "farm is dedicated"
 // @Param stellar_address query string false "farm stellar_address"
 // @Success 200 {object} []types.Farm
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /farms [get]
 func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleFarmRequestsQueryParams(r)
@@ -85,8 +85,10 @@ func (a *App) listFarms(r *http.Request) (interface{}, mw.Response) {
 // @Tags GridProxy
 // @Accept  json
 // @Produce  json
-// @Param status query string false "Node status filter, up/down."
+// @Param status query string false "Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
 // @Success 200 {object} []types.Counters
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /stats [get]
 func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 	filter, err := a.handleStatsRequestsQueryParams(r)
@@ -100,7 +102,7 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 	return counters, nil
 }
 
-// listNodes godoc
+// getNodes godoc
 // @Summary Show nodes on the grid
 // @Description Get all nodes on the grid, It has pagination
 // @Tags GridProxy
@@ -108,18 +110,18 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
-// @Param ret_count query string false "Set nodes' count on headers based on filter"
+// @Param ret_count query bool false "Set nodes' count on headers based on filter"
 // @Param free_mru query int false "Min free reservable mru in bytes"
 // @Param free_hru query int false "Min free reservable hru in bytes"
 // @Param free_sru query int false "Min free reservable sru in bytes"
 // @Param free_ips query int false "Min number of free ips in the farm of the node"
-// @Param status query string false "Node status filter, up/down."
+// @Param status query string false "Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
 // @Param city query string false "Node city filter"
 // @Param country query string false "Node country filter"
 // @Param farm_name query string false "Get nodes for specific farm"
-// @Param ipv4 query string false "Set to true to filter nodes with ipv4"
-// @Param ipv6 query string false "Set to true to filter nodes with ipv6"
-// @Param domain query string false "Set to true to filter nodes with domain"
+// @Param ipv4 query bool false "Set to true to filter nodes with ipv4"
+// @Param ipv6 query bool false "Set to true to filter nodes with ipv6"
+// @Param domain query bool false "Set to true to filter nodes with domain"
 // @Param dedicated query bool false "Set to true to get the dedicated nodes only"
 // @Param rentable query bool false "Set to true to filter the available nodes for renting"
 // @Param rented query bool false "Set to true to filter rented nodes"
@@ -127,8 +129,47 @@ func (a *App) getStats(r *http.Request) (interface{}, mw.Response) {
 // @Param available_for query int false "available for twin id"
 // @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
 // @Success 200 {object} []types.Node
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /nodes [get]
+func (a *App) getNodes(r *http.Request) (interface{}, mw.Response) {
+	return a.listNodes(r)
+}
+
+// getGateways godoc
+// @Summary Show gateways on the grid
+// @Description Get all gateways on the grid, It has pagination
+// @Tags GridProxy
+// @Accept  json
+// @Produce  json
+// @Param page query int false "Page number"
+// @Param size query int false "Max result per page"
+// @Param ret_count query bool false "Set nodes' count on headers based on filter"
+// @Param free_mru query int false "Min free reservable mru in bytes"
+// @Param free_hru query int false "Min free reservable hru in bytes"
+// @Param free_sru query int false "Min free reservable sru in bytes"
+// @Param free_ips query int false "Min number of free ips in the farm of the node"
+// @Param status query string false "Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
+// @Param city query string false "Node city filter"
+// @Param country query string false "Node country filter"
+// @Param farm_name query string false "Get nodes for specific farm"
+// @Param ipv4 query bool false "Set to true to filter nodes with ipv4"
+// @Param ipv6 query bool false "Set to true to filter nodes with ipv6"
+// @Param domain query bool false "Set to true to filter nodes with domain"
+// @Param dedicated query bool false "Set to true to get the dedicated nodes only"
+// @Param rentable query bool false "Set to true to filter the available nodes for renting"
+// @Param rented query bool false "Set to true to filter rented nodes"
+// @Param rented_by query int false "rented by twin id"
+// @Param available_for query int false "available for twin id"
+// @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
+// @Success 200 {object} []types.Node
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /gateways [get]
+func (a *App) getGateways(r *http.Request) (interface{}, mw.Response) {
+	return a.listNodes(r)
+}
+
 func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleNodeRequestsQueryParams(r)
 	if err != nil {
@@ -162,9 +203,31 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} types.NodeWithNestedCapacity
+// @Failure 400 {object} string
+// @Failure 404 {object} string
+// @Failure 500 {object} string
 // @Router /nodes/{node_id} [get]
-// @Router /gateways/{node_id} [get]
 func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {
+	return a._getNode(r)
+}
+
+// getGateway godoc
+// @Summary Show the details for specific gateway
+// @Description Get all details for specific gateway hardware, capacity, DMI, hypervisor
+// @Tags GridProxy
+// @Param node_id path int false "Node ID"
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} types.NodeWithNestedCapacity
+// @Failure 400 {object} string
+// @Failure 404 {object} string
+// @Failure 500 {object} string
+// @Router /gateways/{node_id} [get]
+func (a *App) getGateway(r *http.Request) (interface{}, mw.Response) {
+	return a._getNode(r)
+}
+
+func (a *App) _getNode(r *http.Request) (interface{}, mw.Response) {
 	nodeID := mux.Vars(r)["node_id"]
 	nodeData, err := a.getNodeData(nodeID)
 	if err != nil {
@@ -193,10 +256,12 @@ func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
-// @Param ret_count query string false "Set farms' count on headers based on filter"
+// @Param ret_count query bool false "Set twins' count on headers based on filter"
 // @Param twin_id query int false "twin id"
 // @Param account_id query string false "account address"
 // @Success 200 {object} []types.Twin
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /twins [get]
 func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleTwinRequestsQueryParams(r)
@@ -229,8 +294,8 @@ func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 // @Produce  json
 // @Param page query int false "Page number"
 // @Param size query int false "Max result per page"
-// @Param ret_count query string false "Set farms' count on headers based on filter"
-// @Param contract_id_id query int false "contract id"
+// @Param ret_count query bool false "Set contracts' count on headers based on filter"
+// @Param contract_id query int false "contract id"
 // @Param twin_id query int false "twin id"
 // @Param node_id query int false "node id which contract is deployed on in case of ('rent' or 'node' contracts)"
 // @Param name query string false "contract name in case of 'name' contracts"
@@ -240,6 +305,8 @@ func (a *App) listTwins(r *http.Request) (interface{}, mw.Response) {
 // @Param deployment_hash query string false "contract deployment hash in case of 'node' contracts"
 // @Param number_of_public_ips query int false "Min number of public ips in the 'node' contract"
 // @Success 200 {object} []types.Contract
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /contracts [get]
 func (a *App) listContracts(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleContractRequestsQueryParams(r)
@@ -308,51 +375,17 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 
 	router.HandleFunc("/farms", mw.AsHandlerFunc(a.listFarms))
 	router.HandleFunc("/stats", mw.AsHandlerFunc(a.getStats))
-	router.HandleFunc("/nodes", mw.AsHandlerFunc(a.listNodes))
-	router.HandleFunc("/gateways", mw.AsHandlerFunc(a.listNodes))
+	router.HandleFunc("/nodes", mw.AsHandlerFunc(a.getNodes))
+	router.HandleFunc("/gateways", mw.AsHandlerFunc(a.getGateways))
 	router.HandleFunc("/twins", mw.AsHandlerFunc(a.listTwins))
 	router.HandleFunc("/contracts", mw.AsHandlerFunc(a.listContracts))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
-	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
+	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getGateway))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage))
 	router.HandleFunc("/version", mw.AsHandlerFunc(a.version))
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 
-	go updateCacheRoutine(a)
-
 	return nil
-}
-
-func updateCacheRoutine(a App) {
-	// time to just pass tests before manipulating data
-	time.Sleep(time.Minute * 10)
-
-	for {
-		nodes, _, err := a.db.GetNodes(types.NodeFilter{}, types.Limit{})
-		if err != nil {
-			continue
-		}
-		for _, node := range nodes {
-			const cmd = "zos.statistics.get"
-			var result struct {
-				Total gridtypes.Capacity `json:"total"`
-				Used  gridtypes.Capacity `json:"used"`
-			}
-			err = a.rmb.Call(context.Background(), uint32(node.TwinID), cmd, nil, &result)
-			if err != nil {
-				errSet := a.db.SetNodeStatusCache(uint32(node.NodeID), "up")
-				if errSet != nil {
-					log.Printf("error setting status cache: %+v", errSet)
-				}
-				continue
-			}
-			errSet := a.db.SetNodeStatusCache(uint32(node.NodeID), "down")
-			if errSet != nil {
-				log.Printf("error setting status cache: %+v", errSet)
-			}
-		}
-		time.Sleep(time.Minute * 10)
-	}
 }

@@ -20,15 +20,15 @@ COPY --from=builder /src/yggdrasilctl /usr/bin/yggdrasilctl
 COPY --from=builder /src/genkeys /usr/bin/genkeys
 
 
-RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.2.0/msgbusd && \
+RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.2.1/msgbusd && \
     mv msgbusd /usr/bin/msgbusd &&\
     chmod +x /usr/bin/msgbusd
 
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.6/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
-RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/v1.6.0/tfgridclient_proxy_1.6.0_linux_amd64.tar.gz \
-    && tar -xzf tfgridclient_proxy_1.6.0_linux_amd64.tar.gz \
+RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/v1.6.4/tfgridclient_proxy_1.6.4_linux_amd64.tar.gz \
+    && tar -xzf tfgridclient_proxy_1.6.4_linux_amd64.tar.gz \
     && chmod +x server \
     && mv server /usr/bin/server
 

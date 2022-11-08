@@ -8,29 +8,12 @@ import (
 	// swagger configuration
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
+	"github.com/threefoldtech/substrate-client"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
-
-// NewTwinClient : create new TwinClient
-func (a *App) NewTwinClient(twinID int) (TwinClient, error) {
-	log.Debug().Int("twin", twinID).Msg("resolving twin")
-	client, err := a.resolver.manager.Substrate()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create substrate client")
-	}
-	twin, err := client.GetTwin(uint32(twinID))
-	if err != nil {
-		return nil, err
-	}
-	log.Debug().Str("ip", twin.IP).Msg("resolved twin ip")
-
-	return &twinClient{
-		dstIP: twin.IP,
-	}, nil
-}
 
 // sendMessage godoc
 // @Summary submit the message
@@ -41,6 +24,9 @@ func (a *App) NewTwinClient(twinID int) (TwinClient, error) {
 // @Param msg body Message true "rmb.Message"
 // @Param twin_id path int true "twin id"
 // @Success 200 {object} MessageIdentifier
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Failure 502 {object} string
 // @Router /twin/{twin_id} [post]
 func (a *App) sendMessage(r *http.Request) (*http.Response, mw.Response) {
 	twinIDString := mux.Vars(r)["twin_id"]
@@ -55,7 +41,7 @@ func (a *App) sendMessage(r *http.Request) (*http.Response, mw.Response) {
 		return nil, mw.BadRequest(errors.Wrap(err, "invalid twin_id"))
 	}
 
-	c, err := a.NewTwinClient(twinID)
+	c, err := a.resolver.Get(twinID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create twin client")
 		return nil, mw.Error(errors.Wrap(err, "failed to create twin client"))
@@ -77,6 +63,9 @@ func (a *App) sendMessage(r *http.Request) (*http.Response, mw.Response) {
 // @Param twin_id path int true "twin id"
 // @Param retqueue path string true "message retqueue"
 // @Success 200 {array} Message
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Failure 502 {object} string
 // @Router /twin/{twin_id}/{retqueue} [get]
 func (a *App) getResult(r *http.Request) (*http.Response, mw.Response) {
 	twinIDString := mux.Vars(r)["twin_id"]
@@ -91,7 +80,7 @@ func (a *App) getResult(r *http.Request) (*http.Response, mw.Response) {
 		return nil, mw.BadRequest(errors.Wrap(err, "invalid twin_id"))
 	}
 
-	c, err := a.NewTwinClient(twinID)
+	c, err := a.resolver.Get(twinID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create twin client")
 		return nil, mw.Error(errors.Wrap(err, "failed to create twin client"))
@@ -106,14 +95,14 @@ func (a *App) getResult(r *http.Request) (*http.Response, mw.Response) {
 
 // ping godoc
 // @Summary ping the server
-// @Description ping the server to check if it running
+// @Description ping the server to check if it is running
 // @Tags ping
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} string "pong"
+// @Success 200 {object} PingMessage
 // @Router /ping [get]
 func (a *App) ping(r *http.Request) (interface{}, mw.Response) {
-	return map[string]string{"ping": "pong"}, mw.Ok()
+	return PingMessage{Ping: "pong"}, mw.Ok()
 }
 
 // Setup : sets rmb routes
@@ -126,7 +115,7 @@ func (a *App) ping(r *http.Request) (interface{}, mw.Response) {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8080
 // @BasePath /
-func Setup(router *mux.Router, substrate string) error {
+func Setup(router *mux.Router, substrate *substrate.Substrate) error {
 	log.Info().Msg("Creating server")
 
 	resolver, err := NewTwinResolver(substrate)
@@ -135,7 +124,7 @@ func Setup(router *mux.Router, substrate string) error {
 	}
 
 	a := &App{
-		resolver: *resolver,
+		resolver: resolver,
 	}
 
 	router.HandleFunc("/twin/{twin_id:[0-9]+}", mw.AsProxyHandlerFunc(a.sendMessage))

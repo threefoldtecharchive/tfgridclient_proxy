@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 
+	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/substrate-client"
 )
 
@@ -14,7 +15,11 @@ type MessageIdentifier struct {
 
 // App is the main app objects
 type App struct {
-	resolver TwinExplorerResolver
+	resolver *TwinExplorerResolver
+}
+
+type PingMessage struct {
+	Ping string `json:"ping" example:"pong"`
 }
 
 // Flags for the App cmd command
@@ -30,7 +35,21 @@ type Flags struct {
 
 // TwinExplorerResolver is Substrate resolver
 type TwinExplorerResolver struct {
-	manager substrate.Manager
+	client *substrate.Substrate
+}
+
+// NewTwinClient : create new TwinClient
+func (t *TwinExplorerResolver) Get(twinID int) (TwinClient, error) {
+	log.Debug().Int("twin", twinID).Msg("resolving twin")
+	twin, err := t.client.GetTwin(uint32(twinID))
+	if err != nil {
+		return nil, err
+	}
+	log.Debug().Str("ip", twin.IP).Msg("resolved twin ip")
+
+	return &twinClient{
+		dstIP: twin.IP,
+	}, nil
 }
 
 type twinClient struct {

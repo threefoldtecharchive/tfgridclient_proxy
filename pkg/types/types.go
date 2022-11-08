@@ -86,6 +86,10 @@ type NodeFilter struct {
 	FreeMRU          *uint64
 	FreeHRU          *uint64
 	FreeSRU          *uint64
+	TotalMRU         *uint64
+	TotalHRU         *uint64
+	TotalSRU         *uint64
+	TotalCRU         *uint64
 	Country          *string
 	CountryContains  *string
 	City             *string
@@ -166,6 +170,7 @@ type Node struct {
 	Dedicated         bool         `json:"dedicated"`
 	RentContractID    uint         `json:"rentContractId"`
 	RentedByTwinID    uint         `json:"rentedByTwinId"`
+	SerialNumber      string       `json:"serialNumber"`
 }
 
 // CapacityResult is the NodeData capacity results to unmarshal json in it
@@ -195,6 +200,7 @@ type NodeWithNestedCapacity struct {
 	Dedicated         bool           `json:"dedicated"`
 	RentContractID    uint           `json:"rentContractId"`
 	RentedByTwinID    uint           `json:"rentedByTwinId"`
+	SerialNumber      string         `json:"serialNumber"`
 }
 
 type Twin struct {

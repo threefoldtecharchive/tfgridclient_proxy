@@ -29,6 +29,15 @@ type NodesAggregate struct {
 	maxFreeIPs  uint64
 	nodeRenters []uint64
 	twins       []uint64
+
+	totalCRUs   []uint64
+	maxTotalCRU uint64
+	totalHRUs   []uint64
+	maxTotalHRU uint64
+	totalMRUs   []uint64
+	maxTotalMRU uint64
+	totalSRUs   []uint64
+	maxTotalSRU uint64
 }
 
 var (
@@ -193,6 +202,38 @@ func randomNodeFilter(agg *NodesAggregate) proxytypes.NodeFilter {
 			f.FreeSRU = rndref(0, agg.maxFreeSRU)
 		}
 	}
+	if flip(.5) {
+		if flip(.1) {
+			c := agg.totalCRUs[rand.Intn(len(agg.totalCRUs))]
+			f.TotalCRU = &c
+		} else {
+			f.TotalCRU = rndref(0, agg.maxTotalCRU)
+		}
+	}
+	if flip(.5) {
+		if flip(.1) {
+			c := agg.totalMRUs[rand.Intn(len(agg.totalMRUs))]
+			f.TotalMRU = &c
+		} else {
+			f.TotalMRU = rndref(0, agg.maxTotalMRU)
+		}
+	}
+	if flip(.5) {
+		if flip(.1) {
+			c := agg.totalSRUs[rand.Intn(len(agg.totalSRUs))]
+			f.TotalSRU = &c
+		} else {
+			f.TotalSRU = rndref(0, agg.maxTotalSRU)
+		}
+	}
+	if flip(.5) {
+		if flip(.1) {
+			c := agg.totalHRUs[rand.Intn(len(agg.totalHRUs))]
+			f.TotalHRU = &c
+		} else {
+			f.TotalHRU = rndref(0, agg.maxTotalHRU)
+		}
+	}
 	if flip(.05) {
 		c := agg.countries[rand.Intn(len(agg.countries))]
 		v := changeCase(c)
@@ -312,13 +353,23 @@ func calcNodesAggregates(data *DBData) (res NodesAggregate) {
 	for _, node := range data.nodes {
 		cities[node.city] = struct{}{}
 		countries[node.country] = struct{}{}
-		free := calcFreeResources(data.nodeTotalResources[node.node_id], data.nodeUsedResources[node.node_id])
+		total := data.nodeTotalResources[node.node_id]
+		free := calcFreeResources(total, data.nodeUsedResources[node.node_id])
 		res.maxFreeHRU = max(res.maxFreeHRU, free.hru)
 		res.maxFreeSRU = max(res.maxFreeSRU, free.sru)
 		res.maxFreeMRU = max(res.maxFreeMRU, free.mru)
 		res.freeMRUs = append(res.freeMRUs, free.mru)
 		res.freeSRUs = append(res.freeSRUs, free.sru)
 		res.freeHRUs = append(res.freeHRUs, free.hru)
+
+		res.maxTotalMRU = max(res.maxTotalMRU, total.mru)
+		res.totalMRUs = append(res.totalMRUs, total.mru)
+		res.maxTotalCRU = max(res.maxTotalCRU, total.cru)
+		res.totalCRUs = append(res.totalCRUs, total.cru)
+		res.maxTotalSRU = max(res.maxTotalSRU, total.sru)
+		res.totalSRUs = append(res.totalSRUs, total.sru)
+		res.maxTotalHRU = max(res.maxTotalHRU, total.hru)
+		res.totalHRUs = append(res.totalHRUs, total.hru)
 	}
 	for _, contract := range data.rentContracts {
 		if contract.state == "Deleted" {
@@ -414,6 +465,18 @@ func serializeFilter(f proxytypes.NodeFilter) string {
 	}
 	if f.FreeHRU != nil {
 		res = fmt.Sprintf("%sFreeHRU: %d\n", res, *f.FreeHRU)
+	}
+	if f.TotalCRU != nil {
+		res = fmt.Sprintf("%sTotalCRU: %d\n", res, *f.TotalCRU)
+	}
+	if f.TotalHRU != nil {
+		res = fmt.Sprintf("%sTotalHRU: %d\n", res, *f.TotalHRU)
+	}
+	if f.TotalMRU != nil {
+		res = fmt.Sprintf("%sTotalMRU: %d\n", res, *f.TotalMRU)
+	}
+	if f.TotalSRU != nil {
+		res = fmt.Sprintf("%sTotalSRU: %d\n", res, *f.TotalSRU)
 	}
 	if f.Country != nil {
 		res = fmt.Sprintf("%sCountry: %s\n", res, *f.Country)
