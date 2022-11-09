@@ -401,9 +401,6 @@ func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.TotalSRU != nil && *f.TotalSRU > total.sru {
 		return false
 	}
-	if f.Country != nil && *f.Country != node.country {
-		return false
-	}
 	if f.NodeID != nil && *f.NodeID != node.node_id {
 		return false
 	}
