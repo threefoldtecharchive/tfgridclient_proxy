@@ -49,6 +49,12 @@ definitions:
         example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
         type: string
     type: object
+  rmbproxy.PingMessage:
+    properties:
+      ping:
+        example: pong
+        type: string
+    type: object
   types.Capacity:
     properties:
       cru:
@@ -256,13 +262,13 @@ paths:
         in: query
         name: size
         type: integer
-      - description: Set farms' count on headers based on filter
+      - description: Set contracts' count on headers based on filter
         in: query
         name: ret_count
-        type: string
+        type: boolean
       - description: contract id
         in: query
-        name: contract_id_id
+        name: contract_id
         type: integer
       - description: twin id
         in: query
@@ -306,6 +312,14 @@ paths:
             items:
               $ref: '#/definitions/types.Contract'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show contracts on the grid
       tags:
       - GridProxy
@@ -326,7 +340,7 @@ paths:
       - description: Set farms' count on headers based on filter
         in: query
         name: ret_count
-        type: string
+        type: boolean
       - description: Min number of free ips in the farm
         in: query
         name: free_ips
@@ -380,6 +394,14 @@ paths:
             items:
               $ref: '#/definitions/types.Farm'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show farms on the grid
       tags:
       - GridProxy
@@ -387,7 +409,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all nodes on the grid, It has pagination
+      description: Get all gateways on the grid, It has pagination
       parameters:
       - description: Page number
         in: query
@@ -400,7 +422,7 @@ paths:
       - description: Set nodes' count on headers based on filter
         in: query
         name: ret_count
-        type: string
+        type: boolean
       - description: Min free reservable mru in bytes
         in: query
         name: free_mru
@@ -417,7 +439,8 @@ paths:
         in: query
         name: free_ips
         type: integer
-      - description: Node status filter, up/down.
+      - description: 'Node status filter, ''up'': for only up nodes & ''down'': for
+          all up/down nodes.'
         in: query
         name: status
         type: string
@@ -436,15 +459,15 @@ paths:
       - description: Set to true to filter nodes with ipv4
         in: query
         name: ipv4
-        type: string
+        type: boolean
       - description: Set to true to filter nodes with ipv6
         in: query
         name: ipv6
-        type: string
+        type: boolean
       - description: Set to true to filter nodes with domain
         in: query
         name: domain
-        type: string
+        type: boolean
       - description: Set to true to get the dedicated nodes only
         in: query
         name: dedicated
@@ -478,14 +501,22 @@ paths:
             items:
               $ref: '#/definitions/types.Node'
             type: array
-      summary: Show nodes on the grid
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show gateways on the grid
       tags:
       - GridProxy
   /gateways/{node_id}:
     get:
       consumes:
       - application/json
-      description: Get all details for specific node hardware, capacity, DMI, hypervisor
+      description: Get all details for specific gateway hardware, capacity, DMI, hypervisor
       parameters:
       - description: Node ID
         in: path
@@ -498,7 +529,19 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/types.Node'
-      summary: Show the details for specific node
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show the details for specific gateway
       tags:
       - GridProxy
   /nodes:
@@ -518,7 +561,7 @@ paths:
       - description: Set nodes' count on headers based on filter
         in: query
         name: ret_count
-        type: string
+        type: boolean
       - description: Min free reservable mru in bytes
         in: query
         name: free_mru
@@ -535,7 +578,8 @@ paths:
         in: query
         name: free_ips
         type: integer
-      - description: Node status filter, up/down.
+      - description: 'Node status filter, ''up'': for only up nodes & ''down'': for
+          all up/down nodes.'
         in: query
         name: status
         type: string
@@ -554,15 +598,15 @@ paths:
       - description: Set to true to filter nodes with ipv4
         in: query
         name: ipv4
-        type: string
+        type: boolean
       - description: Set to true to filter nodes with ipv6
         in: query
         name: ipv6
-        type: string
+        type: boolean
       - description: Set to true to filter nodes with domain
         in: query
         name: domain
-        type: string
+        type: boolean
       - description: Set to true to get the dedicated nodes only
         in: query
         name: dedicated
@@ -596,6 +640,14 @@ paths:
             items:
               $ref: '#/definitions/types.Node'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show nodes on the grid
       tags:
       - GridProxy
@@ -616,6 +668,18 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/types.Node'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show the details for specific node
       tags:
       - GridProxy
@@ -623,14 +687,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: ping the server to check if it running
+      description: ping the server to check if it is running
       produces:
       - application/json
       responses:
         "200":
-          description: pong
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/rmbproxy.PingMessage'
       summary: ping the server
       tags:
       - ping
@@ -640,7 +704,8 @@ paths:
       - application/json
       description: Get statistics about the grid
       parameters:
-      - description: Node status filter, up/down.
+      - description: 'Node status filter, ''up'': for only up nodes & ''down'': for
+          all up/down nodes.'
         in: query
         name: status
         type: string
@@ -653,6 +718,14 @@ paths:
             items:
               $ref: '#/definitions/types.Counters'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show stats about the grid
       tags:
       - GridProxy
@@ -680,6 +753,18 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rmbproxy.MessageIdentifier'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+        "502":
+          description: Bad Gateway
+          schema:
+            type: string
       summary: submit the message
       tags:
       - RMB
@@ -708,6 +793,18 @@ paths:
             items:
               $ref: '#/definitions/rmbproxy.Message'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+        "502":
+          description: Bad Gateway
+          schema:
+            type: string
       summary: Get the message result
       tags:
       - RMB
@@ -725,10 +822,10 @@ paths:
         in: query
         name: size
         type: integer
-      - description: Set farms' count on headers based on filter
+      - description: Set twins' count on headers based on filter
         in: query
         name: ret_count
-        type: string
+        type: boolean
       - description: twin id
         in: query
         name: twin_id
@@ -746,6 +843,14 @@ paths:
             items:
               $ref: '#/definitions/types.Twin'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Show twins on the grid
       tags:
       - GridProxy
