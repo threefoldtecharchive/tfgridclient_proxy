@@ -2,6 +2,7 @@ package main
 
 import (
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -60,4 +61,13 @@ func min(a, b uint64) uint64 {
 		return a
 	}
 	return b
+}
+
+func changeCase(s string) string {
+	idx := rand.Intn(len(s))
+	return strings.Replace(s, string(s[idx]), strings.ToUpper(string(s[idx])), 1)
+}
+
+func stringMatch(str string, sub_str string) bool {
+	return strings.Contains(strings.ToLower(str), strings.ToLower(sub_str))
 }

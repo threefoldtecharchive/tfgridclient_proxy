@@ -370,10 +370,16 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 		q = q.Where("nodes_resources_view.total_sru >= ?", *filter.TotalSRU)
 	}
 	if filter.Country != nil {
-		q = q.Where("node.country = ?", *filter.Country)
+		q = q.Where("LOWER(node.country) = LOWER(?)", *filter.Country)
+	}
+	if filter.CountryContains != nil {
+		q = q.Where("node.country ILIKE '%' || ? || '%'", *filter.CountryContains)
 	}
 	if filter.City != nil {
-		q = q.Where("node.city = ?", *filter.City)
+		q = q.Where("LOWER(node.city) = LOWER(?)", *filter.City)
+	}
+	if filter.CityContains != nil {
+		q = q.Where("node.city ILIKE '%' || ? || '%'", *filter.CityContains)
 	}
 	if filter.NodeID != nil {
 		q = q.Where("node.node_id = ?", *filter.NodeID)
@@ -385,7 +391,10 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 		q = q.Where("node.farm_id IN ?", filter.FarmIDs)
 	}
 	if filter.FarmName != nil {
-		q = q.Where("farm.name = ?", *filter.FarmName)
+		q = q.Where("LOWER(farm.name) = LOWER(?)", *filter.FarmName)
+	}
+	if filter.FarmNameContains != nil {
+		q = q.Where("farm.name ILIKE '%' || ? || '%'", *filter.FarmNameContains)
 	}
 	if filter.FreeIPs != nil {
 		q = q.Where("(SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id AND public_ip.contract_id = 0) >= ?", *filter.FreeIPs)
@@ -480,7 +489,7 @@ func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) 
 		q = q.Where("twin_id = ?", *filter.TwinID)
 	}
 	if filter.Name != nil {
-		q = q.Where("name = ?", *filter.Name)
+		q = q.Where("LOWER(name) = LOWER(?)", *filter.Name)
 	}
 
 	if filter.NameContains != nil {

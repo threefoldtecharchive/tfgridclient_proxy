@@ -82,29 +82,32 @@ type Limit struct {
 
 // NodeFilter node filters
 type NodeFilter struct {
-	Status       *string
-	FreeMRU      *uint64
-	FreeHRU      *uint64
-	FreeSRU      *uint64
-	TotalMRU     *uint64
-	TotalHRU     *uint64
-	TotalSRU     *uint64
-	TotalCRU     *uint64
-	Country      *string
-	City         *string
-	FarmName     *string
-	FarmIDs      []uint64
-	FreeIPs      *uint64
-	IPv4         *bool
-	IPv6         *bool
-	Domain       *bool
-	Dedicated    *bool
-	Rentable     *bool
-	Rented       *bool
-	RentedBy     *uint64
-	AvailableFor *uint64
-	NodeID       *uint64
-	TwinID       *uint64
+	Status           *string
+	FreeMRU          *uint64
+	FreeHRU          *uint64
+	FreeSRU          *uint64
+	TotalMRU         *uint64
+	TotalHRU         *uint64
+	TotalSRU         *uint64
+	TotalCRU         *uint64
+	Country          *string
+	CountryContains  *string
+	City             *string
+	CityContains     *string
+	FarmName         *string
+	FarmNameContains *string
+	FarmIDs          []uint64
+	FreeIPs          *uint64
+	IPv4             *bool
+	IPv6             *bool
+	Domain           *bool
+	Dedicated        *bool
+	Rentable         *bool
+	Rented           *bool
+	RentedBy         *uint64
+	AvailableFor     *uint64
+	NodeID           *uint64
+	TwinID           *uint64
 }
 
 // FarmFilter farm filters
