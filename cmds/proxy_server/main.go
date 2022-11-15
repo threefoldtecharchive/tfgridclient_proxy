@@ -17,7 +17,6 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/rmbproxy"
 	logging "github.com/threefoldtech/grid_proxy_server/pkg"
-	"github.com/threefoldtech/substrate-client"
 )
 
 const (
@@ -79,12 +78,7 @@ func main() {
 	}
 
 	logging.SetupLogging(f.debug)
-	substrate, err := substrate.NewManager(f.substrate).Substrate()
-	if err != nil {
-		log.Fatal().Err(errors.Wrap(err, "error in connecting to substrate"))
-	}
-	defer substrate.Close()
-	s, err := createServer(f, GitCommit, substrate)
+	s, err := createServer(f, GitCommit)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create mux server")
 	}
@@ -140,7 +134,7 @@ func app(s *http.Server, f flags) error {
 	return nil
 }
 
-func createServer(f flags, gitCommit string, substrate *substrate.Substrate) (*http.Server, error) {
+func createServer(f flags, gitCommit string) (*http.Server, error) {
 	log.Info().Msg("Creating server")
 
 	router := mux.NewRouter().StrictSlash(true)
