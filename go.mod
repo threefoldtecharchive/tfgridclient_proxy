@@ -14,7 +14,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/http-swagger v1.1.1
 	github.com/swaggo/swag v1.8.6-0.20220826192336-007219f7b3f9
-	github.com/threefoldtech/go-rmb v0.1.11-0.20220224131627-825c23c921d3
+	github.com/threefoldtech/go-rmb v0.2.1
 	github.com/threefoldtech/substrate-client v0.0.0-20220927111941-026e0cf92661
 	github.com/threefoldtech/zos v0.5.6-0.20220823125932-7df5043ab018
 	gorm.io/driver/postgres v1.3.5
@@ -38,12 +38,7 @@ require (
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
-<<<<<<< HEAD
 	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/gomodule/redigo v2.0.0+incompatible // indirect
-=======
-	github.com/go-stack/stack v1.8.0 // indirect
->>>>>>> 4877a50 (remove rmb client from explorer as it's not used anymore...)
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect

@@ -21,7 +21,8 @@ type TwinResolver struct {
 
 // NewTwinResolver : create a new substrate resolver
 func NewTwinResolver(substrateURL string, redis *redis.Client, ttl time.Duration) (*TwinResolver, error) {
-	client, err := substrate.NewSubstrate(substrateURL)
+	manager := substrate.NewManager(substrateURL)
+	client, err := manager.Substrate()
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func NewTwinResolver(substrateURL string, redis *redis.Client, ttl time.Duration
 func (r TwinResolver) Get(id int) (*substrate.Twin, error) {
 	var twin *substrate.Twin
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	key := strconv.Itoa(id)
 	if err := r.cache.Get(ctx, key, &twin); err == nil {
 		return twin, nil

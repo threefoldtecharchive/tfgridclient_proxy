@@ -3,10 +3,11 @@ package rmbproxy
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 
 	// swagger configuration
 	"github.com/pkg/errors"
