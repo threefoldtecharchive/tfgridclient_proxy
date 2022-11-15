@@ -1,50 +1,75 @@
 package rmbproxy
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"context"
+	"strconv"
+	"time"
 
+	"github.com/go-redis/cache/v8"
+	"github.com/go-redis/redis/v8"
+
+	"github.com/threefoldtech/go-rmb"
 	"github.com/threefoldtech/substrate-client"
 )
 
-func submitURL(twinIP string) string {
-	return fmt.Sprintf("http://%s:8051/zbus-cmd", twinIP)
-}
-
-func resultURL(twinIP string) string {
-	return fmt.Sprintf("http://%s:8051/zbus-result", twinIP)
+// TwinExplorerResolver is Substrate resolver
+type TwinResolver struct {
+	client *substrate.Substrate
+	cache  *cache.Cache
+	ttl    time.Duration
 }
 
 // NewTwinResolver : create a new substrate resolver
-func NewTwinResolver(substrate *substrate.Substrate) (*TwinExplorerResolver, error) {
+func NewTwinResolver(substrateURL string, redis *redis.Client, ttl time.Duration) (*TwinResolver, error) {
+	client, err := substrate.NewSubstrate(substrateURL)
+	if err != nil {
+		return nil, err
+	}
 
-	return &TwinExplorerResolver{
-		client: substrate,
+	redisCache := cache.New(&cache.Options{
+		Redis:      redis,
+		LocalCache: cache.NewTinyLFU(1000, ttl),
+	})
+
+	return &TwinResolver{
+		client: client,
+		cache:  redisCache,
+		ttl:    ttl,
 	}, nil
 }
 
-func (c *twinClient) SubmitMessage(msg bytes.Buffer) (*http.Response, error) {
-	resp, err := http.Post(submitURL(c.dstIP), "application/json", &msg)
-	// check on response for non-communication errors?
+func (r TwinResolver) Get(id int) (*substrate.Twin, error) {
+	var twin *substrate.Twin
+
+	ctx := context.TODO()
+	key := strconv.Itoa(id)
+	if err := r.cache.Get(ctx, key, &twin); err == nil {
+		return twin, nil
+	}
+
+	twin, err := r.client.GetTwin(uint32(id))
 	if err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	if err := r.cache.Set(&cache.Item{
+		Ctx:   ctx,
+		Key:   key,
+		Value: twin,
+		TTL:   r.ttl,
+	}); err != nil {
+		return nil, err
+	}
+
+	return twin, nil
 }
 
-func (c *twinClient) GetResult(msgIdentifier MessageIdentifier) (*http.Response, error) {
-	var buffer bytes.Buffer
-	if err := json.NewEncoder(&buffer).Encode(msgIdentifier); err != nil {
-		return nil, err
-	}
-	resp, err := http.Post(resultURL(c.dstIP), "application/json", &buffer)
-
+func (r TwinResolver) Verify(id int, message *rmb.Message) error {
+	twin, err := r.Get(id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return resp, err
+	pubKey := twin.Account.PublicKey()
+	return message.Verify(pubKey)
 }

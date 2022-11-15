@@ -4,6 +4,8 @@ go 1.17
 
 require (
 	github.com/go-acme/lego/v4 v4.4.0
+	github.com/go-redis/cache/v8 v8.4.3
+	github.com/go-redis/redis/v8 v8.11.3
 	github.com/gorilla/mux v1.8.0
 	github.com/lib/pq v1.10.4
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -12,6 +14,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/http-swagger v1.1.1
 	github.com/swaggo/swag v1.8.6-0.20220826192336-007219f7b3f9
+	github.com/threefoldtech/go-rmb v0.1.11-0.20220224131627-825c23c921d3
 	github.com/threefoldtech/substrate-client v0.0.0-20220927111941-026e0cf92661
 	github.com/threefoldtech/zos v0.5.6-0.20220823125932-7df5043ab018
 	gorm.io/driver/postgres v1.3.5
@@ -62,7 +65,9 @@ require (
 
 require (
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.5 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -73,7 +78,13 @@ require (
 	github.com/jackc/pgx/v4 v4.16.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/vmihailenco/go-tinylfu v0.2.2 // indirect
+	github.com/vmihailenco/msgpack/v5 v5.3.4 // indirect
+	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
+	golang.org/x/exp v0.0.0-20210916165020-5cb4fee858ee // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 

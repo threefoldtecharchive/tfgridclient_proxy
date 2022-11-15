@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/rmbproxy"
@@ -150,9 +153,17 @@ func createServer(f flags, gitCommit string, substrate *substrate.Substrate) (*h
 	if err := explorer.Setup(router, f.redis, gitCommit, db); err != nil {
 		return nil, err
 	}
-	if err := rmbproxy.Setup(router, substrate); err != nil {
+
+	// setup rmb proxy
+	redis := redis.NewClient(&redis.Options{
+		Addr: f.redis,
+	})
+	ttl := 10 * time.Minute
+	proxy, err := rmbproxy.NewProxy(f.substrate, redis, ttl)
+	if err != nil {
 		return nil, err
 	}
+	proxy.Setup(router)
 
 	return &http.Server{
 		Handler: router,

@@ -34,31 +34,33 @@ func exposeHeaders(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Expose-Headers", "*")
 }
 
-// AsProxyHandlerFunc returns the response in `_, response`, and proxy the http response in `response, nil`
-func AsProxyHandlerFunc(a ProxyAction) http.HandlerFunc {
+type ProxyResult struct {
+	Status  string `json:",omitempty"`
+	Message string `json:",omitempty"`
+}
+
+// AsProxyHandlerFunc is the same as AsHandlerFunc
+// except it returns a different result in case of error response
+// this can be modified to support both, but kept as is for now
+// to be compatible with the rmb result
+func AsProxyHandlerFunc(a Action) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			_, _ = io.ReadAll(r.Body)
 			_ = r.Body.Close()
 		}()
 		enableCors(&w)
-		response, result := a(r)
-		defer func() {
-			if response != nil {
-				response.Body.Close()
-			}
-		}()
+		result, response := a(r)
 
 		var headers http.Header
 		var statusCode int
 
 		// headers
-		if result != nil {
-			headers = result.Header()
+		if response != nil {
+			headers = response.Header()
 			headers.Set("Content-Type", "application/json")
-		} else if response != nil {
-			headers = response.Header
 		}
+
 		for k, v := range headers {
 			// override if present
 			w.Header().Set(k, v[0])
@@ -69,10 +71,8 @@ func AsProxyHandlerFunc(a ProxyAction) http.HandlerFunc {
 		}
 
 		// status code
-		if result != nil {
-			statusCode = result.Status()
-		} else if response != nil {
-			statusCode = response.StatusCode
+		if response != nil {
+			statusCode = response.Status()
 		} else {
 			statusCode = http.StatusOK
 		}
@@ -80,21 +80,18 @@ func AsProxyHandlerFunc(a ProxyAction) http.HandlerFunc {
 		w.WriteHeader(statusCode)
 
 		// body
-		if result != nil && result.Err() != nil {
+		if response != nil && response.Err() != nil {
 			// to be consistent with https://github.com/threefoldtech/rmb_go/blob/825c23c921d395294f3d28d5d9f1d009e8fde9d6/models.go#L35
-			object := struct {
-				Status  string `json:",omitempty"`
-				Message string `json:",omitempty"`
-			}{
-				Message: result.Err().Error(),
-				Status:  http.StatusText(result.Status()),
+			object := ProxyResult{
+				Message: response.Err().Error(),
+				Status:  http.StatusText(response.Status()),
 			}
 			if err := json.NewEncoder(w).Encode(object); err != nil {
 				log.Error().Err(err).Msg("failed to encode return object")
 			}
-		} else if response != nil {
-			if _, err := io.Copy(w, response.Body); err != nil {
-				log.Error().Err(err).Msg("failed to write returned object")
+		} else {
+			if err := json.NewEncoder(w).Encode(result); err != nil {
+				log.Error().Err(err).Msg("failed to encode return object")
 			}
 		}
 	}
