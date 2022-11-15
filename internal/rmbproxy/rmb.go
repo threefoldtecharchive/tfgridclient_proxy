@@ -3,8 +3,9 @@ package rmbproxy
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-redis/redis/v8"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -28,7 +29,7 @@ type Rmb struct {
 func NewRmb(redis *redis.Client, ttl time.Duration) *Rmb {
 	rmbClient := &client.MessageBusClient{
 		Client: redis,
-		Ctx:    context.TODO(),
+		Ctx:    context.Background(),
 	}
 
 	return &Rmb{
