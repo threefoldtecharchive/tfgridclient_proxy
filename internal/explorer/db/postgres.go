@@ -28,33 +28,34 @@ var (
 )
 
 const (
-	nodeStateFactor = 3
-	reportInterval  = time.Hour
+	nodeStateFactor = 1 // will need to update this later
+	reportInterval  = time.Hour * 24
 	// the number of missed reports to mark the node down
 	// if node reports every 5 mins, it's marked down if the last report is more than 15 mins in the past
 )
 
+// consumable_resources should have total resources reserved by a contract (resources used on node)
 const (
 	setupPostgresql = `
 	CREATE OR REPLACE VIEW nodes_resources_view AS SELECT
 		node.node_id,
-		COALESCE(sum(contract_resources.cru), 0) as used_cru,
-		COALESCE(sum(contract_resources.mru), 0) + GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as used_mru,
-		COALESCE(sum(contract_resources.hru), 0) as used_hru,
-		COALESCE(sum(contract_resources.sru), 0) + 107374182400 as used_sru,
-		node_resources_total.mru - COALESCE(sum(contract_resources.mru), 0) - GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as free_mru,
-		node_resources_total.hru - COALESCE(sum(contract_resources.hru), 0) as free_hru,
-		node_resources_total.sru - COALESCE(sum(contract_resources.sru), 0) - 107374182400 as free_sru,
+		COALESCE(sum(consumable_resources.total_cru), 0) as used_cru,
+		COALESCE(sum(consumable_resources.total_mru), 0) + GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as used_mru,
+		COALESCE(sum(consumable_resources.total_hru), 0) as used_hru,
+		COALESCE(sum(consumable_resources.total_sru), 0) + 107374182400 as used_sru,
+		node_resources_total.mru - COALESCE(sum(consumable_resources.total_mru), 0) - GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as free_mru,
+		node_resources_total.hru - COALESCE(sum(consumable_resources.total_hru), 0) as free_hru,
+		node_resources_total.sru - COALESCE(sum(consumable_resources.total_sru), 0) - 107374182400 as free_sru,
 		COALESCE(node_resources_total.cru, 0) as total_cru,
 		COALESCE(node_resources_total.mru, 0) as total_mru,
 		COALESCE(node_resources_total.hru, 0) as total_hru,
 		COALESCE(node_resources_total.sru, 0) as total_sru,
 		COALESCE(COUNT(DISTINCT state), 0) as states
-	FROM contract_resources
-	JOIN node_contract as node_contract
-	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state IN ('Created', 'GracePeriod')
+	FROM consumable_resources
+	JOIN capacity_reservation_contract as capacity_reservation_contract
+	ON capacity_reservation_contract.consumable_resources_id = consumable_resources.id AND capacity_reservation_contract.state IN ('Created', 'GracePeriod')
 	RIGHT JOIN node as node
-	ON node.node_id = node_contract.node_id
+	ON node.node_id = capacity_reservation_contract.node_id
 	JOIN node_resources_total AS node_resources_total
 	ON node_resources_total.node_id = node.id
 	GROUP BY node.node_id, node_resources_total.mru, node_resources_total.sru, node_resources_total.hru, node_resources_total.cru;
@@ -66,23 +67,23 @@ const (
 	$body$
 	SELECT
 		node.node_id,
-		COALESCE(sum(contract_resources.cru), 0) as used_cru,
-		COALESCE(sum(contract_resources.mru), 0) + GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as used_mru,
-		COALESCE(sum(contract_resources.hru), 0) as used_hru,
-		COALESCE(sum(contract_resources.sru), 0) + 107374182400 as used_sru,
-		node_resources_total.mru - COALESCE(sum(contract_resources.mru), 0) - GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as free_mru,
-		node_resources_total.hru - COALESCE(sum(contract_resources.hru), 0) as free_hru,
-		node_resources_total.sru - COALESCE(sum(contract_resources.sru), 0) - 107374182400 as free_sru,
+		COALESCE(sum(consumable_resources.total_cru), 0) as used_cru,
+		COALESCE(sum(consumable_resources.total_mru), 0) + GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as used_mru,
+		COALESCE(sum(consumable_resources.total_hru), 0) as used_hru,
+		COALESCE(sum(consumable_resources.total_sru), 0) + 107374182400 as used_sru,
+		node_resources_total.mru - COALESCE(sum(consumable_resources.total_mru), 0) - GREATEST(CAST((node_resources_total.mru / 10) AS bigint), 2147483648) as free_mru,
+		node_resources_total.hru - COALESCE(sum(consumable_resources.total_hru), 0) as free_hru,
+		node_resources_total.sru - COALESCE(sum(consumable_resources.total_sru), 0) - 107374182400 as free_sru,
 		COALESCE(node_resources_total.cru, 0) as total_cru,
 		COALESCE(node_resources_total.mru, 0) as total_mru,
 		COALESCE(node_resources_total.hru, 0) as total_hru,
 		COALESCE(node_resources_total.sru, 0) as total_sru,
 		COALESCE(COUNT(DISTINCT state), 0) as states
-	FROM contract_resources
-	JOIN node_contract as node_contract
-	ON node_contract.resources_used_id = contract_resources.id AND node_contract.state IN ('Created', 'GracePeriod')
+	FROM consumable_resources
+	JOIN capacity_reservation_contract as capacity_reservation_contract
+	ON capacity_reservation_contract.consumable_resources_id = consumable_resources.id AND capacity_reservation_contract.state IN ('Created', 'GracePeriod')
 	RIGHT JOIN node as node
-	ON node.node_id = node_contract.node_id
+	ON node.node_id = capacity_reservation_contract.node_id
 	JOIN node_resources_total AS node_resources_total
 	ON node_resources_total.node_id = node.id
 	WHERE node.node_id = query_node_id
@@ -137,6 +138,15 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 		return counters, errors.Wrap(res.Error, "couldn't get public ip count")
 	}
 	var count int64
+	if res := d.gormDB.Table("capacity_reservation_contract").Count(&count); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get node contract count")
+	}
+	counters.Contracts += count
+	if res := d.gormDB.Table("deployment").Count(&count); res.Error != nil {
+		return counters, errors.Wrap(res.Error, "couldn't get node contract count")
+	}
+	counters.Contracts += count
+
 	if res := d.gormDB.Table("node_contract").Count(&count); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get node contract count")
 	}
@@ -155,7 +165,7 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 	condition := "TRUE"
 	if filter.Status != nil && *filter.Status == "up" {
 		nodeUpInterval := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
-		condition = fmt.Sprintf(`node.updated_at >= %d`, nodeUpInterval)
+		condition = fmt.Sprintf(`node_power.last_uptime >= %d`, nodeUpInterval)
 	}
 	if res := d.gormDB.
 		Table("node").
@@ -166,15 +176,18 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 			"sum(node_resources_total.mru) as total_mru",
 		).
 		Joins("LEFT JOIN node_resources_total ON node.id = node_resources_total.node_id").
+		Joins("LEFT JOIN node_power ON node.id = node_power.node_id").
 		Where(condition).
 		Scan(&counters); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get nodes total resources")
 	}
 	if res := d.gormDB.Table("node").
+		Joins("LEFT JOIN node_power ON node.id = node_power.node_id").
 		Where(condition).Count(&counters.Nodes); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get node count")
 	}
 	if res := d.gormDB.Table("node").
+		Joins("LEFT JOIN node_power ON node.id = node_power.node_id").
 		Where(condition).Distinct("country").Count(&counters.Countries); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get country count")
 	}
@@ -184,7 +197,8 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 			`RIGHT JOIN public_config
 			ON node.id = public_config.node_id
 			`,
-		)
+		).
+		Joins("LEFT JOIN node_power ON node.id = node_power.node_id")
 
 	if res := query.Where(condition).Where("COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv6, '') != ''").Count(&counters.AccessNodes); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get access node count")
@@ -194,7 +208,8 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 	}
 	var distribution []NodesDistribution
 	if res := d.gormDB.Table("node").
-		Select("country, count(node_id) as nodes").Where(condition).Group("country").Scan(&distribution); res.Error != nil {
+		Select("country, count(node_id) as nodes").Joins("LEFT JOIN node_power ON node.id = node_power.node_id").
+		Where(condition).Group("country").Scan(&distribution); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get nodes distribution")
 	}
 	nodesDistribution := map[string]int64{}
@@ -285,7 +300,9 @@ func (d *PostgresDatabase) farmTableQuery() *gorm.DB {
 			public_ip
 		GROUP by farm_id) public_ip
 		ON public_ip.farm_id = farm.id`,
-		)
+		).
+		Joins(`LEFT JOIN node ON node.farm_id = farm.id`).
+		Joins(`LEFT JOIN nodes_resources_view ON nodes_resources_view.node_id = node.id`)
 }
 func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 	return d.gormDB.
@@ -317,9 +334,13 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 			"public_config.ipv6",
 			"node.certification",
 			"farm.dedicated_farm as dedicated",
+			// waiting for clarification here https://github.com/threefoldtech/tfchain/issues/537 for renting
 			"rent_contract.contract_id as rent_contract_id",
 			"rent_contract.twin_id as rented_by_twin_id",
 			"node.serial_number",
+			"node_power.target as power_target",
+			"node_power.state as power_state",
+			"node_power.last_up_time",
 		).
 		Joins(
 			"LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id",
@@ -332,7 +353,8 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 		).
 		Joins(
 			"LEFT JOIN farm ON node.farm_id = farm.farm_id",
-		)
+		).
+		Joins("LEFT JOIN node_power ON node.id = node_power.node_id")
 }
 
 // GetNodes returns nodes filtered and paginated
@@ -470,6 +492,28 @@ func (d *PostgresDatabase) shouldRetry(resError error) bool {
 // GetFarms return farms filtered and paginated
 func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) ([]Farm, uint, error) {
 	q := d.farmTableQuery()
+
+	if filter.FreeMRU != nil {
+		q = q.Where("nodes_resources_view.free_mru >= ?", *filter.FreeMRU)
+	}
+	if filter.FreeHRU != nil {
+		q = q.Where("nodes_resources_view.free_hru >= ?", *filter.FreeHRU)
+	}
+	if filter.FreeSRU != nil {
+		q = q.Where("nodes_resources_view.free_sru >= ?", *filter.FreeSRU)
+	}
+	if filter.TotalCRU != nil {
+		q = q.Where("nodes_resources_view.total_cru >= ?", *filter.TotalCRU)
+	}
+	if filter.TotalHRU != nil {
+		q = q.Where("nodes_resources_view.total_hru >= ?", *filter.TotalHRU)
+	}
+	if filter.TotalMRU != nil {
+		q = q.Where("nodes_resources_view.total_mru >= ?", *filter.TotalMRU)
+	}
+	if filter.TotalSRU != nil {
+		q = q.Where("nodes_resources_view.total_sru >= ?", *filter.TotalSRU)
+	}
 	if filter.FreeIPs != nil {
 		q = q.Where("(SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id and public_ip.contract_id = 0) >= ?", *filter.FreeIPs)
 	}

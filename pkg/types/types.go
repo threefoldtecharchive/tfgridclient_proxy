@@ -122,6 +122,13 @@ type FarmFilter struct {
 	NameContains      *string
 	CertificationType *string
 	Dedicated         *bool
+	FreeMRU           *uint64
+	FreeHRU           *uint64
+	FreeSRU           *uint64
+	TotalMRU          *uint64
+	TotalHRU          *uint64
+	TotalSRU          *uint64
+	TotalCRU          *uint64
 }
 
 // TwinFilter twin filters

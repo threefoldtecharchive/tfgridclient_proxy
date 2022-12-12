@@ -59,6 +59,9 @@ type Node struct {
 	RentContractID  int64
 	RentedByTwinID  int64
 	SerialNumber    string
+	PowerState      string
+	PowerTarget     string
+	LastUpTime      int64
 }
 
 // Farm data about a farm which is calculated from the chain
