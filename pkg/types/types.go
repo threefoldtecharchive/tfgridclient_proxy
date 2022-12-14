@@ -129,6 +129,10 @@ type FarmFilter struct {
 	TotalHRU          *uint64
 	TotalSRU          *uint64
 	TotalCRU          *uint64
+	Country           *string
+	CountryContains   *string
+	City              *string
+	CityContains      *string
 }
 
 // TwinFilter twin filters

@@ -493,6 +493,7 @@ func (d *PostgresDatabase) shouldRetry(resError error) bool {
 func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) ([]Farm, uint, error) {
 	q := d.farmTableQuery()
 
+	// node filters
 	if filter.FreeMRU != nil {
 		q = q.Where("nodes_resources_view.free_mru >= ?", *filter.FreeMRU)
 	}
@@ -514,6 +515,21 @@ func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) 
 	if filter.TotalSRU != nil {
 		q = q.Where("nodes_resources_view.total_sru >= ?", *filter.TotalSRU)
 	}
+
+	if filter.Country != nil {
+		q = q.Where("LOWER(node.country) = LOWER(?)", *filter.Country)
+	}
+	if filter.CountryContains != nil {
+		q = q.Where("node.country ILIKE '%' || ? || '%'", *filter.CountryContains)
+	}
+	if filter.City != nil {
+		q = q.Where("LOWER(node.city) = LOWER(?)", *filter.City)
+	}
+	if filter.CityContains != nil {
+		q = q.Where("node.city ILIKE '%' || ? || '%'", *filter.CityContains)
+	}
+
+	// farm filters
 	if filter.FreeIPs != nil {
 		q = q.Where("(SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id and public_ip.contract_id = 0) >= ?", *filter.FreeIPs)
 	}
@@ -609,15 +625,27 @@ func (d *PostgresDatabase) GetTwins(filter types.TwinFilter, limit types.Limit) 
 
 // GetContracts returns contracts filtered and paginated
 func (d *PostgresDatabase) GetContracts(filter types.ContractFilter, limit types.Limit) ([]DBContract, uint, error) {
+	// contract_id, twin_id, state, created_at, name, node_id, deployment_data, deployment_hash, number_of_public_ips, type, public_ips, capacity_id
 	q := d.gormDB.
-		Table(`(SELECT contract_id, twin_id, state, created_at, ''AS name, node_id, deployment_data, deployment_hash, number_of_public_i_ps, 'node' AS type
+		Table(`(
+	SELECT contract_id, twin_id, state, created_at, '' AS name, node_id, deployment_data, deployment_hash, number_of_public_ips, 'node' AS type, 0 AS public_ips, 0 AS capacity_id
 	FROM node_contract 
+
 	UNION 
-	SELECT contract_id, twin_id, state, created_at, '' AS name, node_id, '', '', 0, 'rent' AS type
-	FROM rent_contract 
+	SELECT contract_id, twin_id, state, created_at, '' AS name, node_id, '', '', 0, 'rent' AS type, 0 AS public_ips, 0 AS capacity_id
+	FROM rent_contract
+
 	UNION 
-	SELECT contract_id, twin_id, state, created_at, name, 0, '', '', 0, 'name' AS type
-	FROM name_contract) contracts`).
+	SELECT contract_id, twin_id, state, created_at, name, 0, '', '', 0, 'name' AS type, 0 AS public_ips, 0 AS capacity_id
+	FROM name_contract
+	
+	UNION
+	SELECT contract_id, twin_id, state, 0 AS created_at, '' AS name, 0, '', '', 0, 'capacity' as type, public_ips, 0 AS capacity_id
+	FROM capacity_reservation_contract
+
+	UNION
+	SELECT deployment_id AS contract_id, twin_id, state, created_at, '' AS name, 0, deployment_data, deployment_hash, number_of_public_ips, 'deployment' as type, 0 AS public_ips, capacity_id
+	) contracts`).
 		Select(
 			"contracts.contract_id",
 			"twin_id",
@@ -669,6 +697,7 @@ func (d *PostgresDatabase) GetContracts(filter types.ContractFilter, limit types
 	if filter.DeploymentHash != nil {
 		q = q.Where("deployment_hash = ?", *filter.DeploymentHash)
 	}
+	// Add contracts filters
 	var count int64
 	if limit.Randomize || limit.RetCount {
 		if res := q.Count(&count); res.Error != nil {
