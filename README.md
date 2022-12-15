@@ -4,11 +4,11 @@
 
 Interact with TFgridDB using rest APIs
 
-## Endpoints
+## Live Instances
 
-- <https://gridproxy.dev.grid.tf>
-- <https://gridproxy.test.grid.tf>
-- <https://gridproxy.grid.tf>
+- Dev network: <https://gridproxy.dev.grid.tf>
+- Test network: <https://gridproxy.test.grid.tf>
+- Main network: <https://gridproxy.grid.tf>
 
 ## Prerequisites
 
@@ -29,7 +29,14 @@ Interact with TFgridDB using rest APIs
 
 2. Run `make docs`.
 
-## Build and run
+## Build
+
+  ```bash
+  GIT_COMMIT=$(git describe --tags --abbrev=0) && \
+  cd cmds/proxy_server && CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s -X main.GitCommit=$GIT_COMMIT -extldflags '-static'"  -o server
+  ```
+
+## Development Run
 
 - Start the msgbus with your MNEMONICS ID
     ```sh
@@ -39,7 +46,7 @@ Interact with TFgridDB using rest APIs
     ```sh
     go run cmds/proxy_server/main.go --address :8080 --log-level debug -no-cert --postgres-host 127.0.0.1 --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres
     ```
-- all Options:
+- all server Options:
 
 | Option | Description |
 | --- | --- |
@@ -59,13 +66,6 @@ Interact with TFgridDB using rest APIs
 | -substrate-user | substrate url (default`"wss://tfchain.dev.grid.tf/ws"`)  |
 | -v | shows the package version |
 
-
-- To build:
-
-  ```bash
-  GIT_COMMIT=$(git describe --tags --abbrev=0) && \
-  cd cmds/proxy_server && CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s -X main.GitCommit=$GIT_COMMIT -extldflags '-static'"  -o server
-  ```
 
 - Then visit `http://localhost:8080/<endpoint>`
 
