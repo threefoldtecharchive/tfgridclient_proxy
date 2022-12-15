@@ -17,9 +17,9 @@ Interact with TFgridDB using rest APIs
 
 ## Prerequisites
 
-1. A (msgbusd)[https://github.com/threefoldtech/rmb_go] instance must be running on the node. This client uses RMB (message bus) to send messages to nodes, and get the responses.
+1. A [msgbusd](https://github.com/threefoldtech/rmb_go) instance must be running on the node. This client uses RMB (message bus) to send messages to nodes, and get the responses.
 2. A valid MNEMONICS.
-3. (yggdrasil)[https://yggdrasil-network.github.io/installation.html] service running with a valid ip assigned to the MNEMONICS on (polkadot)[https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Ftfchain.dev.grid.tf%2Fws#/accounts].
+3. [yggdrasil](https://yggdrasil-network.github.io/installation.html) service running with a valid ip assigned to the MNEMONICS on [polkadot](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Ftfchain.dev.grid.tf%2Fws#/accounts).
 4. Golang compiler > 1.13 to run the grid proxy server.
 5. Postgres database
 
@@ -47,7 +47,7 @@ Interact with TFgridDB using rest APIs
     ```sh
     msgbusd --mnemonics "YOUR MNEMONICS" --substrate "wss://tfchain.dev.grid.tf"
     ```
-- To run in development envornimnet see (here)[tools/db/README.md] how to generate test db or load a db dump then use:
+- To run in development envornimnet see [here](tools/db/README.md) how to generate test db or load a db dump then use:
     ```sh
     go run cmds/proxy_server/main.go --address :8080 --log-level debug -no-cert --postgres-host 127.0.0.1 --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres
     ```
@@ -148,7 +148,7 @@ systemctl daemon-reload
 ```
 
 ## Endpoints
-- Docs: docs/README.md
+- [API Docs](docs/README.md)
 ### `/farms`
 
 - Bring all farms information and public ips
