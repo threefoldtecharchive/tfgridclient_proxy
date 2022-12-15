@@ -7,8 +7,13 @@ Interact with TFgridDB using rest APIs
 ## Live Instances
 
 - Dev network: <https://gridproxy.dev.grid.tf>
+  - Swagger: https://gridproxy.dev.grid.tf/swagger/index.html
 - Test network: <https://gridproxy.test.grid.tf>
+  - Swagger: https://gridproxy.test.grid.tf/swagger/index.html
 - Main network: <https://gridproxy.grid.tf>
+  - Swagger: https://gridproxy.grid.tf/swagger/index.html
+
+
 
 ## Prerequisites
 
@@ -143,7 +148,7 @@ systemctl daemon-reload
 ```
 
 ## Endpoints
-
+- Docs: docs/README.md
 ### `/farms`
 
 - Bring all farms information and public ips
