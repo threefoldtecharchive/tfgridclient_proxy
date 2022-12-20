@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -337,11 +338,23 @@ func (a *App) listContracts(r *http.Request) (interface{}, mw.Response) {
 	}
 	return contracts, resp
 }
+func (a *App) indexPage(m *mux.Router) mw.Action {
+	return func(r *http.Request) (interface{}, mw.Response) {
+		response := mw.Ok()
+		welcome_msg := "welcome to grid proxy server, available endpoints "
+		message := []string{welcome_msg}
+		m.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+			path, err := route.GetPathTemplate()
+			if err != nil {
+				return nil
+			}
 
-func (a *App) indexPage(r *http.Request) (interface{}, mw.Response) {
-	response := mw.Ok()
-	message := "welcome to grid proxy server, available endpoints [/farms, /nodes, /nodes/<node-id>]"
-	return message, response
+			msg := path
+			message = append(message, "["+msg+"]")
+			return nil
+		})
+		return strings.Join(message, " "), response
+	}
 }
 
 func (a *App) version(r *http.Request) (interface{}, mw.Response) {
@@ -383,7 +396,7 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getGateway))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
-	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage))
+	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage(router)))
 	router.HandleFunc("/version", mw.AsHandlerFunc(a.version))
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 
