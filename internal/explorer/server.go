@@ -350,8 +350,7 @@ func (a *App) indexPage(m *mux.Router) mw.Action {
 				return nil
 			}
 
-			msg := path
-			sb.WriteString("[" + msg + "] ")
+			sb.WriteString("[" + path + "] ")
 			return nil
 		})
 		return sb.String(), response
