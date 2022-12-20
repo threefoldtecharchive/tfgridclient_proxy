@@ -344,7 +344,7 @@ func (a *App) indexPage(m *mux.Router) mw.Action {
 		var sb strings.Builder
 		sb.WriteString("Welcome to threefold grid proxy server, available endpoints ")
 
-		m.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		_ = m.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 			path, err := route.GetPathTemplate()
 			if err != nil {
 				return nil
