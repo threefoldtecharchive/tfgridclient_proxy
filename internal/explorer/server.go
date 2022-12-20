@@ -341,8 +341,9 @@ func (a *App) listContracts(r *http.Request) (interface{}, mw.Response) {
 func (a *App) indexPage(m *mux.Router) mw.Action {
 	return func(r *http.Request) (interface{}, mw.Response) {
 		response := mw.Ok()
-		welcome_msg := "welcome to grid proxy server, available endpoints "
-		message := []string{welcome_msg}
+		var sb strings.Builder
+		sb.WriteString("Welcome to threefold grid proxy server, available endpoints ")
+
 		m.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 			path, err := route.GetPathTemplate()
 			if err != nil {
@@ -350,10 +351,10 @@ func (a *App) indexPage(m *mux.Router) mw.Action {
 			}
 
 			msg := path
-			message = append(message, "["+msg+"]")
+			sb.WriteString("[" + msg + "] ")
 			return nil
 		})
-		return strings.Join(message, " "), response
+		return sb.String(), response
 	}
 }
 
