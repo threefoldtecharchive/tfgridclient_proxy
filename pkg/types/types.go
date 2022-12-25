@@ -144,8 +144,10 @@ type ContractFilter struct {
 }
 
 type Location struct {
-	Country string `json:"country"`
-	City    string `json:"city"`
+	Country   string   `json:"country"`
+	City      string   `json:"city"`
+	Longitude *float64 `json:"longitude"`
+	Latitude  *float64 `json:"latitude"`
 }
 
 // Node is a struct holding the data for a Node for the nodes view
