@@ -89,7 +89,21 @@ const (
 	GROUP BY node.node_id, node_resources_total.mru, node_resources_total.sru, node_resources_total.hru, node_resources_total.cru;
 	$body$
 	language sql;
-	`
+
+	DROP FUNCTION IF EXISTS convert_to_decimal(v_input text);
+	CREATE OR REPLACE FUNCTION convert_to_decimal(v_input text)
+	RETURNS DECIMAL AS $$
+	DECLARE v_dec_value DECIMAL DEFAULT NULL;
+	BEGIN
+		BEGIN
+			v_dec_value := v_input::DECIMAL;
+		EXCEPTION WHEN OTHERS THEN
+			RAISE NOTICE 'Invalid decimal value: "%".  Returning NULL.', v_input;
+			RETURN NULL;
+		END;
+	RETURN v_dec_value;
+	END;
+	$$ LANGUAGE plpgsql;`
 )
 
 // PostgresDatabase postgres db client
@@ -320,6 +334,8 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 			"rent_contract.contract_id as rent_contract_id",
 			"rent_contract.twin_id as rented_by_twin_id",
 			"node.serial_number",
+			"convert_to_decimal(location.longitude) as longitude",
+			"convert_to_decimal(location.latitude) as latitude",
 		).
 		Joins(
 			"LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id",
@@ -332,6 +348,9 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 		).
 		Joins(
 			"LEFT JOIN farm ON node.farm_id = farm.farm_id",
+		).
+		Joins(
+			"LEFT JOIN location ON node.location_id = location.id",
 		)
 }
 

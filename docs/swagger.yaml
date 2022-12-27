@@ -1,5 +1,17 @@
 basePath: /
 definitions:
+  gridtypes.Unit:
+    enum:
+    - 1024
+    - 1048576
+    - 1073741824
+    - 1099511627776
+    type: integer
+    x-enum-varnames:
+    - Kilobyte
+    - Megabyte
+    - Gigabyte
+    - Terabyte
   rmbproxy.Message:
     properties:
       cmd:
@@ -60,11 +72,11 @@ definitions:
       cru:
         type: integer
       hru:
-        type: integer
+        $ref: '#/definitions/gridtypes.Unit'
       mru:
-        type: integer
+        $ref: '#/definitions/gridtypes.Unit'
       sru:
-        type: integer
+        $ref: '#/definitions/gridtypes.Unit'
     type: object
   types.CapacityResult:
     properties:
@@ -158,6 +170,10 @@ definitions:
         type: string
       country:
         type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
     type: object
   types.Node:
     properties:

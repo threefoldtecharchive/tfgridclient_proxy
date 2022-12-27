@@ -37,8 +37,10 @@ func nodeFromDBNode(info db.Node) types.Node {
 			MRU: gridtypes.Unit(info.UsedMru),
 		},
 		Location: types.Location{
-			Country: info.Country,
-			City:    info.City,
+			Country:   info.Country,
+			City:      info.City,
+			Longitude: info.Longitude,
+			Latitude:  info.Latitude,
 		},
 		PublicConfig: types.PublicConfig{
 			Domain: info.Domain,

@@ -1,6 +1,8 @@
 package db
 
-import "github.com/threefoldtech/grid_proxy_server/pkg/types"
+import (
+	"github.com/threefoldtech/grid_proxy_server/pkg/types"
+)
 
 // Database interface for storing and fetching grid info
 type Database interface {
@@ -59,6 +61,8 @@ type Node struct {
 	RentContractID  int64
 	RentedByTwinID  int64
 	SerialNumber    string
+	Longitude       *float64
+	Latitude        *float64
 }
 
 // Farm data about a farm which is calculated from the chain
