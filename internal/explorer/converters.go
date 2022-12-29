@@ -109,8 +109,10 @@ func nodeWithNestedCapacityFromDBNode(info db.Node) types.NodeWithNestedCapacity
 			},
 		},
 		Location: types.Location{
-			Country: info.Country,
-			City:    info.City,
+			Country:   info.Country,
+			City:      info.City,
+			Longitude: info.Longitude,
+			Latitude:  info.Latitude,
 		},
 		PublicConfig: types.PublicConfig{
 			Domain: info.Domain,
