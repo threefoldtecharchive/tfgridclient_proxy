@@ -385,6 +385,12 @@ func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.FreeSRU != nil && *f.FreeSRU > free.sru {
 		return false
 	}
+	if f.Country != nil && !strings.EqualFold(*f.Country, node.country) {
+		return false
+	}
+	if f.CountryContains != nil && !stringMatch(node.country, *f.CountryContains) {
+		return false
+	}
 	if f.TotalCRU != nil && *f.TotalCRU > total.cru {
 		return false
 	}
@@ -397,19 +403,22 @@ func nodeSatisfies(data *DBData, node node, f proxytypes.NodeFilter) bool {
 	if f.TotalSRU != nil && *f.TotalSRU > total.sru {
 		return false
 	}
-	if f.Country != nil && *f.Country != node.country {
-		return false
-	}
 	if f.NodeID != nil && *f.NodeID != node.node_id {
 		return false
 	}
 	if f.TwinID != nil && *f.TwinID != node.twin_id {
 		return false
 	}
-	if f.City != nil && *f.City != node.city {
+	if f.CityContains != nil && !stringMatch(node.city, *f.CityContains) {
 		return false
 	}
-	if f.FarmName != nil && *f.FarmName != data.farms[node.farm_id].name {
+	if f.City != nil && !strings.EqualFold(*f.City, node.city) {
+		return false
+	}
+	if f.FarmNameContains != nil && !stringMatch(data.farms[node.farm_id].name, *f.FarmNameContains) {
+		return false
+	}
+	if f.FarmName != nil && !strings.EqualFold(*f.FarmName, data.farms[node.farm_id].name) {
 		return false
 	}
 	if f.FarmIDs != nil && !isIn(f.FarmIDs, node.farm_id) {
@@ -476,7 +485,10 @@ func farmSatisfies(data *DBData, farm farm, f proxytypes.FarmFilter) bool {
 	if f.TwinID != nil && *f.TwinID != farm.twin_id {
 		return false
 	}
-	if f.Name != nil && *f.Name != "" && *f.Name != farm.name {
+	if f.NameContains != nil && *f.NameContains != "" && !stringMatch(farm.name, *f.NameContains) {
+		return false
+	}
+	if f.Name != nil && *f.Name != "" && !strings.EqualFold(*f.Name, farm.name) {
 		return false
 	}
 	if f.NameContains != nil && *f.NameContains != "" && !strings.Contains(farm.name, *f.NameContains) {

@@ -934,6 +934,21 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "gridtypes.Unit": {
+            "type": "integer",
+            "enum": [
+                1024,
+                1048576,
+                1073741824,
+                1099511627776
+            ],
+            "x-enum-varnames": [
+                "Kilobyte",
+                "Megabyte",
+                "Gigabyte",
+                "Terabyte"
+            ]
+        },
         "rmbproxy.Message": {
             "type": "object",
             "properties": {
@@ -1018,13 +1033,13 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "hru": {
-                    "type": "integer"
+                    "$ref": "#/definitions/gridtypes.Unit"
                 },
                 "mru": {
-                    "type": "integer"
+                    "$ref": "#/definitions/gridtypes.Unit"
                 },
                 "sru": {
-                    "type": "integer"
+                    "$ref": "#/definitions/gridtypes.Unit"
                 }
             }
         },
@@ -1167,6 +1182,12 @@ const docTemplate = `{
                 },
                 "country": {
                     "type": "string"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
                 }
             }
         },

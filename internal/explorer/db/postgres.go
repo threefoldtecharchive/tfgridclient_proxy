@@ -89,7 +89,21 @@ const (
 	GROUP BY node.node_id, node_resources_total.mru, node_resources_total.sru, node_resources_total.hru, node_resources_total.cru;
 	$body$
 	language sql;
-	`
+
+	DROP FUNCTION IF EXISTS convert_to_decimal(v_input text);
+	CREATE OR REPLACE FUNCTION convert_to_decimal(v_input text)
+	RETURNS DECIMAL AS $$
+	DECLARE v_dec_value DECIMAL DEFAULT NULL;
+	BEGIN
+		BEGIN
+			v_dec_value := v_input::DECIMAL;
+		EXCEPTION WHEN OTHERS THEN
+			RAISE NOTICE 'Invalid decimal value: "%".  Returning NULL.', v_input;
+			RETURN NULL;
+		END;
+	RETURN v_dec_value;
+	END;
+	$$ LANGUAGE plpgsql;`
 )
 
 // PostgresDatabase postgres db client
@@ -320,6 +334,8 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 			"rent_contract.contract_id as rent_contract_id",
 			"rent_contract.twin_id as rented_by_twin_id",
 			"node.serial_number",
+			"convert_to_decimal(location.longitude) as longitude",
+			"convert_to_decimal(location.latitude) as latitude",
 		).
 		Joins(
 			"LEFT JOIN nodes_resources_view ON node.node_id = nodes_resources_view.node_id",
@@ -332,6 +348,9 @@ func (d *PostgresDatabase) nodeTableQuery() *gorm.DB {
 		).
 		Joins(
 			"LEFT JOIN farm ON node.farm_id = farm.farm_id",
+		).
+		Joins(
+			"LEFT JOIN location ON node.location_id = location.id",
 		)
 }
 
@@ -370,10 +389,16 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 		q = q.Where("nodes_resources_view.total_sru >= ?", *filter.TotalSRU)
 	}
 	if filter.Country != nil {
-		q = q.Where("node.country = ?", *filter.Country)
+		q = q.Where("LOWER(node.country) = LOWER(?)", *filter.Country)
+	}
+	if filter.CountryContains != nil {
+		q = q.Where("node.country ILIKE '%' || ? || '%'", *filter.CountryContains)
 	}
 	if filter.City != nil {
-		q = q.Where("node.city = ?", *filter.City)
+		q = q.Where("LOWER(node.city) = LOWER(?)", *filter.City)
+	}
+	if filter.CityContains != nil {
+		q = q.Where("node.city ILIKE '%' || ? || '%'", *filter.CityContains)
 	}
 	if filter.NodeID != nil {
 		q = q.Where("node.node_id = ?", *filter.NodeID)
@@ -385,7 +410,10 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 		q = q.Where("node.farm_id IN ?", filter.FarmIDs)
 	}
 	if filter.FarmName != nil {
-		q = q.Where("farm.name = ?", *filter.FarmName)
+		q = q.Where("LOWER(farm.name) = LOWER(?)", *filter.FarmName)
+	}
+	if filter.FarmNameContains != nil {
+		q = q.Where("farm.name ILIKE '%' || ? || '%'", *filter.FarmNameContains)
 	}
 	if filter.FreeIPs != nil {
 		q = q.Where("(SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id AND public_ip.contract_id = 0) >= ?", *filter.FreeIPs)
@@ -480,7 +508,7 @@ func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) 
 		q = q.Where("twin_id = ?", *filter.TwinID)
 	}
 	if filter.Name != nil {
-		q = q.Where("name = ?", *filter.Name)
+		q = q.Where("LOWER(name) = LOWER(?)", *filter.Name)
 	}
 
 	if filter.NameContains != nil {
