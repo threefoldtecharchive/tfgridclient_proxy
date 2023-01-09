@@ -273,7 +273,7 @@ func (a *App) handleStatsRequestsQueryParams(r *http.Request) (types.StatsFilter
 func (a *App) getNodeData(nodeIDStr string) (types.Node, error) {
 	nodeID, err := strconv.Atoi(nodeIDStr)
 	if err != nil {
-		return types.Node{}, errors.Wrap(ErrBadGateway, fmt.Sprintf("invalid node id %d: %s", nodeID, err.Error()))
+		return types.Node{}, errors.Wrap(ErrBadGateway, fmt.Sprintf("invalid node id %s: %s", nodeIDStr, err.Error()))
 	}
 	info, err := a.db.GetNode(uint32(nodeID))
 	if errors.Is(err, db.ErrNodeNotFound) {
@@ -282,6 +282,6 @@ func (a *App) getNodeData(nodeIDStr string) (types.Node, error) {
 		// TODO: wrapping
 		return types.Node{}, err
 	}
-	apiNode := nodeFromDBNode(info)
-	return apiNode, nil
+	node := nodeFromDBNode(info)
+	return node, nil
 }

@@ -193,6 +193,7 @@ func (g *Clientimpl) Node(nodeID uint32) (res types.Node, err error) {
 		err = parseError(req.Body)
 		return
 	}
+	defer req.Body.Close()
 	data, err := io.ReadAll(req.Body)
 	if err != nil {
 		return
