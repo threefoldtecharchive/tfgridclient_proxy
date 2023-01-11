@@ -1,0 +1,22 @@
+name: Endpoints Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  selenium-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setting up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Installing the packages
+        run: pip install -r tests/endpoints/requirements.txt
+      - name: Run tests
+        working-directory: ./tests/endpoints
+        run: python -m pytest -v
