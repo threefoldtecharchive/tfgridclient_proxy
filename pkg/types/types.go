@@ -158,6 +158,31 @@ type CapacityResult struct {
 
 // Node is a struct holding the data for a Node for the nodes view
 type Node struct {
+	ID                string       `json:"id"`
+	NodeID            int          `json:"nodeId"`
+	FarmID            int          `json:"farmId"`
+	TwinID            int          `json:"twinId"`
+	Country           string       `json:"country"`
+	GridVersion       int          `json:"gridVersion"`
+	City              string       `json:"city"`
+	Uptime            int64        `json:"uptime"`
+	Created           int64        `json:"created"`
+	FarmingPolicyID   int          `json:"farmingPolicyId"`
+	UpdatedAt         int64        `json:"updatedAt"`
+	TotalResources    Capacity     `json:"total_resources"`
+	UsedResources     Capacity     `json:"used_resources"`
+	Location          Location     `json:"location"`
+	PublicConfig      PublicConfig `json:"publicConfig"`
+	Status            string       `json:"status"` // added node status field for up or down
+	CertificationType string       `json:"certificationType"`
+	Dedicated         bool         `json:"dedicated"`
+	RentContractID    uint         `json:"rentContractId"`
+	RentedByTwinID    uint         `json:"rentedByTwinId"`
+	SerialNumber      string       `json:"serialNumber"`
+}
+
+// Node is a struct holding the data for a Node for the nodes view with nested capacity
+type NodeWithNestedCapacity struct {
 	ID                string         `json:"id"`
 	NodeID            int            `json:"nodeId"`
 	FarmID            int            `json:"farmId"`

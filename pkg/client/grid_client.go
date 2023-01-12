@@ -18,7 +18,7 @@ type Client interface {
 	Farms(filter types.FarmFilter, pagination types.Limit) (res []types.Farm, totalCount int, err error)
 	Contracts(filter types.ContractFilter, pagination types.Limit) (res []types.Contract, totalCount int, err error)
 	Twins(filter types.TwinFilter, pagination types.Limit) (res []types.Twin, totalCount int, err error)
-	Node(nodeID uint32) (res types.Node, err error)
+	Node(nodeID uint32) (res types.NodeWithNestedCapacity, err error)
 	NodeStatus(nodeID uint32) (res types.NodeStatus, err error)
 	Counters(filter types.StatsFilter) (res types.Counters, err error)
 }
@@ -184,7 +184,7 @@ func (g *Clientimpl) Contracts(filter types.ContractFilter, limit types.Limit) (
 }
 
 // Node returns the node with the give id
-func (g *Clientimpl) Node(nodeID uint32) (res types.Node, err error) {
+func (g *Clientimpl) Node(nodeID uint32) (res types.NodeWithNestedCapacity, err error) {
 	req, err := http.Get(g.url("nodes/%d", nodeID))
 	if err != nil {
 		return

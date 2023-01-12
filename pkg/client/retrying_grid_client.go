@@ -87,7 +87,7 @@ func (g *RetryingClient) Contracts(filter types.ContractFilter, pagination types
 }
 
 // Node returns the node with the give id
-func (g *RetryingClient) Node(nodeID uint32) (res types.Node, err error) {
+func (g *RetryingClient) Node(nodeID uint32) (res types.NodeWithNestedCapacity, err error) {
 	f := func() error {
 		res, err = g.cl.Node(nodeID)
 		return err

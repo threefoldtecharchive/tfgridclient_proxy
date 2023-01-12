@@ -137,6 +137,40 @@ func (a *App) getNodes(r *http.Request) (interface{}, mw.Response) {
 	return a.listNodes(r)
 }
 
+// getNodesWithNestedCapacity godoc
+// @Summary Show nodes on the grid
+// @Description Get all nodes on the grid, It has pagination. Nodes displayed with nested capacity object
+// @Tags GridProxy
+// @Accept  json
+// @Produce  json
+// @Param page query int false "Page number"
+// @Param size query int false "Max result per page"
+// @Param ret_count query bool false "Set nodes' count on headers based on filter"
+// @Param free_mru query int false "Min free reservable mru in bytes"
+// @Param free_hru query int false "Min free reservable hru in bytes"
+// @Param free_sru query int false "Min free reservable sru in bytes"
+// @Param free_ips query int false "Min number of free ips in the farm of the node"
+// @Param status query string false "Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
+// @Param city query string false "Node city filter"
+// @Param country query string false "Node country filter"
+// @Param farm_name query string false "Get nodes for specific farm"
+// @Param ipv4 query bool false "Set to true to filter nodes with ipv4"
+// @Param ipv6 query bool false "Set to true to filter nodes with ipv6"
+// @Param domain query bool false "Set to true to filter nodes with domain"
+// @Param dedicated query bool false "Set to true to get the dedicated nodes only"
+// @Param rentable query bool false "Set to true to filter the available nodes for renting"
+// @Param rented query bool false "Set to true to filter rented nodes"
+// @Param rented_by query int false "rented by twin id"
+// @Param available_for query int false "available for twin id"
+// @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
+// @Success 200 {object} []types.NodeWithNestedCapacity
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Router /api/v2/nodes [get]
+func (a *App) getNodesWithNestedCapacity(r *http.Request) (interface{}, mw.Response) {
+	return a.listNodesWithNestedCapacity(r)
+}
+
 // getGateways godoc
 // @Summary Show gateways on the grid
 // @Description Get all gateways on the grid, It has pagination
@@ -171,6 +205,40 @@ func (a *App) getGateways(r *http.Request) (interface{}, mw.Response) {
 	return a.listNodes(r)
 }
 
+// getGatewaysWithNestedCapacity godoc
+// @Summary Show gateways on the grid
+// @Description Get all gateways on the grid, It has pagination. Nodes displayed with nested capacity object
+// @Tags GridProxy
+// @Accept  json
+// @Produce  json
+// @Param page query int false "Page number"
+// @Param size query int false "Max result per page"
+// @Param ret_count query bool false "Set nodes' count on headers based on filter"
+// @Param free_mru query int false "Min free reservable mru in bytes"
+// @Param free_hru query int false "Min free reservable hru in bytes"
+// @Param free_sru query int false "Min free reservable sru in bytes"
+// @Param free_ips query int false "Min number of free ips in the farm of the node"
+// @Param status query string false "Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
+// @Param city query string false "Node city filter"
+// @Param country query string false "Node country filter"
+// @Param farm_name query string false "Get nodes for specific farm"
+// @Param ipv4 query bool false "Set to true to filter nodes with ipv4"
+// @Param ipv6 query bool false "Set to true to filter nodes with ipv6"
+// @Param domain query bool false "Set to true to filter nodes with domain"
+// @Param dedicated query bool false "Set to true to get the dedicated nodes only"
+// @Param rentable query bool false "Set to true to filter the available nodes for renting"
+// @Param rented query bool false "Set to true to filter rented nodes"
+// @Param rented_by query int false "rented by twin id"
+// @Param available_for query int false "available for twin id"
+// @Param farm_ids query string false "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
+// @Success 200 {object} []types.NodeWithNestedCapacity
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Router /api/v2/gateways [get]
+func (a *App) getGatewaysWithNestedCapacity(r *http.Request) (interface{}, mw.Response) {
+	return a.listNodesWithNestedCapacity(r)
+}
+
 func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	filter, limit, err := a.handleNodeRequestsQueryParams(r)
 	if err != nil {
@@ -183,6 +251,31 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	nodes := make([]types.Node, len(dbNodes))
 	for idx, node := range dbNodes {
 		nodes[idx] = nodeFromDBNode(node)
+	}
+	resp := mw.Ok()
+
+	// return the number of pages and totalCount in the response headers
+	if limit.RetCount {
+		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
+		resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
+			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
+			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+	}
+	return nodes, resp
+}
+
+func (a *App) listNodesWithNestedCapacity(r *http.Request) (interface{}, mw.Response) {
+	filter, limit, err := a.handleNodeRequestsQueryParams(r)
+	if err != nil {
+		return nil, mw.BadRequest(err)
+	}
+	dbNodes, nodesCount, err := a.db.GetNodes(filter, limit)
+	if err != nil {
+		return nil, mw.Error(err)
+	}
+	nodes := make([]types.NodeWithNestedCapacity, len(dbNodes))
+	for idx, node := range dbNodes {
+		nodes[idx] = nodeWithNestedCapacityFromDBNode(node)
 	}
 	resp := mw.Ok()
 
@@ -386,6 +479,12 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 		releaseVersion: gitCommit,
 	}
 
+	// v1 endpoints
+	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage(router)))
+	router.HandleFunc("/version", mw.AsHandlerFunc(a.version))
+	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
+	router.HandleFunc("/stats", mw.AsHandlerFunc(a.getStats))
+
 	router.HandleFunc("/farms", mw.AsHandlerFunc(a.listFarms))
 	router.HandleFunc("/stats", mw.AsHandlerFunc(a.getStats))
 	router.HandleFunc("/nodes", mw.AsHandlerFunc(a.getNodes))
@@ -396,9 +495,23 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getGateway))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
-	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage(router)))
-	router.HandleFunc("/version", mw.AsHandlerFunc(a.version))
-	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
+
+	// v2 endpoints
+	router.HandleFunc("/api/v2/", mw.AsHandlerFunc(a.indexPage(router)))
+	router.HandleFunc("/api/v2/version", mw.AsHandlerFunc(a.version))
+	router.PathPrefix("/api/v2/swagger").Handler(httpSwagger.WrapHandler)
+	router.HandleFunc("/api/v2/stats", mw.AsHandlerFunc(a.getStats))
+
+	router.HandleFunc("/api/v2/farms", mw.AsHandlerFunc(a.listFarms))
+	router.HandleFunc("/api/v2/stats", mw.AsHandlerFunc(a.getStats))
+	router.HandleFunc("/api/v2/nodes", mw.AsHandlerFunc(a.getNodesWithNestedCapacity))
+	router.HandleFunc("/api/v2/gateways", mw.AsHandlerFunc(a.getGatewaysWithNestedCapacity))
+	router.HandleFunc("/api/v2/twins", mw.AsHandlerFunc(a.listTwins))
+	router.HandleFunc("/api/v2/contracts", mw.AsHandlerFunc(a.listContracts))
+	router.HandleFunc("/api/v2/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getNode))
+	router.HandleFunc("/api/v2/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getGateway))
+	router.HandleFunc("/api/v2/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
+	router.HandleFunc("/api/v2/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 
 	return nil
 }

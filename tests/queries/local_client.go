@@ -51,19 +51,17 @@ func (g *GridProxyClientimpl) Nodes(filter proxytypes.NodeFilter, limit proxytyp
 				Uptime:          int64(node.uptime),
 				Created:         int64(node.created),
 				FarmingPolicyID: int(node.farming_policy_id),
-				Capacity: proxytypes.CapacityResult{
-					Total: proxytypes.Capacity{
-						CRU: g.data.nodeTotalResources[node.node_id].cru,
-						HRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].hru),
-						MRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].mru),
-						SRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].sru),
-					},
-					Used: proxytypes.Capacity{
-						CRU: g.data.nodeUsedResources[node.node_id].cru,
-						HRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].hru),
-						MRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].mru),
-						SRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].sru),
-					},
+				TotalResources: proxytypes.Capacity{
+					CRU: g.data.nodeTotalResources[node.node_id].cru,
+					HRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].hru),
+					MRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].mru),
+					SRU: gridtypes.Unit(g.data.nodeTotalResources[node.node_id].sru),
+				},
+				UsedResources: proxytypes.Capacity{
+					CRU: g.data.nodeUsedResources[node.node_id].cru,
+					HRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].hru),
+					MRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].mru),
+					SRU: gridtypes.Unit(g.data.nodeUsedResources[node.node_id].sru),
 				},
 				Location: proxytypes.Location{
 					Country: node.country,
@@ -277,13 +275,13 @@ func (g *GridProxyClientimpl) Twins(filter proxytypes.TwinFilter, limit proxytyp
 	res = res[start:end]
 	return
 }
-func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.Node, err error) {
+func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.NodeWithNestedCapacity, err error) {
 	node := g.data.nodes[uint64(nodeID)]
 	status := STATUS_DOWN
 	if isUp(node.updated_at) {
 		status = STATUS_UP
 	}
-	res = proxytypes.Node{
+	res = proxytypes.NodeWithNestedCapacity{
 		ID:              node.id,
 		NodeID:          int(node.node_id),
 		FarmID:          int(node.farm_id),

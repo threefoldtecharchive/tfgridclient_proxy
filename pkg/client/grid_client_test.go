@@ -13,18 +13,27 @@ import (
 )
 
 var (
-	NodeExampleStr       = `{"id":"0000000510-000001-782e1","nodeId":1,"farmId":1,"twinId":9,"country":"Belgium","gridVersion":3,"city":"Unknown","uptime":1297882,"created":1649252220,"farmingPolicyId":1,"updatedAt":1650550422,"total_resources":{"cru":24,"sru":512110190592,"hru":9001778946048,"mru":202802933760},"used_resources":{"cru":52,"sru":793419710464,"hru":0,"mru":119957094400},"location":{"country":"Belgium","city":"Unknown"},"publicConfig":{"domain":"","gw4":"","gw6":"","ipv4":"","ipv6":""},"status":"up","certificationType":"Diy"}`
-	NodesExampleStr      = fmt.Sprintf("[%s]", NodeExampleStr)
-	FarmExampleStr       = `{"name":"Freefarm","farmId":1,"twinId":2,"pricingPolicyId":1,"stellarAddress":"","publicIps":[{"id":"0000001006-000001-f899f","ip":"185.206.122.35/24","farmId":"","contractId":142,"gateway":"185.206.122.1"},{"id":"0000001012-000001-23923","ip":"185.206.122.36/24","farmId":"","contractId":317,"gateway":"185.206.122.1"},{"id":"0000001019-000001-5001b","ip":"185.206.122.37/24","farmId":"","contractId":144,"gateway":"185.206.122.1"},{"id":"0000001070-000001-3e7e7","ip":"185.206.122.42/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001047-000001-f6e0d","ip":"185.206.122.41/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001042-000001-f65e8","ip":"185.206.122.40/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000000991-000001-aa42e","ip":"185.206.122.33/24","farmId":"","contractId":164,"gateway":"185.206.122.1"},{"id":"0000001037-000001-dad97","ip":"185.206.122.39/24","farmId":"","contractId":619,"gateway":"185.206.122.1"},{"id":"0000001075-000001-3b1ee","ip":"185.206.122.43/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001084-000001-670af","ip":"185.206.122.44/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001091-000001-c5b37","ip":"185.206.122.45/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001096-000001-5f6c1","ip":"185.206.122.46/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001101-000001-63193","ip":"185.206.122.47/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001106-000001-c4f32","ip":"185.206.122.48/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001168-000001-34245","ip":"185.206.122.49/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001174-000001-db2a3","ip":"185.206.122.50/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000000999-000001-01080","ip":"185.206.122.34/24","farmId":"","contractId":677,"gateway":"185.206.122.1"},{"id":"0000001032-000001-5cfae","ip":"185.206.122.38/24","farmId":"","contractId":744,"gateway":"185.206.122.1"}]}`
-	FarmsExampleStr      = fmt.Sprintf("[%s]", FarmExampleStr)
+	NodeExampleStr  = `{"id":"0000000510-000001-782e1","nodeId":1,"farmId":1,"twinId":9,"country":"Belgium","gridVersion":3,"city":"Unknown","uptime":1297882,"created":1649252220,"farmingPolicyId":1,"updatedAt":1650550422,"total_resources":{"cru":24,"sru":512110190592,"hru":9001778946048,"mru":202802933760},"used_resources":{"cru":52,"sru":793419710464,"hru":0,"mru":119957094400},"location":{"country":"Belgium","city":"Unknown"},"publicConfig":{"domain":"","gw4":"","gw6":"","ipv4":"","ipv6":""},"status":"up","certificationType":"Diy"}`
+	NodesExampleStr = fmt.Sprintf("[%s]", NodeExampleStr)
+
+	FarmExampleStr  = `{"name":"Freefarm","farmId":1,"twinId":2,"pricingPolicyId":1,"stellarAddress":"","publicIps":[{"id":"0000001006-000001-f899f","ip":"185.206.122.35/24","farmId":"","contractId":142,"gateway":"185.206.122.1"},{"id":"0000001012-000001-23923","ip":"185.206.122.36/24","farmId":"","contractId":317,"gateway":"185.206.122.1"},{"id":"0000001019-000001-5001b","ip":"185.206.122.37/24","farmId":"","contractId":144,"gateway":"185.206.122.1"},{"id":"0000001070-000001-3e7e7","ip":"185.206.122.42/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001047-000001-f6e0d","ip":"185.206.122.41/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001042-000001-f65e8","ip":"185.206.122.40/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000000991-000001-aa42e","ip":"185.206.122.33/24","farmId":"","contractId":164,"gateway":"185.206.122.1"},{"id":"0000001037-000001-dad97","ip":"185.206.122.39/24","farmId":"","contractId":619,"gateway":"185.206.122.1"},{"id":"0000001075-000001-3b1ee","ip":"185.206.122.43/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001084-000001-670af","ip":"185.206.122.44/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001091-000001-c5b37","ip":"185.206.122.45/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001096-000001-5f6c1","ip":"185.206.122.46/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001101-000001-63193","ip":"185.206.122.47/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001106-000001-c4f32","ip":"185.206.122.48/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001168-000001-34245","ip":"185.206.122.49/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000001174-000001-db2a3","ip":"185.206.122.50/24","farmId":"","contractId":0,"gateway":"185.206.122.1"},{"id":"0000000999-000001-01080","ip":"185.206.122.34/24","farmId":"","contractId":677,"gateway":"185.206.122.1"},{"id":"0000001032-000001-5cfae","ip":"185.206.122.38/24","farmId":"","contractId":744,"gateway":"185.206.122.1"}]}`
+	FarmsExampleStr = fmt.Sprintf("[%s]", FarmExampleStr)
+
+	NodeWithNestedCapacityExampleStr  = `{"id":"0000000510-000001-782e1","nodeId":1,"farmId":1,"twinId":9,"country":"Belgium","gridVersion":3,"city":"Unknown","uptime":1297882,"created":1649252220,"farmingPolicyId":1,"updatedAt":1650550422,"total_resources":{"cru":24,"sru":512110190592,"hru":9001778946048,"mru":202802933760},"used_resources":{"cru":52,"sru":793419710464,"hru":0,"mru":119957094400},"location":{"country":"Belgium","city":"Unknown"},"publicConfig":{"domain":"","gw4":"","gw6":"","ipv4":"","ipv6":""},"status":"up","certificationType":"Diy"}`
+	NodesWithNestedCapacityExampleStr = fmt.Sprintf("[%s]", NodeWithNestedCapacityExampleStr)
+
 	NodeStatusExampleStr = `{"status":"up"}`
 
-	NodeExample       = MarshalNode([]byte(NodeExampleStr))
-	NodesExample      = []types.Node{NodeExample}
-	NodeInfoExample   = MarshalNode([]byte(NodeExampleStr))
-	FarmExample       = MarshalFarm([]byte(FarmExampleStr))
-	FarmsExample      = []types.Farm{FarmExample}
+	NodeExample  = MarshalNode([]byte(NodeExampleStr))
+	NodesExample = []types.Node{NodeExample}
+
+	FarmExample  = MarshalFarm([]byte(FarmExampleStr))
+	FarmsExample = []types.Farm{FarmExample}
+
 	NodeStatusExample = MarshalNodeStatus([]byte(NodeStatusExampleStr))
+
+	NodeWithNestedCapacityExample  = MarshalNodeWithNestedCapacity([]byte(NodeWithNestedCapacityExampleStr))
+	NodesWithNestedCapacityExample = []types.NodeWithNestedCapacity{NodeWithNestedCapacityExample}
 )
 
 func MustMarshal(data []byte, v interface{}) {
@@ -34,6 +43,11 @@ func MustMarshal(data []byte, v interface{}) {
 }
 
 func MarshalNode(data []byte) (info types.Node) {
+	MustMarshal(data, &info)
+	return
+}
+
+func MarshalNodeWithNestedCapacity(data []byte) (info types.NodeWithNestedCapacity) {
 	MustMarshal(data, &info)
 	return
 }
@@ -223,8 +237,8 @@ func testSuccess(t *testing.T, f ProxyFunc) {
 				if err != nil {
 					return err
 				}
-				if !reflect.DeepEqual(NodeInfoExample, res) {
-					return fmt.Errorf("result mismatch: expected: %v, found: %v", NodeInfoExample, res)
+				if !reflect.DeepEqual(NodeWithNestedCapacityExample, res) {
+					return fmt.Errorf("result mismatch: expected: %v, found: %v", NodeWithNestedCapacityExample, res)
 				}
 				return nil
 			},
