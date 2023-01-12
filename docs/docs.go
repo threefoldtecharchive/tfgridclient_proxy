@@ -20,6 +20,242 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v2/contracts": {
+            "get": {
+                "description": "Get all contracts on the grid, It has pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show contracts on the grid",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max result per page",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Set contracts' count on headers based on filter",
+                        "name": "ret_count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "contract id",
+                        "name": "contract_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "twin id",
+                        "name": "twin_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "node id which contract is deployed on in case of ('rent' or 'node' contracts)",
+                        "name": "node_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract name in case of 'name' contracts",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract type 'node', 'name', or 'rent'",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract state 'Created', 'GracePeriod', or 'Deleted'",
+                        "name": "state",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract deployment data in case of 'node' contracts",
+                        "name": "deployment_data",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract deployment hash in case of 'node' contracts",
+                        "name": "deployment_hash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min number of public ips in the 'node' contract",
+                        "name": "number_of_public_ips",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/types.Contract"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/farms": {
+            "get": {
+                "description": "Get all farms on the grid, It has pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show farms on the grid",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max result per page",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Set farms' count on headers based on filter",
+                        "name": "ret_count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min number of free ips in the farm",
+                        "name": "free_ips",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min number of total ips in the farm",
+                        "name": "total_ips",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pricing policy id",
+                        "name": "pricing_policy_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "farm version",
+                        "name": "version",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "farm id",
+                        "name": "farm_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "twin id associated with the farm",
+                        "name": "twin_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "farm name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "farm name contains",
+                        "name": "name_contains",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "certificate type DIY or Certified",
+                        "name": "certification_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "farm is dedicated",
+                        "name": "dedicated",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "farm stellar_address",
+                        "name": "stellar_address",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/types.Farm"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/gateways": {
             "get": {
                 "description": "Get all gateways on the grid, It has pagination. Nodes displayed with nested capacity object",
@@ -180,6 +416,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v2/gateways/{node_id}": {
+            "get": {
+                "description": "Get all details for specific gateway hardware, capacity, DMI, hypervisor",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show the details for specific gateway",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Node ID",
+                        "name": "node_id",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.Node"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/nodes": {
             "get": {
                 "description": "Get all nodes on the grid, It has pagination. Nodes displayed with nested capacity object",
@@ -322,6 +607,171 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/types.NodeWithNestedCapacity"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/nodes/{node_id}": {
+            "get": {
+                "description": "Get all details for specific node hardware, capacity, DMI, hypervisor",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show the details for specific node",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Node ID",
+                        "name": "node_id",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.Node"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/stats": {
+            "get": {
+                "description": "Get statistics about the grid",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show stats about the grid",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/types.Counters"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/twins": {
+            "get": {
+                "description": "Get all twins on the grid, It has pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy"
+                ],
+                "summary": "Show twins on the grid",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max result per page",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Set twins' count on headers based on filter",
+                        "name": "ret_count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "twin id",
+                        "name": "twin_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "account address",
+                        "name": "account_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/types.Twin"
                             }
                         }
                     },

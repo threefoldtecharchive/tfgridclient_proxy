@@ -310,6 +310,163 @@ info:
   title: Grid Proxy Server API
   version: "1.0"
 paths:
+  /api/v2/contracts:
+    get:
+      consumes:
+      - application/json
+      description: Get all contracts on the grid, It has pagination
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Max result per page
+        in: query
+        name: size
+        type: integer
+      - description: Set contracts' count on headers based on filter
+        in: query
+        name: ret_count
+        type: boolean
+      - description: contract id
+        in: query
+        name: contract_id
+        type: integer
+      - description: twin id
+        in: query
+        name: twin_id
+        type: integer
+      - description: node id which contract is deployed on in case of ('rent' or 'node'
+          contracts)
+        in: query
+        name: node_id
+        type: integer
+      - description: contract name in case of 'name' contracts
+        in: query
+        name: name
+        type: string
+      - description: contract type 'node', 'name', or 'rent'
+        in: query
+        name: type
+        type: string
+      - description: contract state 'Created', 'GracePeriod', or 'Deleted'
+        in: query
+        name: state
+        type: string
+      - description: contract deployment data in case of 'node' contracts
+        in: query
+        name: deployment_data
+        type: string
+      - description: contract deployment hash in case of 'node' contracts
+        in: query
+        name: deployment_hash
+        type: string
+      - description: Min number of public ips in the 'node' contract
+        in: query
+        name: number_of_public_ips
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.Contract'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show contracts on the grid
+      tags:
+      - GridProxy
+  /api/v2/farms:
+    get:
+      consumes:
+      - application/json
+      description: Get all farms on the grid, It has pagination
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Max result per page
+        in: query
+        name: size
+        type: integer
+      - description: Set farms' count on headers based on filter
+        in: query
+        name: ret_count
+        type: boolean
+      - description: Min number of free ips in the farm
+        in: query
+        name: free_ips
+        type: integer
+      - description: Min number of total ips in the farm
+        in: query
+        name: total_ips
+        type: integer
+      - description: Pricing policy id
+        in: query
+        name: pricing_policy_id
+        type: integer
+      - description: farm version
+        in: query
+        name: version
+        type: integer
+      - description: farm id
+        in: query
+        name: farm_id
+        type: integer
+      - description: twin id associated with the farm
+        in: query
+        name: twin_id
+        type: integer
+      - description: farm name
+        in: query
+        name: name
+        type: string
+      - description: farm name contains
+        in: query
+        name: name_contains
+        type: string
+      - description: certificate type DIY or Certified
+        in: query
+        name: certification_type
+        type: string
+      - description: farm is dedicated
+        in: query
+        name: dedicated
+        type: boolean
+      - description: farm stellar_address
+        in: query
+        name: stellar_address
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.Farm'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show farms on the grid
+      tags:
+      - GridProxy
   /api/v2/gateways:
     get:
       consumes:
@@ -418,6 +575,38 @@ paths:
       summary: Show gateways on the grid
       tags:
       - GridProxy
+  /api/v2/gateways/{node_id}:
+    get:
+      consumes:
+      - application/json
+      description: Get all details for specific gateway hardware, capacity, DMI, hypervisor
+      parameters:
+      - description: Node ID
+        in: path
+        name: node_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.Node'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show the details for specific gateway
+      tags:
+      - GridProxy
   /api/v2/nodes:
     get:
       consumes:
@@ -524,6 +713,115 @@ paths:
           schema:
             type: string
       summary: Show nodes on the grid
+      tags:
+      - GridProxy
+  /api/v2/nodes/{node_id}:
+    get:
+      consumes:
+      - application/json
+      description: Get all details for specific node hardware, capacity, DMI, hypervisor
+      parameters:
+      - description: Node ID
+        in: path
+        name: node_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.Node'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show the details for specific node
+      tags:
+      - GridProxy
+  /api/v2/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics about the grid
+      parameters:
+      - description: 'Node status filter, ''up'': for only up nodes & ''down'': for
+          all up/down nodes.'
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.Counters'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show stats about the grid
+      tags:
+      - GridProxy
+  /api/v2/twins:
+    get:
+      consumes:
+      - application/json
+      description: Get all twins on the grid, It has pagination
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Max result per page
+        in: query
+        name: size
+        type: integer
+      - description: Set twins' count on headers based on filter
+        in: query
+        name: ret_count
+        type: boolean
+      - description: twin id
+        in: query
+        name: twin_id
+        type: integer
+      - description: account address
+        in: query
+        name: account_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.Twin'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show twins on the grid
       tags:
       - GridProxy
   /contracts:
