@@ -177,6 +177,52 @@ definitions:
     type: object
   types.Node:
     properties:
+      certificationType:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      created:
+        type: integer
+      dedicated:
+        type: boolean
+      farmId:
+        type: integer
+      farmingPolicyId:
+        type: integer
+      gridVersion:
+        type: integer
+      id:
+        type: string
+      location:
+        $ref: '#/definitions/types.Location'
+      nodeId:
+        type: integer
+      publicConfig:
+        $ref: '#/definitions/types.PublicConfig'
+      rentContractId:
+        type: integer
+      rentedByTwinId:
+        type: integer
+      serialNumber:
+        type: string
+      status:
+        description: added node status field for up or down
+        type: string
+      total_resources:
+        $ref: '#/definitions/types.Capacity'
+      twinId:
+        type: integer
+      updatedAt:
+        type: integer
+      uptime:
+        type: integer
+      used_resources:
+        $ref: '#/definitions/types.Capacity'
+    type: object
+  types.NodeWithNestedCapacity:
+    properties:
       capacity:
         $ref: '#/definitions/types.CapacityResult'
       certificationType:
@@ -264,6 +310,222 @@ info:
   title: Grid Proxy Server API
   version: "1.0"
 paths:
+  /api/v2/gateways:
+    get:
+      consumes:
+      - application/json
+      description: Get all gateways on the grid, It has pagination. Nodes displayed
+        with nested capacity object
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Max result per page
+        in: query
+        name: size
+        type: integer
+      - description: Set nodes' count on headers based on filter
+        in: query
+        name: ret_count
+        type: boolean
+      - description: Min free reservable mru in bytes
+        in: query
+        name: free_mru
+        type: integer
+      - description: Min free reservable hru in bytes
+        in: query
+        name: free_hru
+        type: integer
+      - description: Min free reservable sru in bytes
+        in: query
+        name: free_sru
+        type: integer
+      - description: Min number of free ips in the farm of the node
+        in: query
+        name: free_ips
+        type: integer
+      - description: 'Node status filter, ''up'': for only up nodes & ''down'': for
+          all up/down nodes.'
+        in: query
+        name: status
+        type: string
+      - description: Node city filter
+        in: query
+        name: city
+        type: string
+      - description: Node country filter
+        in: query
+        name: country
+        type: string
+      - description: Get nodes for specific farm
+        in: query
+        name: farm_name
+        type: string
+      - description: Set to true to filter nodes with ipv4
+        in: query
+        name: ipv4
+        type: boolean
+      - description: Set to true to filter nodes with ipv6
+        in: query
+        name: ipv6
+        type: boolean
+      - description: Set to true to filter nodes with domain
+        in: query
+        name: domain
+        type: boolean
+      - description: Set to true to get the dedicated nodes only
+        in: query
+        name: dedicated
+        type: boolean
+      - description: Set to true to filter the available nodes for renting
+        in: query
+        name: rentable
+        type: boolean
+      - description: Set to true to filter rented nodes
+        in: query
+        name: rented
+        type: boolean
+      - description: rented by twin id
+        in: query
+        name: rented_by
+        type: integer
+      - description: available for twin id
+        in: query
+        name: available_for
+        type: integer
+      - description: List of farms separated by comma to fetch nodes from (e.g. '1,2,3')
+        in: query
+        name: farm_ids
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.NodeWithNestedCapacity'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show gateways on the grid
+      tags:
+      - GridProxy
+  /api/v2/nodes:
+    get:
+      consumes:
+      - application/json
+      description: Get all nodes on the grid, It has pagination. Nodes displayed with
+        nested capacity object
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Max result per page
+        in: query
+        name: size
+        type: integer
+      - description: Set nodes' count on headers based on filter
+        in: query
+        name: ret_count
+        type: boolean
+      - description: Min free reservable mru in bytes
+        in: query
+        name: free_mru
+        type: integer
+      - description: Min free reservable hru in bytes
+        in: query
+        name: free_hru
+        type: integer
+      - description: Min free reservable sru in bytes
+        in: query
+        name: free_sru
+        type: integer
+      - description: Min number of free ips in the farm of the node
+        in: query
+        name: free_ips
+        type: integer
+      - description: 'Node status filter, ''up'': for only up nodes & ''down'': for
+          all up/down nodes.'
+        in: query
+        name: status
+        type: string
+      - description: Node city filter
+        in: query
+        name: city
+        type: string
+      - description: Node country filter
+        in: query
+        name: country
+        type: string
+      - description: Get nodes for specific farm
+        in: query
+        name: farm_name
+        type: string
+      - description: Set to true to filter nodes with ipv4
+        in: query
+        name: ipv4
+        type: boolean
+      - description: Set to true to filter nodes with ipv6
+        in: query
+        name: ipv6
+        type: boolean
+      - description: Set to true to filter nodes with domain
+        in: query
+        name: domain
+        type: boolean
+      - description: Set to true to get the dedicated nodes only
+        in: query
+        name: dedicated
+        type: boolean
+      - description: Set to true to filter the available nodes for renting
+        in: query
+        name: rentable
+        type: boolean
+      - description: Set to true to filter rented nodes
+        in: query
+        name: rented
+        type: boolean
+      - description: rented by twin id
+        in: query
+        name: rented_by
+        type: integer
+      - description: available for twin id
+        in: query
+        name: available_for
+        type: integer
+      - description: List of farms separated by comma to fetch nodes from (e.g. '1,2,3')
+        in: query
+        name: farm_ids
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.NodeWithNestedCapacity'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show nodes on the grid
+      tags:
+      - GridProxy
   /contracts:
     get:
       consumes:
