@@ -13,6 +13,17 @@ Interact with TFgridDB using rest APIs
 - Main network: <https://gridproxy.grid.tf>
   - Swagger: https://gridproxy.grid.tf/swagger/index.html
 
+## Run for Development & Testing
+
+```bash
+$ make help
+```
+
+To list all the available tasks for running:
+
+- Database
+- Server
+- Tests
 
 
 ## Prerequisites
