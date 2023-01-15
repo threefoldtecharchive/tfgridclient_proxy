@@ -166,11 +166,17 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 	if res := d.gormDB.Table("farm").Distinct("farm_id").Count(&counters.Farms); res.Error != nil {
 		return counters, errors.Wrap(res.Error, "couldn't get farm count")
 	}
+
 	condition := "TRUE"
-	if filter.Status != nil && *filter.Status == "up" {
+	if filter.Status != nil {
 		nodeUpInterval := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
-		condition = fmt.Sprintf(`node.updated_at >= %d`, nodeUpInterval)
+		if *filter.Status == "up" {
+			condition = fmt.Sprintf(`node.updated_at >= %d`, nodeUpInterval)
+		} else if *filter.Status == "down" {
+			condition = fmt.Sprintf(`node.updated_at < %d`, nodeUpInterval)
+		}
 	}
+
 	if res := d.gormDB.
 		Table("node").
 		Select(
