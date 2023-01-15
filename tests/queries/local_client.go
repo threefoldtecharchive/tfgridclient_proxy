@@ -286,8 +286,6 @@ func (g *GridProxyClientimpl) Node(nodeID uint32) (res proxytypes.NodeWithNested
 		NodeID:          int(node.node_id),
 		FarmID:          int(node.farm_id),
 		TwinID:          int(node.twin_id),
-		Country:         node.country,
-		City:            node.city,
 		GridVersion:     int(node.grid_version),
 		Uptime:          int64(node.uptime),
 		Created:         int64(node.created),
