@@ -1,100 +1,27 @@
+import pytest
 import requests
 import assertpy
 from utils.config import Devnet_URL, Qanet_URL, Testnet_URL, Mainnet_URL
 
 
-def test_node_devnet():
-    response = requests.get(Devnet_URL+'nodes')
+@pytest.mark.parametrize("network", [Devnet_URL, Qanet_URL, Testnet_URL, Mainnet_URL])
+def test_node(network):
+    response = requests.get(network+'nodes')
     response_text = response.json()
 
     assertpy.assert_that(response.status_code).is_equal_to(200)
     assertpy.assert_that(len(response_text)).is_greater_than(1)
 
-    response = requests.get(Devnet_URL+'nodes?farm_ids=1')
+    response = requests.get(network+'nodes?farm_ids=1')
     response_text = response.json()
 
     assertpy.assert_that(response.status_code).is_equal_to(200)
     assertpy.assert_that(response_text).is_not_empty()
     assertpy.assert_that(len(response_text[0])).is_greater_than(1)
 
-    response = requests.get(Devnet_URL+'nodes')
+    response = requests.get(network+'nodes')
     response_text = response.json()
-    response = requests.get(Devnet_URL+'nodes/'+str(response_text[0]['nodeId']))
-    response_text = response.json()
-
-    assertpy.assert_that(response.status_code).is_equal_to(200)
-    assertpy.assert_that(response_text).contains_key("capacity", "certificationType", "city", "country", "created", "dedicated", "farmId", "farmingPolicyId",
-                                                     "gridVersion", "id", "location", "nodeId", "publicConfig", "rentContractId", "rentedByTwinId", "serialNumber", "status", "twinId", "updatedAt", "uptime")
-    assertpy.assert_that(len(response_text)).is_greater_than(1)
-
-
-def test_node_qanet():
-    response = requests.get(Qanet_URL+'nodes')
-    response_text = response.json()
-
-    assertpy.assert_that(response.status_code).is_equal_to(200)
-    assertpy.assert_that(len(response_text)).is_greater_than(1)
-
-    response = requests.get(Qanet_URL+'nodes?farm_ids=1')
-    response_text = response.json()
-
-    assertpy.assert_that(response.status_code).is_equal_to(200)
-    assertpy.assert_that(response_text).is_not_empty()
-    assertpy.assert_that(len(response_text[0])).is_greater_than(1)
-
-    response = requests.get(Qanet_URL+'nodes')
-    response_text = response.json()
-    response = requests.get(Qanet_URL+'nodes/'+str(response_text[0]['nodeId']))
-    response_text = response.json()
-
-    assertpy.assert_that(response.status_code).is_equal_to(200)
-    assertpy.assert_that(response_text).contains_key("capacity", "certificationType", "city", "country", "created", "dedicated", "farmId", "farmingPolicyId",
-                                                     "gridVersion", "id", "location", "nodeId", "publicConfig", "rentContractId", "rentedByTwinId", "serialNumber", "status", "twinId", "updatedAt", "uptime")
-    assertpy.assert_that(len(response_text)).is_greater_than(1)
-
-
-def test_node_testnet():
-    response = requests.get(Testnet_URL+'nodes')
-    response_text = response.json()
-
-    assertpy.assert_that(response.status_code).is_equal_to(200)
-    assertpy.assert_that(len(response_text)).is_greater_than(1)
-
-    response = requests.get(Testnet_URL+'nodes?farm_ids=1')
-    response_text = response.json()
-
-    assertpy.assert_that(response.status_code).is_equal_to(200)
-    assertpy.assert_that(response_text).is_not_empty()
-    assertpy.assert_that(len(response_text[0])).is_greater_than(1)
-
-    response = requests.get(Testnet_URL+'nodes')
-    response_text = response.json()
-    response = requests.get(Testnet_URL+'nodes/'+str(response_text[0]['nodeId']))
-    response_text = response.json()
-
-    assertpy.assert_that(response.status_code).is_equal_to(200)
-    assertpy.assert_that(response_text).contains_key("capacity", "certificationType", "city", "country", "created", "dedicated", "farmId", "farmingPolicyId",
-                                                     "gridVersion", "id", "location", "nodeId", "publicConfig", "rentContractId", "rentedByTwinId", "serialNumber", "status", "twinId", "updatedAt", "uptime")
-    assertpy.assert_that(len(response_text)).is_greater_than(1)
-
-
-def test_node_mainnet():
-    response = requests.get(Mainnet_URL+'nodes')
-    response_text = response.json()
-
-    assertpy.assert_that(response.status_code).is_equal_to(200)
-    assertpy.assert_that(len(response_text)).is_greater_than(1)
-
-    response = requests.get(Mainnet_URL+'nodes?farm_ids=1')
-    response_text = response.json()
-
-    assertpy.assert_that(response.status_code).is_equal_to(200)
-    assertpy.assert_that(response_text).is_not_empty()
-    assertpy.assert_that(len(response_text[0])).is_greater_than(1)
-
-    response = requests.get(Mainnet_URL+'nodes')
-    response_text = response.json()
-    response = requests.get(Mainnet_URL+'nodes/'+str(response_text[0]['nodeId']))
+    response = requests.get(network+'nodes/'+str(response_text[0]['nodeId']))
     response_text = response.json()
 
     assertpy.assert_that(response.status_code).is_equal_to(200)
