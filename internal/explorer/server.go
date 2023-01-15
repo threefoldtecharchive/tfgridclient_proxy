@@ -230,7 +230,7 @@ func (a *App) getGateway(r *http.Request) (interface{}, mw.Response) {
 	if err != nil {
 		return nil, err
 	} else if node.(types.NodeWithNestedCapacity).PublicConfig.Domain == "" {
-		return nil, errorReply(errors.New("node not a gateway"))
+		return nil, errorReply(ErrGatewayNotFound)
 	} else {
 		return node, nil
 	}
