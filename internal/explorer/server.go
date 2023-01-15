@@ -641,7 +641,7 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 	router.HandleFunc("/api/v2/nodes", mw.AsHandlerFunc(a.getV2Nodes))
 	router.HandleFunc("/api/v2/gateways", mw.AsHandlerFunc(a.getV2Gateways))
 	router.HandleFunc("/api/v2/twins", mw.AsHandlerFunc(a.getV2Twins))
-	router.HandleFunc("/api/v2/contracts", mw.AsHandlerFunc(a.getV1Contracts))
+	router.HandleFunc("/api/v2/contracts", mw.AsHandlerFunc(a.getV2Contracts))
 	router.HandleFunc("/api/v2/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getV2Node))
 	router.HandleFunc("/api/v2/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getV2Gateway))
 	router.HandleFunc("/api/v2/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
