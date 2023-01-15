@@ -225,7 +225,15 @@ func (a *App) getNode(r *http.Request) (interface{}, mw.Response) {
 // @Failure 500 {object} string
 // @Router /gateways/{node_id} [get]
 func (a *App) getGateway(r *http.Request) (interface{}, mw.Response) {
-	return a._getNode(r)
+	node, err := a._getNode(r)
+
+	if err != nil {
+		return nil, err
+	} else if node.(types.NodeWithNestedCapacity).PublicConfig.Domain == "" {
+		return nil, errorReply(errors.New("node not a gateway"))
+	} else {
+		return node, nil
+	}
 }
 
 func (a *App) _getNode(r *http.Request) (interface{}, mw.Response) {
