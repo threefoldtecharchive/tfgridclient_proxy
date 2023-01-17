@@ -2,10 +2,13 @@ package rmbproxy
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/substrate-client"
 )
 
@@ -26,12 +29,20 @@ func NewTwinResolver(substrate *substrate.Substrate) (*TwinExplorerResolver, err
 }
 
 func (c *twinClient) SubmitMessage(msg bytes.Buffer) (*http.Response, error) {
-	resp, err := http.Post(submitURL(c.dstIP), "application/json", &msg)
-	// check on response for non-communication errors?
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, submitURL(c.dstIP), &msg)
 	if err != nil {
+		log.Error().Msg(err.Error())
 		return nil, err
 	}
-
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	// check on response for non-communication errors?
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return nil, err
+	}
 	return resp, nil
 }
 
@@ -40,9 +51,18 @@ func (c *twinClient) GetResult(msgIdentifier MessageIdentifier) (*http.Response,
 	if err := json.NewEncoder(&buffer).Encode(msgIdentifier); err != nil {
 		return nil, err
 	}
-	resp, err := http.Post(resultURL(c.dstIP), "application/json", &buffer)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, resultURL(c.dstIP), &buffer)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
+		log.Error().Msg(err.Error())
 		return nil, err
 	}
 
