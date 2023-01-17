@@ -12,7 +12,8 @@ import (
 
 // ErrNodeNotFound creates new error type to define node existence or server problem
 var (
-	ErrNodeNotFound = errors.New("node not found")
+	ErrNodeNotFound    = errors.New("node not found")
+	ErrGatewayNotFound = errors.New("gateway not found")
 )
 
 // ErrBadGateway creates new error type to define node existence or server problem
