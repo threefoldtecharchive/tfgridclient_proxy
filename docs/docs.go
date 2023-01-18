@@ -11,10 +11,6 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {},
-        "license": {
-            "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -30,7 +26,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v2.0"
                 ],
                 "summary": "Show contracts on the grid",
                 "parameters": [
@@ -142,7 +138,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v2.0"
                 ],
                 "summary": "Show farms on the grid",
                 "parameters": [
@@ -266,7 +262,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v2.0"
                 ],
                 "summary": "Show gateways on the grid",
                 "parameters": [
@@ -426,7 +422,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v2.0"
                 ],
                 "summary": "Show the details for specific gateway",
                 "parameters": [
@@ -475,7 +471,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v2.0"
                 ],
                 "summary": "Show nodes on the grid",
                 "parameters": [
@@ -635,7 +631,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v2.0"
                 ],
                 "summary": "Show the details for specific node",
                 "parameters": [
@@ -674,6 +670,29 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v2/ping": {
+            "get": {
+                "description": "ping the server to check if it is running",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ping v2.0"
+                ],
+                "summary": "ping the server",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rmbproxy.PingMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/stats": {
             "get": {
                 "description": "Get statistics about the grid",
@@ -684,7 +703,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v2.0"
                 ],
                 "summary": "Show stats about the grid",
                 "parameters": [
@@ -720,6 +739,125 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v2/twin/{twin_id}": {
+            "post": {
+                "description": "submit the message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RMB v2.0"
+                ],
+                "summary": "submit the message",
+                "parameters": [
+                    {
+                        "description": "rmb.Message",
+                        "name": "msg",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rmbproxy.Message"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "twin id",
+                        "name": "twin_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rmbproxy.MessageIdentifier"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/twin/{twin_id}/{retqueue}": {
+            "get": {
+                "description": "Get the message result",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RMB v2.0"
+                ],
+                "summary": "Get the message result",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "twin id",
+                        "name": "twin_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "message retqueue",
+                        "name": "retqueue",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/rmbproxy.Message"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/twins": {
             "get": {
                 "description": "Get all twins on the grid, It has pagination",
@@ -730,7 +868,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v2.0"
                 ],
                 "summary": "Show twins on the grid",
                 "parameters": [
@@ -800,7 +938,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v1.0"
                 ],
                 "summary": "Show contracts on the grid",
                 "parameters": [
@@ -912,7 +1050,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v1.0"
                 ],
                 "summary": "Show farms on the grid",
                 "parameters": [
@@ -1036,7 +1174,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v1.0"
                 ],
                 "summary": "Show gateways on the grid",
                 "parameters": [
@@ -1196,7 +1334,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v1.0"
                 ],
                 "summary": "Show the details for specific gateway",
                 "parameters": [
@@ -1245,7 +1383,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v1.0"
                 ],
                 "summary": "Show nodes on the grid",
                 "parameters": [
@@ -1405,7 +1543,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v1.0"
                 ],
                 "summary": "Show the details for specific node",
                 "parameters": [
@@ -1454,7 +1592,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "ping"
+                    "Ping v1.0"
                 ],
                 "summary": "ping the server",
                 "responses": {
@@ -1477,7 +1615,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v1.0"
                 ],
                 "summary": "Show stats about the grid",
                 "parameters": [
@@ -1523,7 +1661,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "RMB"
+                    "RMB v1.0"
                 ],
                 "summary": "submit the message",
                 "parameters": [
@@ -1582,7 +1720,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "RMB"
+                    "RMB v1.0"
                 ],
                 "summary": "Get the message result",
                 "parameters": [
@@ -1642,7 +1780,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "GridProxy"
+                    "GridProxy v1.0"
                 ],
                 "summary": "Show twins on the grid",
                 "parameters": [
@@ -2039,12 +2177,6 @@ const docTemplate = `{
                 "certificationType": {
                     "type": "string"
                 },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
                 "created": {
                     "type": "integer"
                 },
@@ -2155,12 +2287,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
+	Version:          "",
 	Host:             "",
-	BasePath:         "/",
+	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "Grid Proxy Server API",
-	Description:      "grid proxy server has the main methods to list farms, nodes, node details in the grid.",
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }

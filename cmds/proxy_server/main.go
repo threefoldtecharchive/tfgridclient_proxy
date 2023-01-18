@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer"
@@ -15,6 +17,7 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/internal/rmbproxy"
 	logging "github.com/threefoldtech/grid_proxy_server/pkg"
 	"github.com/threefoldtech/substrate-client"
+	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
 const (
@@ -41,6 +44,16 @@ type flags struct {
 	certCacheDir     string
 	version          bool
 	nocert           bool
+}
+
+type api struct {
+	version   string
+	router    *mux.Router
+	rmbClient rmb.Client
+	c         *cache.Cache
+	gitCommit string
+	database  db.Database
+	resolver  *rmbproxy.TwinExplorerResolver
 }
 
 func main() {
@@ -138,19 +151,60 @@ func app(s *http.Server, f flags) error {
 }
 
 func createServer(f flags, gitCommit string, substrate *substrate.Substrate) (*http.Server, error) {
-	log.Info().Msg("Creating server")
-
+	// main router
+	log.Info().Msg("Starting server")
 	router := mux.NewRouter().StrictSlash(true)
+
+	// postgres client
+	log.Info().Msg("Preparing Postgres Client ...")
 	db, err := db.NewPostgresDatabase(f.postgresHost, f.postgresPort, f.postgresUser, f.postgresPassword, f.postgresDB)
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't get postgres client")
 	}
 
-	// setup explorer
-	if err := explorer.Setup(router, f.redis, gitCommit, db); err != nil {
+	// redis pool
+	log.Info().Str("redis address", f.redis).Msg("Preparing Redis Pool ...")
+	rmbClient, err := rmb.NewClient(f.redis, 500)
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't connect to rmb")
+	}
+	c := cache.New(2*time.Minute, 3*time.Minute)
+
+	// twin resolver
+	log.Info().Msg("Creating Twin resolver")
+
+	resolver, err := rmbproxy.NewTwinResolver(substrate)
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't get a client to explorer resolver")
+	}
+
+	// setup API v1
+	router1 := router.PathPrefix("").Subrouter()
+	api1 := api{
+		version:   "v1",
+		router:    router1,
+		rmbClient: rmbClient,
+		c:         c,
+		gitCommit: gitCommit,
+		database:  db,
+		resolver:  resolver,
+	}
+	if err := setup(api1); err != nil {
 		return nil, err
 	}
-	if err := rmbproxy.Setup(router, substrate); err != nil {
+
+	// setup API v2
+	router2 := router.PathPrefix("/api/v2").Subrouter()
+	api2 := api{
+		version:   "v2",
+		router:    router2,
+		rmbClient: rmbClient,
+		c:         c,
+		gitCommit: gitCommit,
+		database:  db,
+		resolver:  resolver,
+	}
+	if err := setup(api2); err != nil {
 		return nil, err
 	}
 
@@ -158,4 +212,14 @@ func createServer(f flags, gitCommit string, substrate *substrate.Substrate) (*h
 		Handler: router,
 		Addr:    f.address,
 	}, nil
+}
+
+func setup(api api) error {
+	if err := explorer.Setup(api.version, api.router, api.rmbClient, api.c, api.gitCommit, api.database); err != nil {
+		return err
+	}
+	if err := rmbproxy.Setup(api.version, api.router, api.resolver); err != nil {
+		return err
+	}
+	return nil
 }
