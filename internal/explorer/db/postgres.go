@@ -427,6 +427,9 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 	if filter.Domain != nil {
 		q = q.Where("COALESCE(public_config.domain, '') != ''")
 	}
+	if filter.IsGateway != nil {
+		q = q.Where("COALESCE(public_config.domain, '') != '' AND (COALESCE(public_config.ipv4, '') != '' OR COALESCE(public_config.ipv6, '') != '')")
+	}
 	if filter.Dedicated != nil {
 		q = q.Where("farm.dedicated_farm = ?", *filter.Dedicated)
 	}

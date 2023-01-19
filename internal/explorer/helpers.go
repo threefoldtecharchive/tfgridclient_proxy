@@ -146,12 +146,13 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (types.NodeFilter, 
 		"farm_name_contains": &filter.FarmNameContains,
 	}
 	bools := map[string]**bool{
-		"ipv4":      &filter.IPv4,
-		"ipv6":      &filter.IPv6,
-		"domain":    &filter.Domain,
-		"dedicated": &filter.Dedicated,
-		"rentable":  &filter.Rentable,
-		"rented":    &filter.Rented,
+		"ipv4":       &filter.IPv4,
+		"ipv6":       &filter.IPv6,
+		"domain":     &filter.Domain,
+		"dedicated":  &filter.Dedicated,
+		"rentable":   &filter.Rentable,
+		"rented":     &filter.Rented,
+		"is_gateway": &filter.IsGateway,
 	}
 	listOfInts := map[string]*[]uint64{
 		"farm_ids": &filter.FarmIDs,
@@ -162,11 +163,6 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (types.NodeFilter, 
 	limit, err := getLimit(r)
 	if err != nil {
 		return filter, limit, err
-	}
-	trueval := true
-	if strings.HasSuffix(r.URL.Path, "gateways") {
-		filter.Domain = &trueval
-		filter.IPv4 = &trueval
 	}
 	return filter, limit, nil
 }

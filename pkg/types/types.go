@@ -108,6 +108,7 @@ type NodeFilter struct {
 	AvailableFor     *uint64
 	NodeID           *uint64
 	TwinID           *uint64
+	IsGateway        *bool
 }
 
 // FarmFilter farm filters

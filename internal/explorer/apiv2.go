@@ -95,42 +95,6 @@ func (a *ApiV2) getNodes(r *http.Request) (interface{}, mw.Response) {
 	return a.listNodesWithNestedCapacity(r)
 }
 
-// getGateways godoc
-//
-//	@version		2.0
-//	@Summary		Show gateways on the grid
-//	@Description	Get all gateways on the grid, It has pagination
-//	@Tags			GridProxy v2.0
-//	@Accept			json
-//	@Produce		json
-//	@Param			page			query		int		false	"Page number"
-//	@Param			size			query		int		false	"Max result per page"
-//	@Param			ret_count		query		bool	false	"Set nodes' count on headers based on filter"
-//	@Param			free_mru		query		int		false	"Min free reservable mru in bytes"
-//	@Param			free_hru		query		int		false	"Min free reservable hru in bytes"
-//	@Param			free_sru		query		int		false	"Min free reservable sru in bytes"
-//	@Param			free_ips		query		int		false	"Min number of free ips in the farm of the node"
-//	@Param			status			query		string	false	"Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
-//	@Param			city			query		string	false	"Node city filter"
-//	@Param			country			query		string	false	"Node country filter"
-//	@Param			farm_name		query		string	false	"Get nodes for specific farm"
-//	@Param			ipv4			query		bool	false	"Set to true to filter nodes with ipv4"
-//	@Param			ipv6			query		bool	false	"Set to true to filter nodes with ipv6"
-//	@Param			domain			query		bool	false	"Set to true to filter nodes with domain"
-//	@Param			dedicated		query		bool	false	"Set to true to get the dedicated nodes only"
-//	@Param			rentable		query		bool	false	"Set to true to filter the available nodes for renting"
-//	@Param			rented			query		bool	false	"Set to true to filter rented nodes"
-//	@Param			rented_by		query		int		false	"rented by twin id"
-//	@Param			available_for	query		int		false	"available for twin id"
-//	@Param			farm_ids		query		string	false	"List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
-//	@Success		200				{object}	[]types.NodeWithNestedCapacity
-//	@Failure		400				{object}	string
-//	@Failure		500				{object}	string
-//	@Router			/api/v2/gateways [get]
-func (a *ApiV2) getGateways(r *http.Request) (interface{}, mw.Response) {
-	return a.listNodesWithNestedCapacity(r)
-}
-
 // getNode godoc
 //
 //	@version		2.0
@@ -146,24 +110,6 @@ func (a *ApiV2) getGateways(r *http.Request) (interface{}, mw.Response) {
 //	@Failure		500	{object}	string
 //	@Router			/api/v2/nodes/{node_id} [get]
 func (a *ApiV2) getNode(r *http.Request) (interface{}, mw.Response) {
-	return a.loadNode(r)
-}
-
-// getGateway godoc
-//
-//	@version		2.0
-//	@Summary		Show the details for specific gateway
-//	@Description	Get all details for specific gateway hardware, capacity, DMI, hypervisor
-//	@Tags			GridProxy v2.0
-//	@Param			node_id	path	int	false	"Node ID"
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	types.Node
-//	@Failure		400	{object}	string
-//	@Failure		404	{object}	string
-//	@Failure		500	{object}	string
-//	@Router			/api/v2/gateways/{node_id} [get]
-func (a *ApiV2) getGateway(r *http.Request) (interface{}, mw.Response) {
 	return a.loadNode(r)
 }
 
@@ -230,20 +176,6 @@ func (a *ApiV2) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
 	return a.GetNodeStatus(r)
 }
 
-// getGatewayStatus godoc
-//
-//	@version		2.0
-//	@Summary		Show Gateway status
-//	@Description	Show Gateway status
-//	@Tags			GridProxy v2.0
-//	@Produce		json
-//	@Success		200	{object}	string
-//	@Failure		400	{object}	string
-//	@Router			/api/v2/gateways/{node_id}/status [get]
-func (a *ApiV2) getGatewayStatus(r *http.Request) (interface{}, mw.Response) {
-	return a.GetNodeStatus(r)
-}
-
 // getVersion godoc
 //
 //	@version		2.0
@@ -279,11 +211,6 @@ func (a *App) loadV2Handlers(router *mux.Router) {
 	router.HandleFunc("/contracts", mw.AsHandlerFunc(api.getContracts))
 
 	router.HandleFunc("/nodes", mw.AsHandlerFunc(api.getNodes))
-	router.HandleFunc("/gateways", mw.AsHandlerFunc(api.getGateways))
-
 	router.HandleFunc("/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(api.getNode))
-	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(api.getGateway))
-
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(api.getNodeStatus))
-	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(api.getGatewayStatus))
 }
