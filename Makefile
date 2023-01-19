@@ -6,7 +6,7 @@ install-swag:
 	@go install github.com/swaggo/swag/cmd/swag@latest;
 
 .PHONY: docs
-docs: install-swag ## Create the swagger docs
+docs: ## Create the swagger docs
 	@go mod vendor; 
 	@$(shell go env GOPATH)/bin/swag init -g internal/explorer/server.go --parseVendor;
 	@rm -rf vendor;

@@ -252,241 +252,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v2/gateways": {
-            "get": {
-                "description": "Get all gateways on the grid, It has pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "GridProxy v2.0"
-                ],
-                "summary": "Show gateways on the grid",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Max result per page",
-                        "name": "size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Set nodes' count on headers based on filter",
-                        "name": "ret_count",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Min free reservable mru in bytes",
-                        "name": "free_mru",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Min free reservable hru in bytes",
-                        "name": "free_hru",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Min free reservable sru in bytes",
-                        "name": "free_sru",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Min number of free ips in the farm of the node",
-                        "name": "free_ips",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Node city filter",
-                        "name": "city",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Node country filter",
-                        "name": "country",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Get nodes for specific farm",
-                        "name": "farm_name",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Set to true to filter nodes with ipv4",
-                        "name": "ipv4",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Set to true to filter nodes with ipv6",
-                        "name": "ipv6",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Set to true to filter nodes with domain",
-                        "name": "domain",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Set to true to get the dedicated nodes only",
-                        "name": "dedicated",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Set to true to filter the available nodes for renting",
-                        "name": "rentable",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Set to true to filter rented nodes",
-                        "name": "rented",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "rented by twin id",
-                        "name": "rented_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "available for twin id",
-                        "name": "available_for",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')",
-                        "name": "farm_ids",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/types.NodeWithNestedCapacity"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v2/gateways/{node_id}": {
-            "get": {
-                "description": "Get all details for specific gateway hardware, capacity, DMI, hypervisor",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "GridProxy v2.0"
-                ],
-                "summary": "Show the details for specific gateway",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Node ID",
-                        "name": "node_id",
-                        "in": "path"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/types.Node"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v2/gateways/{node_id}/status": {
-            "get": {
-                "description": "Show Gateway status",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "GridProxy v2.0"
-                ],
-                "summary": "Show Gateway status",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v2/nodes": {
             "get": {
                 "description": "Get all nodes on the grid, It has pagination",
@@ -628,7 +393,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/types.NodeWithNestedCapacity"
+                                "$ref": "#/definitions/types.Node2"
                             }
                         }
                     },
@@ -672,7 +437,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/types.Node"
+                            "$ref": "#/definitions/types.Node2"
                         }
                     },
                     "400": {
@@ -1300,7 +1065,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for only down nodes.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
                         "name": "status",
                         "in": "query"
                     },
@@ -1535,7 +1300,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for only down nodes.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
                         "name": "status",
                         "in": "query"
                     },
@@ -1751,7 +1516,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for only down nodes.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
                         "name": "status",
                         "in": "query"
                     }
@@ -2324,7 +2089,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.NodeWithNestedCapacity": {
+        "types.Node2": {
             "type": "object",
             "properties": {
                 "capacity": {
