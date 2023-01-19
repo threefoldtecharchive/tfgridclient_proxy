@@ -1,11 +1,14 @@
 package explorer
 
 import (
+	"fmt"
+	"math"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
+	"github.com/threefoldtech/grid_proxy_server/pkg/types"
 )
 
 type ApiV2 struct {
@@ -87,12 +90,33 @@ func (a *ApiV2) getFarms(r *http.Request) (interface{}, mw.Response) {
 //	@Param			rented_by		query		int		false	"rented by twin id"
 //	@Param			available_for	query		int		false	"available for twin id"
 //	@Param			farm_ids		query		string	false	"List of farms separated by comma to fetch nodes from (e.g. '1,2,3')"
-//	@Success		200				{object}	[]types.NodeWithNestedCapacity
+//	@Success		200				{object}	[]types.Node2
 //	@Failure		400				{object}	string
 //	@Failure		500				{object}	string
 //	@Router			/api/v2/nodes [get]
 func (a *ApiV2) getNodes(r *http.Request) (interface{}, mw.Response) {
-	return a.listNodesWithNestedCapacity(r)
+	filter, limit, err := a.handleNodeRequestsQueryParams(r)
+	if err != nil {
+		return nil, mw.BadRequest(err)
+	}
+	dbNodes, nodesCount, err := a.db.GetNodes(filter, limit)
+	if err != nil {
+		return nil, mw.Error(err)
+	}
+	nodes := make([]types.Node2, len(dbNodes))
+	for idx, node := range dbNodes {
+		nodes[idx] = node2FromDBNode(node)
+	}
+	resp := mw.Ok()
+
+	// return the number of pages and totalCount in the response headers
+	if limit.RetCount {
+		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
+		resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
+			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
+			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
+	}
+	return nodes, resp
 }
 
 // getNode godoc
@@ -104,13 +128,18 @@ func (a *ApiV2) getNodes(r *http.Request) (interface{}, mw.Response) {
 //	@Param			node_id	path	int	false	"Node ID"
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	types.Node
+//	@Success		200	{object}	types.Node2
 //	@Failure		400	{object}	string
 //	@Failure		404	{object}	string
 //	@Failure		500	{object}	string
 //	@Router			/api/v2/nodes/{node_id} [get]
 func (a *ApiV2) getNode(r *http.Request) (interface{}, mw.Response) {
-	return a.loadNode(r)
+	nodeID := mux.Vars(r)["node_id"]
+	nodeData, err := a.getNode2Data(nodeID)
+	if err != nil {
+		return nil, errorReply(err)
+	}
+	return nodeData, nil
 }
 
 // getTwins godoc

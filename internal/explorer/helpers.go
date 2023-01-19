@@ -281,3 +281,19 @@ func (a *App) getNodeData(nodeIDStr string) (types.NodeWithNestedCapacity, error
 	node := nodeWithNestedCapacityFromDBNode(info)
 	return node, nil
 }
+
+func (a *App) getNode2Data(nodeIDStr string) (types.Node2, error) {
+	nodeID, err := strconv.Atoi(nodeIDStr)
+	if err != nil {
+		return types.Node2{}, errors.Wrap(ErrBadGateway, fmt.Sprintf("invalid node id %s: %s", nodeIDStr, err.Error()))
+	}
+	info, err := a.db.GetNode(uint32(nodeID))
+	if errors.Is(err, db.ErrNodeNotFound) {
+		return types.Node2{}, ErrNodeNotFound
+	} else if err != nil {
+		// TODO: wrapping
+		return types.Node2{}, err
+	}
+	node := node2FromDBNode(info)
+	return node, nil
+}

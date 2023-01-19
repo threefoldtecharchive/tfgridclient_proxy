@@ -132,6 +132,57 @@ func nodeWithNestedCapacityFromDBNode(info db.Node) types.NodeWithNestedCapacity
 	return node
 }
 
+func node2FromDBNode(info db.Node) types.Node2 {
+
+	node := types.Node2{
+		ID:              info.ID,
+		NodeID:          int(info.NodeID),
+		FarmID:          int(info.FarmID),
+		TwinID:          int(info.TwinID),
+		GridVersion:     int(info.GridVersion),
+		Uptime:          info.Uptime,
+		Created:         info.Created,
+		FarmingPolicyID: int(info.FarmingPolicyID),
+		UpdatedAt:       int64(math.Round(float64(info.UpdatedAt) / 1000)),
+		Capacity: types.CapacityResult{
+			Total: types.Capacity{
+				CRU: uint64(info.TotalCru),
+				SRU: gridtypes.Unit(info.TotalSru),
+				HRU: gridtypes.Unit(info.TotalHru),
+				MRU: gridtypes.Unit(info.TotalMru),
+			},
+			Used: types.Capacity{
+				CRU: uint64(info.UsedCru),
+				SRU: gridtypes.Unit(info.UsedSru),
+				HRU: gridtypes.Unit(info.UsedHru),
+				MRU: gridtypes.Unit(info.UsedMru),
+			},
+		},
+		Location: types.Location{
+			Country: info.Country,
+			City:    info.City,
+		},
+		PublicConfig: types.PublicConfig{
+			Domain: info.Domain,
+			Gw4:    info.Gw4,
+			Gw6:    info.Gw6,
+			Ipv4:   info.Ipv4,
+			Ipv6:   info.Ipv6,
+		},
+		CertificationType: info.Certification,
+		Dedicated:         info.Dedicated,
+		RentContractID:    uint(info.RentContractID),
+		RentedByTwinID:    uint(info.RentedByTwinID),
+		SerialNumber:      info.SerialNumber,
+	}
+	if node.UpdatedAt >= time.Now().Add(-3*time.Hour).Unix() {
+		node.Status = "up"
+	} else {
+		node.Status = "down"
+	}
+	return node
+}
+
 func contractFromDBContract(info db.DBContract) (types.Contract, error) {
 	var details interface{}
 	switch info.Type {

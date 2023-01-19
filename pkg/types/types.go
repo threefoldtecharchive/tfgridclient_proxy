@@ -206,6 +206,27 @@ type NodeWithNestedCapacity struct {
 	SerialNumber      string         `json:"serialNumber"`
 }
 
+type Node2 struct {
+	ID                string         `json:"id"`
+	NodeID            int            `json:"nodeId"`
+	FarmID            int            `json:"farmId"`
+	TwinID            int            `json:"twinId"`
+	GridVersion       int            `json:"gridVersion"`
+	Uptime            int64          `json:"uptime"`
+	Created           int64          `json:"created"`
+	FarmingPolicyID   int            `json:"farmingPolicyId"`
+	UpdatedAt         int64          `json:"updatedAt"`
+	Capacity          CapacityResult `json:"capacity"`
+	Location          Location       `json:"location"`
+	PublicConfig      PublicConfig   `json:"publicConfig"`
+	Status            string         `json:"status"` // added node status field for up or down
+	CertificationType string         `json:"certificationType"`
+	Dedicated         bool           `json:"dedicated"`
+	RentContractID    uint           `json:"rentContractId"`
+	RentedByTwinID    uint           `json:"rentedByTwinId"`
+	SerialNumber      string         `json:"serialNumber"`
+}
+
 type Twin struct {
 	TwinID    uint   `json:"twinId"`
 	AccountID string `json:"accountId"`
