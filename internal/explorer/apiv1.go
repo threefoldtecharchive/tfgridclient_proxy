@@ -140,7 +140,7 @@ func (a *ApiV1) getGateways(r *http.Request) (interface{}, mw.Response) {
 //	@Param			node_id	path	int	false	"Node ID"
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	types.Node
+//	@Success		200	{object}	types.NodeWithNestedCapacity
 //	@Failure		400	{object}	string
 //	@Failure		404	{object}	string
 //	@Failure		500	{object}	string
@@ -158,7 +158,7 @@ func (a *ApiV1) getNode(r *http.Request) (interface{}, mw.Response) {
 //	@Param			node_id	path	int	false	"Node ID"
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	types.Node
+//	@Success		200	{object}	types.NodeWithNestedCapacity
 //	@Failure		400	{object}	string
 //	@Failure		404	{object}	string
 //	@Failure		500	{object}	string

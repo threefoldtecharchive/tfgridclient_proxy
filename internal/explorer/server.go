@@ -90,31 +90,6 @@ func (a *App) listNodes(r *http.Request) (interface{}, mw.Response) {
 	return nodes, resp
 }
 
-func (a *App) listNodesWithNestedCapacity(r *http.Request) (interface{}, mw.Response) {
-	filter, limit, err := a.handleNodeRequestsQueryParams(r)
-	if err != nil {
-		return nil, mw.BadRequest(err)
-	}
-	dbNodes, nodesCount, err := a.db.GetNodes(filter, limit)
-	if err != nil {
-		return nil, mw.Error(err)
-	}
-	nodes := make([]types.NodeWithNestedCapacity, len(dbNodes))
-	for idx, node := range dbNodes {
-		nodes[idx] = nodeWithNestedCapacityFromDBNode(node)
-	}
-	resp := mw.Ok()
-
-	// return the number of pages and totalCount in the response headers
-	if limit.RetCount {
-		pages := math.Ceil(float64(nodesCount) / float64(limit.Size))
-		resp = resp.WithHeader("count", fmt.Sprintf("%d", nodesCount)).
-			WithHeader("size", fmt.Sprintf("%d", limit.Size)).
-			WithHeader("pages", fmt.Sprintf("%d", int(pages)))
-	}
-	return nodes, resp
-}
-
 func (a *App) loadNode(r *http.Request) (interface{}, mw.Response) {
 	nodeID := mux.Vars(r)["node_id"]
 	nodeData, err := a.getNodeData(nodeID)
