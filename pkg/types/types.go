@@ -188,7 +188,9 @@ type NodeWithNestedCapacity struct {
 	NodeID            int            `json:"nodeId"`
 	FarmID            int            `json:"farmId"`
 	TwinID            int            `json:"twinId"`
+	Country           string         `json:"country"`
 	GridVersion       int            `json:"gridVersion"`
+	City              string         `json:"city"`
 	Uptime            int64          `json:"uptime"`
 	Created           int64          `json:"created"`
 	FarmingPolicyID   int            `json:"farmingPolicyId"`
