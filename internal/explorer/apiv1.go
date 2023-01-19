@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
+	"github.com/threefoldtech/grid_proxy_server/pkg/types"
 )
 
 type ApiV1 struct {
@@ -164,7 +165,15 @@ func (a *ApiV1) getNode(r *http.Request) (interface{}, mw.Response) {
 //	@Failure		500	{object}	string
 //	@Router			/gateways/{node_id} [get]
 func (a *ApiV1) getGateway(r *http.Request) (interface{}, mw.Response) {
-	return a.loadNode(r)
+	node, err := a.loadNode(r)
+
+	if err != nil {
+		return nil, err
+	} else if node.(types.NodeWithNestedCapacity).PublicConfig.Domain == "" {
+		return nil, errorReply(ErrGatewayNotFound)
+	} else {
+		return node, nil
+	}
 }
 
 // getTwins godoc
