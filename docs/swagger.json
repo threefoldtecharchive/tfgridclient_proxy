@@ -1288,7 +1288,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for only down nodes.",
                         "name": "status",
                         "in": "query"
                     },
@@ -1523,7 +1523,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for only down nodes.",
                         "name": "status",
                         "in": "query"
                     },
@@ -1739,7 +1739,7 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for all up/down nodes.",
+                        "description": "Node status filter, 'up': for only up nodes \u0026 'down': for only down nodes.",
                         "name": "status",
                         "in": "query"
                     }

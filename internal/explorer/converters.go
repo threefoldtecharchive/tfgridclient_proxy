@@ -159,8 +159,10 @@ func node2FromDBNode(info db.Node) types.Node2 {
 			},
 		},
 		Location: types.Location{
-			Country: info.Country,
-			City:    info.City,
+			Country:   info.Country,
+			City:      info.City,
+			Longitude: info.Longitude,
+			Latitude:  info.Latitude,
 		},
 		PublicConfig: types.PublicConfig{
 			Domain: info.Domain,
