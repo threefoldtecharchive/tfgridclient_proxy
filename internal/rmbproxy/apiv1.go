@@ -8,7 +8,11 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 )
 
-// sendV1 godoc
+type ApiV1 struct {
+	*App
+}
+
+// sendMessage godoc
 //
 //	@Summary		submit the message
 //	@Description	submit the message
@@ -22,11 +26,11 @@ import (
 //	@Failure		500		{object}	string
 //	@Failure		502		{object}	string
 //	@Router			/twin/{twin_id} [post]
-func (a *App) sendV1(r *http.Request) (*http.Response, mw.Response) {
-	return a.sendMessage(r)
+func (a *ApiV1) sendMessage(r *http.Request) (*http.Response, mw.Response) {
+	return a.SendMessage(r)
 }
 
-// getV1 godoc
+// getResult godoc
 //
 //	@Summary		Get the message result
 //	@Description	Get the message result
@@ -40,11 +44,11 @@ func (a *App) sendV1(r *http.Request) (*http.Response, mw.Response) {
 //	@Failure		500			{object}	string
 //	@Failure		502			{object}	string
 //	@Router			/twin/{twin_id}/{retqueue} [get]
-func (a *App) getV1(r *http.Request) (*http.Response, mw.Response) {
-	return a.getResult(r)
+func (a *ApiV1) getResult(r *http.Request) (*http.Response, mw.Response) {
+	return a.GetResult(r)
 }
 
-// pingServerV1 godoc
+// ping godoc
 //
 //	@Summary		ping the server
 //	@Description	ping the server to check if it is running
@@ -53,8 +57,8 @@ func (a *App) getV1(r *http.Request) (*http.Response, mw.Response) {
 //	@Produce		json
 //	@Success		200	{object}	PingMessage
 //	@Router			/ping [get]
-func (a *App) pingServerV1(r *http.Request) (interface{}, mw.Response) {
-	return a.getResult(r)
+func (a *ApiV1) ping(r *http.Request) (interface{}, mw.Response) {
+	return a.Ping(r)
 }
 
 // Setup : sets rmb routes
@@ -69,9 +73,10 @@ func (a *App) pingServerV1(r *http.Request) (interface{}, mw.Response) {
 //	@host			localhost:8080
 //	@BasePath		/
 func (a *App) loadV1Handlers(router *mux.Router) {
+	api := ApiV1{App: a}
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
+	router.HandleFunc("/ping", mw.AsHandlerFunc(api.ping))
 
-	router.HandleFunc("/twin/{twin_id:[0-9]+}", mw.AsProxyHandlerFunc(a.sendV1))
-	router.HandleFunc("/twin/{twin_id:[0-9]+}/{retqueue}", mw.AsProxyHandlerFunc(a.getV1))
-	router.HandleFunc("/ping", mw.AsHandlerFunc(a.pingServerV1))
+	router.HandleFunc("/twin/{twin_id:[0-9]+}", mw.AsProxyHandlerFunc(api.sendMessage))
+	router.HandleFunc("/twin/{twin_id:[0-9]+}/{retqueue}", mw.AsProxyHandlerFunc(api.getResult))
 }

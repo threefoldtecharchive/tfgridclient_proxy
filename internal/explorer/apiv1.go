@@ -6,10 +6,30 @@ import (
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
-	"github.com/threefoldtech/grid_proxy_server/pkg/types"
 )
 
-// getV1Farms godoc
+type ApiV1 struct {
+	*App
+}
+
+// getStats godoc
+//
+//	@version		1.0
+//	@Summary		Show stats about the grid
+//	@Description	Get statistics about the grid
+//	@Tags			GridProxy v1.0
+//	@Accept			json
+//	@Produce		json
+//	@Param			status	query		string	false	"Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
+//	@Success		200		{object}	[]types.Counters
+//	@Failure		400		{object}	string
+//	@Failure		500		{object}	string
+//	@Router			/stats [get]
+func (a *ApiV1) getStats(r *http.Request) (interface{}, mw.Response) {
+	return a.loadStats(r)
+}
+
+// getFarms godoc
 //
 //	@version		1.0
 //	@Summary		Show farms on the grid
@@ -35,28 +55,11 @@ import (
 //	@Failure		400					{object}	string
 //	@Failure		500					{object}	string
 //	@Router			/farms [get]
-func (a *App) getV1Farms(r *http.Request) (interface{}, mw.Response) {
+func (a *ApiV1) getFarms(r *http.Request) (interface{}, mw.Response) {
 	return a.listFarms(r)
 }
 
-// getV1Stats godoc
-//
-//	@version		1.0
-//	@Summary		Show stats about the grid
-//	@Description	Get statistics about the grid
-//	@Tags			GridProxy v1.0
-//	@Accept			json
-//	@Produce		json
-//	@Param			status	query		string	false	"Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
-//	@Success		200		{object}	[]types.Counters
-//	@Failure		400		{object}	string
-//	@Failure		500		{object}	string
-//	@Router			/stats [get]
-func (a *App) getV1Stats(r *http.Request) (interface{}, mw.Response) {
-	return a.loadStats(r)
-}
-
-// getV1Nodes godoc
+// getNodes godoc
 //
 //	@version		1.0
 //	@Summary		Show nodes on the grid
@@ -88,11 +91,11 @@ func (a *App) getV1Stats(r *http.Request) (interface{}, mw.Response) {
 //	@Failure		400				{object}	string
 //	@Failure		500				{object}	string
 //	@Router			/nodes [get]
-func (a *App) getV1Nodes(r *http.Request) (interface{}, mw.Response) {
+func (a *ApiV1) getNodes(r *http.Request) (interface{}, mw.Response) {
 	return a.listNodes(r)
 }
 
-// getV1Gateways godoc
+// getGateways godoc
 //
 //	@version		1.0
 //	@Summary		Show gateways on the grid
@@ -124,11 +127,11 @@ func (a *App) getV1Nodes(r *http.Request) (interface{}, mw.Response) {
 //	@Failure		400				{object}	string
 //	@Failure		500				{object}	string
 //	@Router			/gateways [get]
-func (a *App) getV1Gateways(r *http.Request) (interface{}, mw.Response) {
+func (a *ApiV1) getGateways(r *http.Request) (interface{}, mw.Response) {
 	return a.listNodes(r)
 }
 
-// getV1Node godoc
+// getNode godoc
 //
 //	@version		1.0
 //	@Summary		Show the details for specific node
@@ -142,11 +145,11 @@ func (a *App) getV1Gateways(r *http.Request) (interface{}, mw.Response) {
 //	@Failure		404	{object}	string
 //	@Failure		500	{object}	string
 //	@Router			/nodes/{node_id} [get]
-func (a *App) getV1Node(r *http.Request) (interface{}, mw.Response) {
+func (a *ApiV1) getNode(r *http.Request) (interface{}, mw.Response) {
 	return a.loadNode(r)
 }
 
-// getV1Gateway godoc
+// getGateway godoc
 //
 //	@version		1.0
 //	@Summary		Show the details for specific gateway
@@ -160,23 +163,11 @@ func (a *App) getV1Node(r *http.Request) (interface{}, mw.Response) {
 //	@Failure		404	{object}	string
 //	@Failure		500	{object}	string
 //	@Router			/gateways/{node_id} [get]
-func (a *App) getV1Gateway(r *http.Request) (interface{}, mw.Response) {
+func (a *ApiV1) getGateway(r *http.Request) (interface{}, mw.Response) {
 	return a.loadNode(r)
 }
 
-func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
-	response := types.NodeStatus{}
-	nodeID := mux.Vars(r)["node_id"]
-
-	nodeData, err := a.getNodeData(nodeID)
-	if err != nil {
-		return nil, errorReply(err)
-	}
-	response.Status = nodeData.Status
-	return response, nil
-}
-
-// getV1Twins godoc
+// getTwins godoc
 //
 //	@version		1.0
 //	@Summary		Show twins on the grid
@@ -193,11 +184,11 @@ func (a *App) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
 //	@Failure		400			{object}	string
 //	@Failure		500			{object}	string
 //	@Router			/twins [get]
-func (a *App) getV1Twins(r *http.Request) (interface{}, mw.Response) {
+func (a *ApiV1) getTwins(r *http.Request) (interface{}, mw.Response) {
 	return a.listTwins(r)
 }
 
-// getV1Contracts godoc
+// getContracts godoc
 //
 //	@version		1.0
 //	@Summary		Show contracts on the grid
@@ -221,8 +212,50 @@ func (a *App) getV1Twins(r *http.Request) (interface{}, mw.Response) {
 //	@Failure		400						{object}	string
 //	@Failure		500						{object}	string
 //	@Router			/contracts [get]
-func (a *App) getV1Contracts(r *http.Request) (interface{}, mw.Response) {
+func (a *ApiV1) getContracts(r *http.Request) (interface{}, mw.Response) {
 	return a.listContracts(r)
+}
+
+// getNodeStatus godoc
+//
+//	@version		1.0
+//	@Summary		Show Node status
+//	@Description	Show Node status
+//	@Tags			GridProxy v1.0
+//	@Produce		json
+//	@Success		200	{object}	string
+//	@Failure		400	{object}	string
+//	@Router			/nodes/{node_id}/status [get]
+func (a *ApiV1) getNodeStatus(r *http.Request) (interface{}, mw.Response) {
+	return a.GetNodeStatus(r)
+}
+
+// getGatewayStatus godoc
+//
+//	@version		1.0
+//	@Summary		Show Gateway status
+//	@Description	Show Gateway status
+//	@Tags			GridProxy v1.0
+//	@Produce		json
+//	@Success		200	{object}	string
+//	@Failure		400	{object}	string
+//	@Router			/gateways/{node_id}/status [get]
+func (a *ApiV1) getGatewayStatus(r *http.Request) (interface{}, mw.Response) {
+	return a.GetNodeStatus(r)
+}
+
+// getVersion godoc
+//
+//	@version		1.0
+//	@Summary		Show grid proxy version
+//	@Description	Show grid proxy version
+//	@Tags			GridProxy v1.0
+//	@Produce		json
+//	@Success		200	{object}	string
+//	@Failure		400	{object}	string
+//	@Router			/version [get]
+func (a *ApiV1) getVersion(r *http.Request) (interface{}, mw.Response) {
+	return a.Version(r)
 }
 
 // Setup is the server and do initial configurations
@@ -234,19 +267,23 @@ func (a *App) getV1Contracts(r *http.Request) (interface{}, mw.Response) {
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 //	@BasePath		/
 func (a *App) loadV1Handlers(router *mux.Router) {
-	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
+	api := ApiV1{App: a}
 
 	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage(router)))
-	router.HandleFunc("/version", mw.AsHandlerFunc(a.version))
-	router.HandleFunc("/stats", mw.AsHandlerFunc(a.getV1Stats))
+	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 
-	router.HandleFunc("/farms", mw.AsHandlerFunc(a.getV1Farms))
-	router.HandleFunc("/nodes", mw.AsHandlerFunc(a.getV1Nodes))
-	router.HandleFunc("/gateways", mw.AsHandlerFunc(a.getV1Gateways))
-	router.HandleFunc("/twins", mw.AsHandlerFunc(a.getV1Twins))
-	router.HandleFunc("/contracts", mw.AsHandlerFunc(a.getV1Contracts))
-	router.HandleFunc("/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getV1Node))
-	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getV1Gateway))
-	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
-	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
+	router.HandleFunc("/version", mw.AsHandlerFunc(api.getVersion))
+	router.HandleFunc("/stats", mw.AsHandlerFunc(api.getStats))
+	router.HandleFunc("/farms", mw.AsHandlerFunc(api.getFarms))
+	router.HandleFunc("/twins", mw.AsHandlerFunc(api.getTwins))
+	router.HandleFunc("/contracts", mw.AsHandlerFunc(api.getContracts))
+
+	router.HandleFunc("/nodes", mw.AsHandlerFunc(api.getNodes))
+	router.HandleFunc("/gateways", mw.AsHandlerFunc(api.getGateways))
+
+	router.HandleFunc("/nodes/{node_id:[0-9]+}", mw.AsHandlerFunc(api.getNode))
+	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(api.getGateway))
+
+	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(api.getNodeStatus))
+	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(api.getGatewayStatus))
 }

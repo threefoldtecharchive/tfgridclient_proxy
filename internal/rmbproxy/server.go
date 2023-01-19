@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (a *App) sendMessage(r *http.Request) (*http.Response, mw.Response) {
+func (a *App) SendMessage(r *http.Request) (*http.Response, mw.Response) {
 	twinIDString := mux.Vars(r)["twin_id"]
 
 	buffer := new(bytes.Buffer)
@@ -39,7 +39,7 @@ func (a *App) sendMessage(r *http.Request) (*http.Response, mw.Response) {
 	return response, nil
 }
 
-func (a *App) getResult(r *http.Request) (*http.Response, mw.Response) {
+func (a *App) GetResult(r *http.Request) (*http.Response, mw.Response) {
 	twinIDString := mux.Vars(r)["twin_id"]
 	retqueue := mux.Vars(r)["retqueue"]
 
@@ -65,7 +65,7 @@ func (a *App) getResult(r *http.Request) (*http.Response, mw.Response) {
 	return response, nil
 }
 
-func (a *App) ping(r *http.Request) (interface{}, mw.Response) {
+func (a *App) Ping(r *http.Request) (interface{}, mw.Response) {
 	return PingMessage{Ping: "pong"}, mw.Ok()
 }
 

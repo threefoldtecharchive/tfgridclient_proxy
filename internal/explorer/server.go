@@ -196,11 +196,23 @@ func (a *App) indexPage(m *mux.Router) mw.Action {
 	}
 }
 
-func (a *App) version(r *http.Request) (interface{}, mw.Response) {
+func (a *App) Version(r *http.Request) (interface{}, mw.Response) {
 	response := mw.Ok()
 	return types.Version{
 		Version: a.releaseVersion,
 	}, response
+}
+
+func (a *App) GetNodeStatus(r *http.Request) (interface{}, mw.Response) {
+	response := types.NodeStatus{}
+	nodeID := mux.Vars(r)["node_id"]
+
+	nodeData, err := a.getNodeData(nodeID)
+	if err != nil {
+		return nil, errorReply(err)
+	}
+	response.Status = nodeData.Status
+	return response, nil
 }
 
 func Setup(version string, router *mux.Router, rmbClient rmb.Client, c *cache.Cache, gitCommit string, database db.Database) error {

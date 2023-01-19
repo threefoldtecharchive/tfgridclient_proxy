@@ -459,8 +459,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all gateways on the grid, It has pagination. Nodes displayed
-        with nested capacity object
+      description: Get all gateways on the grid, It has pagination
       parameters:
       - description: Page number
         in: query
@@ -595,12 +594,28 @@ paths:
       summary: Show the details for specific gateway
       tags:
       - GridProxy v2.0
+  /api/v2/gateways/{node_id}/status:
+    get:
+      description: Show Gateway status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Show Gateway status
+      tags:
+      - GridProxy v2.0
   /api/v2/nodes:
     get:
       consumes:
       - application/json
-      description: Get all nodes on the grid, It has pagination. Nodes displayed with
-        nested capacity object
+      description: Get all nodes on the grid, It has pagination
       parameters:
       - description: Page number
         in: query
@@ -733,6 +748,23 @@ paths:
           schema:
             type: string
       summary: Show the details for specific node
+      tags:
+      - GridProxy v2.0
+  /api/v2/nodes/{node_id}/status:
+    get:
+      description: Show Node status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Show Node status
       tags:
       - GridProxy v2.0
   /api/v2/ping:
@@ -904,6 +936,23 @@ paths:
           schema:
             type: string
       summary: Show twins on the grid
+      tags:
+      - GridProxy v2.0
+  /api/v2/version:
+    get:
+      description: Show grid proxy version
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Show grid proxy version
       tags:
       - GridProxy v2.0
   /contracts:
@@ -1202,6 +1251,23 @@ paths:
       summary: Show the details for specific gateway
       tags:
       - GridProxy v1.0
+  /gateways/{node_id}/status:
+    get:
+      description: Show Gateway status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Show Gateway status
+      tags:
+      - GridProxy v1.0
   /nodes:
     get:
       consumes:
@@ -1339,6 +1405,23 @@ paths:
           schema:
             type: string
       summary: Show the details for specific node
+      tags:
+      - GridProxy v1.0
+  /nodes/{node_id}/status:
+    get:
+      description: Show Node status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Show Node status
       tags:
       - GridProxy v1.0
   /ping:
@@ -1510,6 +1593,23 @@ paths:
           schema:
             type: string
       summary: Show twins on the grid
+      tags:
+      - GridProxy v1.0
+  /version:
+    get:
+      description: Show grid proxy version
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Show grid proxy version
       tags:
       - GridProxy v1.0
 swagger: "2.0"

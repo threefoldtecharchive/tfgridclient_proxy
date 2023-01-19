@@ -254,7 +254,7 @@ const docTemplate = `{
         },
         "/api/v2/gateways": {
             "get": {
-                "description": "Get all gateways on the grid, It has pagination. Nodes displayed with nested capacity object",
+                "description": "Get all gateways on the grid, It has pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -461,9 +461,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v2/gateways/{node_id}/status": {
+            "get": {
+                "description": "Show Gateway status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy v2.0"
+                ],
+                "summary": "Show Gateway status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/nodes": {
             "get": {
-                "description": "Get all nodes on the grid, It has pagination. Nodes displayed with nested capacity object",
+                "description": "Get all nodes on the grid, It has pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -663,6 +689,32 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/nodes/{node_id}/status": {
+            "get": {
+                "description": "Show Node status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy v2.0"
+                ],
+                "summary": "Show Node status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "string"
                         }
@@ -921,6 +973,32 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/version": {
+            "get": {
+                "description": "Show grid proxy version",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy v2.0"
+                ],
+                "summary": "Show grid proxy version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "string"
                         }
@@ -1373,6 +1451,32 @@ const docTemplate = `{
                 }
             }
         },
+        "/gateways/{node_id}/status": {
+            "get": {
+                "description": "Show Gateway status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy v1.0"
+                ],
+                "summary": "Show Gateway status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/nodes": {
             "get": {
                 "description": "Get all nodes on the grid, It has pagination",
@@ -1575,6 +1679,32 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/nodes/{node_id}/status": {
+            "get": {
+                "description": "Show Node status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy v1.0"
+                ],
+                "summary": "Show Node status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "string"
                         }
@@ -1833,6 +1963,32 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/version": {
+            "get": {
+                "description": "Show grid proxy version",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GridProxy v1.0"
+                ],
+                "summary": "Show grid proxy version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "string"
                         }
