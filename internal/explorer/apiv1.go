@@ -21,7 +21,7 @@ type ApiV1 struct {
 //	@Tags			GridProxy v1.0
 //	@Accept			json
 //	@Produce		json
-//	@Param			status	query		string	false	"Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
+//	@Param			status	query		string	false	"Node status filter, 'up': for only up nodes & 'down': only down nodes."
 //	@Success		200		{object}	[]types.Counters
 //	@Failure		400		{object}	string
 //	@Failure		500		{object}	string
@@ -75,7 +75,7 @@ func (a *ApiV1) getFarms(r *http.Request) (interface{}, mw.Response) {
 //	@Param			free_hru		query		int		false	"Min free reservable hru in bytes"
 //	@Param			free_sru		query		int		false	"Min free reservable sru in bytes"
 //	@Param			free_ips		query		int		false	"Min number of free ips in the farm of the node"
-//	@Param			status			query		string	false	"Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
+//	@Param			status			query		string	false	"Node status filter, 'up': for only up nodes & 'down': only down nodes."
 //	@Param			city			query		string	false	"Node city filter"
 //	@Param			country			query		string	false	"Node country filter"
 //	@Param			farm_name		query		string	false	"Get nodes for specific farm"
@@ -111,7 +111,7 @@ func (a *ApiV1) getNodes(r *http.Request) (interface{}, mw.Response) {
 //	@Param			free_hru		query		int		false	"Min free reservable hru in bytes"
 //	@Param			free_sru		query		int		false	"Min free reservable sru in bytes"
 //	@Param			free_ips		query		int		false	"Min number of free ips in the farm of the node"
-//	@Param			status			query		string	false	"Node status filter, 'up': for only up nodes & 'down': for all up/down nodes."
+//	@Param			status			query		string	false	"Node status filter, 'up': for only up nodes & 'down': only down nodes."
 //	@Param			city			query		string	false	"Node city filter"
 //	@Param			country			query		string	false	"Node country filter"
 //	@Param			farm_name		query		string	false	"Get nodes for specific farm"
