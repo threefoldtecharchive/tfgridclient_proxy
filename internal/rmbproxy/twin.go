@@ -30,7 +30,7 @@ func NewTwinResolver(substrate *substrate.Substrate, rmbTimeout time.Duration) (
 
 func (c *twinClient) SubmitMessage(msg bytes.Buffer) (*http.Response, error) {
 
-	resp, err := c.httpClient.Post(resultURL(c.dstIP), "application/json", &msg)
+	resp, err := c.httpClient.Post(submitURL(c.dstIP), "application/json", &msg)
 
 	if err != nil {
 		log.Error().Str("dstIP", c.dstIP).Msg(err.Error())
