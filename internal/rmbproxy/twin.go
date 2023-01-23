@@ -2,7 +2,6 @@ package rmbproxy
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -30,18 +29,9 @@ func NewTwinResolver(substrate *substrate.Substrate, rmbTimeout time.Duration) (
 }
 
 func (c *twinClient) SubmitMessage(msg bytes.Buffer) (*http.Response, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, submitURL(c.dstIP), &msg)
-	if err != nil {
-		log.Error().Str("dstIP", c.dstIP).Msg(err.Error())
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
+	resp, err := c.httpClient.Post(resultURL(c.dstIP), "application/json", &msg)
 
-	resp, err := http.DefaultClient.Do(req)
-	// check on response for non-communication errors?
 	if err != nil {
 		log.Error().Str("dstIP", c.dstIP).Msg(err.Error())
 		return nil, err
@@ -52,22 +42,13 @@ func (c *twinClient) SubmitMessage(msg bytes.Buffer) (*http.Response, error) {
 }
 
 func (c *twinClient) GetResult(msgIdentifier MessageIdentifier) (*http.Response, error) {
+
 	var buffer bytes.Buffer
 	if err := json.NewEncoder(&buffer).Encode(msgIdentifier); err != nil {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, resultURL(c.dstIP), &buffer)
-	if err != nil {
-		log.Error().Str("dstIP", c.dstIP).Msg(err.Error())
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.httpClient.Post(resultURL(c.dstIP), "application/json", &buffer)
 	if err != nil {
 		log.Error().Str("dstIP", c.dstIP).Msg(err.Error())
 		return nil, err

@@ -50,14 +50,14 @@ func (t *TwinExplorerResolver) Get(twinID int) (TwinClient, error) {
 	log.Debug().Str("ip", twin.IP).Msg("resolved twin ip")
 
 	return &twinClient{
-		dstIP:   twin.IP,
-		timeout: t.rmbTimeout,
+		dstIP:      twin.IP,
+		httpClient: &http.Client{Timeout: t.rmbTimeout},
 	}, nil
 }
 
 type twinClient struct {
-	dstIP   string
-	timeout time.Duration
+	dstIP      string
+	httpClient *http.Client
 }
 
 // TwinClient interface
