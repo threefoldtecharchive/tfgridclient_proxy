@@ -80,6 +80,7 @@ To list all the available tasks for running:
 | -postgres-user | postgres username  |
 | -redis | redis url (default `"tcp://127.0.0.1:6379"`)  |
 | -substrate-user | substrate url (default`"wss://tfchain.dev.grid.tf/ws"`)  |
+| -rmb-timeout | timeout for rmb requests (default `30` seconds) |
 | -v | shows the package version |
 
 
@@ -166,7 +167,7 @@ To build & run dockerfile
 
 ```bash
 docker build -t threefoldtech/gridproxy .
-docker run --name gridproxy -e MNEMONICS="" -e SUBSTRATE="wss://tfchain.dev.grid.tf/ws" -e PUBLIC_KEY="5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e PRIVATE_KEY="ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e POSTGRES_HOST="127.0.0.1" -e POSTGRES_PORT="5432" -e POSTGRES_DB="db" -e POSTGRES_USER="postgres" -e POSTGRES_PASSWORD="password" --cap-add=NET_ADMIN threefoldtech/gridproxy
+docker run --name gridproxy -e MNEMONICS="" -e SUBSTRATE="wss://tfchain.dev.grid.tf/ws" -e PUBLIC_KEY="5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e PRIVATE_KEY="ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e POSTGRES_HOST="127.0.0.1" -e POSTGRES_PORT="5432" -e POSTGRES_DB="db" -e POSTGRES_USER="postgres" -e POSTGRES_PASSWORD="password" -e RMB_TIMEOUT="30" --cap-add=NET_ADMIN threefoldtech/gridproxy
 ```
 
 - PUBLIC_KEY: yggdrasil public key

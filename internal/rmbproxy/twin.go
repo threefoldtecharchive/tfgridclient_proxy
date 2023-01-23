@@ -12,11 +12,6 @@ import (
 	"github.com/threefoldtech/substrate-client"
 )
 
-const (
-	// timeout in sec for rmb proxy requests, should be defined with a sensible timeout
-	TIMEOUT = 10
-)
-
 func submitURL(twinIP string) string {
 	return fmt.Sprintf("http://%s:8051/zbus-cmd", twinIP)
 }
@@ -26,15 +21,16 @@ func resultURL(twinIP string) string {
 }
 
 // NewTwinResolver : create a new substrate resolver
-func NewTwinResolver(substrate *substrate.Substrate) (*TwinExplorerResolver, error) {
+func NewTwinResolver(substrate *substrate.Substrate, rmbTimeout time.Duration) (*TwinExplorerResolver, error) {
 
 	return &TwinExplorerResolver{
-		client: substrate,
+		client:     substrate,
+		rmbTimeout: rmbTimeout,
 	}, nil
 }
 
 func (c *twinClient) SubmitMessage(msg bytes.Buffer) (*http.Response, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, submitURL(c.dstIP), &msg)
@@ -61,7 +57,7 @@ func (c *twinClient) GetResult(msgIdentifier MessageIdentifier) (*http.Response,
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, resultURL(c.dstIP), &buffer)

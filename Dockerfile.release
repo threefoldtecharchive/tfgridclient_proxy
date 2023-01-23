@@ -42,6 +42,7 @@ ENV POSTGRES_USER="postgres"
 ENV POSTGRES_PASSWORD="123"
 ENV SUBSTRATE="wss://tfchain.dev.grid.tf/ws"
 ENV REDIS="tcp://127.0.0.1:6379"
+ENV RMB_TIMEOUT="30"
 
 EXPOSE 443 8051
 ENTRYPOINT [ "zinit", "init" ]

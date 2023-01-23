@@ -37,6 +37,8 @@ image:
       value: "postgres"
     - name: "POSTGRES_PASSWORD"
       value: "123"
+    - name: "RMB_TIMEOUT"
+      value: "30"
 
 imagePullSecrets: []
 nameOverride: ""
