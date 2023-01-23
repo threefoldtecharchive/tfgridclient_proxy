@@ -35,7 +35,8 @@ type Flags struct {
 
 // TwinExplorerResolver is Substrate resolver
 type TwinExplorerResolver struct {
-	client *substrate.Substrate
+	client     *substrate.Substrate
+	rmbTimeout int
 }
 
 // NewTwinClient : create new TwinClient
@@ -48,12 +49,14 @@ func (t *TwinExplorerResolver) Get(twinID int) (TwinClient, error) {
 	log.Debug().Str("ip", twin.IP).Msg("resolved twin ip")
 
 	return &twinClient{
-		dstIP: twin.IP,
+		dstIP:   twin.IP,
+		timeout: t.rmbTimeout,
 	}, nil
 }
 
 type twinClient struct {
-	dstIP string
+	dstIP   string
+	timeout int
 }
 
 // TwinClient interface

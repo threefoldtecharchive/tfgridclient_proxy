@@ -41,6 +41,7 @@ type flags struct {
 	certCacheDir     string
 	version          bool
 	nocert           bool
+	rmbTimeout       int
 }
 
 func main() {
@@ -60,6 +61,7 @@ func main() {
 	flag.BoolVar(&f.version, "v", false, "shows the package version")
 	flag.StringVar(&f.certCacheDir, "cert-cache-dir", CertDefaultCacheDir, "path to store generated certs in")
 	flag.BoolVar(&f.nocert, "no-cert", false, "start the server without certificate")
+	flag.IntVar(&f.rmbTimeout, "rmb-timeout", 30, "rmb requests timeout (default 30 sec)")
 	flag.Parse()
 
 	// shows version and exit
@@ -150,7 +152,7 @@ func createServer(f flags, gitCommit string, substrate *substrate.Substrate) (*h
 	if err := explorer.Setup(router, f.redis, gitCommit, db); err != nil {
 		return nil, err
 	}
-	if err := rmbproxy.Setup(router, substrate); err != nil {
+	if err := rmbproxy.Setup(router, substrate, f.rmbTimeout); err != nil {
 		return nil, err
 	}
 
