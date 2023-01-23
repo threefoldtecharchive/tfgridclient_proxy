@@ -80,7 +80,7 @@ To list all the available tasks for running:
 | -postgres-user | postgres username  |
 | -redis | redis url (default `"tcp://127.0.0.1:6379"`)  |
 | -substrate-user | substrate url (default`"wss://tfchain.dev.grid.tf/ws"`)  |
-| -rmb-timeout | time out for rmb requests (default `30`) |
+| -rmb-timeout | timeout for rmb requests (default `30` seconds) |
 | -v | shows the package version |
 
 

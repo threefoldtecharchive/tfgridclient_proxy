@@ -26,22 +26,22 @@ const (
 var GitCommit string
 
 type flags struct {
-	debug            string
-	redis            string
-	postgresHost     string
-	postgresPort     int
-	postgresDB       string
-	postgresUser     string
-	postgresPassword string
-	address          string
-	substrate        string
-	domain           string
-	TLSEmail         string
-	CA               string
-	certCacheDir     string
-	version          bool
-	nocert           bool
-	rmbTimeout       int
+	debug             string
+	redis             string
+	postgresHost      string
+	postgresPort      int
+	postgresDB        string
+	postgresUser      string
+	postgresPassword  string
+	address           string
+	substrate         string
+	domain            string
+	TLSEmail          string
+	CA                string
+	certCacheDir      string
+	version           bool
+	nocert            bool
+	rmbTimeoutSeconds int
 }
 
 func main() {
@@ -61,7 +61,7 @@ func main() {
 	flag.BoolVar(&f.version, "v", false, "shows the package version")
 	flag.StringVar(&f.certCacheDir, "cert-cache-dir", CertDefaultCacheDir, "path to store generated certs in")
 	flag.BoolVar(&f.nocert, "no-cert", false, "start the server without certificate")
-	flag.IntVar(&f.rmbTimeout, "rmb-timeout", 30, "rmb requests timeout (default 30 sec)")
+	flag.IntVar(&f.rmbTimeoutSeconds, "rmb-timeout", 30, "rmb requests timeout (default 30 sec)")
 	flag.Parse()
 
 	// shows version and exit
@@ -152,7 +152,7 @@ func createServer(f flags, gitCommit string, substrate *substrate.Substrate) (*h
 	if err := explorer.Setup(router, f.redis, gitCommit, db); err != nil {
 		return nil, err
 	}
-	if err := rmbproxy.Setup(router, substrate, f.rmbTimeout); err != nil {
+	if err := rmbproxy.Setup(router, substrate, f.rmbTimeoutSeconds); err != nil {
 		return nil, err
 	}
 

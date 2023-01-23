@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"strconv"
+	"time"
 
 	// swagger configuration
 	"github.com/pkg/errors"
@@ -115,10 +116,10 @@ func (a *App) ping(r *http.Request) (interface{}, mw.Response) {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8080
 // @BasePath /
-func Setup(router *mux.Router, substrate *substrate.Substrate, rmbTimeout int) error {
+func Setup(router *mux.Router, substrate *substrate.Substrate, rmbTimeoutSeconds int) error {
 	log.Info().Msg("Creating server")
 
-	resolver, err := NewTwinResolver(substrate, rmbTimeout)
+	resolver, err := NewTwinResolver(substrate, time.Duration(rmbTimeoutSeconds)*time.Second)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get a client to explorer resolver")
 	}

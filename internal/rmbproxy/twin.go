@@ -21,7 +21,7 @@ func resultURL(twinIP string) string {
 }
 
 // NewTwinResolver : create a new substrate resolver
-func NewTwinResolver(substrate *substrate.Substrate, rmbTimeout int) (*TwinExplorerResolver, error) {
+func NewTwinResolver(substrate *substrate.Substrate, rmbTimeout time.Duration) (*TwinExplorerResolver, error) {
 
 	return &TwinExplorerResolver{
 		client:     substrate,
@@ -30,7 +30,7 @@ func NewTwinResolver(substrate *substrate.Substrate, rmbTimeout int) (*TwinExplo
 }
 
 func (c *twinClient) SubmitMessage(msg bytes.Buffer) (*http.Response, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.timeout))
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, submitURL(c.dstIP), &msg)
@@ -57,7 +57,7 @@ func (c *twinClient) GetResult(msgIdentifier MessageIdentifier) (*http.Response,
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.timeout))
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, resultURL(c.dstIP), &buffer)

@@ -3,6 +3,7 @@ package rmbproxy
 import (
 	"bytes"
 	"net/http"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/substrate-client"
@@ -36,7 +37,7 @@ type Flags struct {
 // TwinExplorerResolver is Substrate resolver
 type TwinExplorerResolver struct {
 	client     *substrate.Substrate
-	rmbTimeout int
+	rmbTimeout time.Duration
 }
 
 // NewTwinClient : create new TwinClient
@@ -56,7 +57,7 @@ func (t *TwinExplorerResolver) Get(twinID int) (TwinClient, error) {
 
 type twinClient struct {
 	dstIP   string
-	timeout int
+	timeout time.Duration
 }
 
 // TwinClient interface
