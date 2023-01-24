@@ -169,7 +169,7 @@ func (d *PostgresDatabase) GetCounters(filter types.StatsFilter) (types.Counters
 
 	condition := "TRUE"
 	if filter.Status != nil {
-		nodeUpInterval := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
+		nodeUpInterval := time.Now().Unix() - nodeStateFactor*int64(reportInterval.Seconds())
 		if *filter.Status == "up" {
 			condition = fmt.Sprintf(`node.updated_at >= %d`, nodeUpInterval)
 		} else if *filter.Status == "down" {
@@ -366,7 +366,7 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 	q = q.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
 	if filter.Status != nil {
 		// TODO: this shouldn't be in db
-		threshold := time.Now().Unix()*1000 - nodeStateFactor*int64(reportInterval/time.Millisecond)
+		threshold := time.Now().Unix() - nodeStateFactor*int64(reportInterval.Seconds())
 		if *filter.Status == "down" {
 			q = q.Where("node.updated_at < ? OR node.updated_at IS NULL", threshold)
 		} else {
