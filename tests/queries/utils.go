@@ -38,7 +38,7 @@ func isIn(l []uint64, v uint64) bool {
 }
 
 func isUp(timestamp uint64) bool {
-	return int64(timestamp) > time.Now().Unix()*1000-nodeStateFactor*int64(reportInterval/time.Millisecond)
+	return int64(timestamp) > time.Now().Unix()-nodeStateFactor*int64(reportInterval.Seconds())
 }
 
 func flip(success float32) bool {
