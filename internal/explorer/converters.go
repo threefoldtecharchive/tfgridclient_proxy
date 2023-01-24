@@ -2,7 +2,6 @@ package explorer
 
 import (
 	"encoding/json"
-	"math"
 	"time"
 
 	"github.com/pkg/errors"
@@ -23,7 +22,7 @@ func nodeFromDBNode(info db.Node) types.Node {
 		Uptime:          info.Uptime,
 		Created:         info.Created,
 		FarmingPolicyID: int(info.FarmingPolicyID),
-		UpdatedAt:       int64(math.Round(float64(info.UpdatedAt) / 1000)),
+		UpdatedAt:       info.UpdatedAt,
 		TotalResources: types.Capacity{
 			CRU: uint64(info.TotalCru),
 			SRU: gridtypes.Unit(info.TotalSru),
@@ -92,7 +91,7 @@ func nodeWithNestedCapacityFromDBNode(info db.Node) types.NodeWithNestedCapacity
 		Uptime:          info.Uptime,
 		Created:         info.Created,
 		FarmingPolicyID: int(info.FarmingPolicyID),
-		UpdatedAt:       int64(math.Round(float64(info.UpdatedAt) / 1000)),
+		UpdatedAt:       info.UpdatedAt,
 		Capacity: types.CapacityResult{
 
 			Total: types.Capacity{
