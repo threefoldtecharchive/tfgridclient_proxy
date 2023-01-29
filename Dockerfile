@@ -1,6 +1,6 @@
 FROM docker.io/golang:alpine as builder
 
-ARG YGG_VERSION=v0.4.3
+ARG YGG_VERSION=v0.4.7
 
 WORKDIR /src
 
@@ -24,7 +24,7 @@ RUN wget https://github.com/threefoldtech/go-rmb/releases/download/v0.2.1/msgbus
     mv msgbusd /usr/bin/msgbusd &&\
     chmod +x /usr/bin/msgbusd
 
-RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.6/zinit -O /sbin/zinit \
+RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.10/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
 
 RUN wget https://github.com/threefoldtech/tfgridclient_proxy/releases/download/v1.6.9/tfgridclient_proxy_1.6.9_linux_amd64.tar.gz \
