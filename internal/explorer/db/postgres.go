@@ -603,7 +603,7 @@ func (d *PostgresDatabase) GetContracts(filter types.ContractFilter, limit types
 			"contracts.contract_id",
 			"twin_id",
 			"state",
-			"CAST(created_at / 1000 AS int) as created_at",
+			"created_at",
 			"name",
 			"node_id",
 			"deployment_data",
