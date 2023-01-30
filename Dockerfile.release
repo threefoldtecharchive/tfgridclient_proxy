@@ -1,6 +1,6 @@
 FROM docker.io/golang:alpine as builder
 
-ARG YGG_VERSION=v0.4.3
+ARG YGG_VERSION=v0.4.7
 
 WORKDIR /src
 
