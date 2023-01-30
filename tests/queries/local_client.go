@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math"
 	"sort"
 	"strings"
 
@@ -178,7 +177,7 @@ func (g *GridProxyClientimpl) Contracts(filter proxytypes.ContractFilter, limit 
 				ContractID: uint(contract.contract_id),
 				TwinID:     uint(contract.twin_id),
 				State:      contract.state,
-				CreatedAt:  uint(math.Round(float64(contract.created_at) / 1000.0)),
+				CreatedAt:  uint(contract.created_at),
 				Type:       "node",
 				Details: proxytypes.NodeContractDetails{
 					NodeID:            uint(contract.node_id),
@@ -197,7 +196,7 @@ func (g *GridProxyClientimpl) Contracts(filter proxytypes.ContractFilter, limit 
 				ContractID: uint(contract.contract_id),
 				TwinID:     uint(contract.twin_id),
 				State:      contract.state,
-				CreatedAt:  uint(math.Round(float64(contract.created_at) / 1000.0)),
+				CreatedAt:  uint(contract.created_at),
 				Type:       "rent",
 				Details: proxytypes.RentContractDetails{
 					NodeID: uint(contract.node_id),
@@ -213,7 +212,7 @@ func (g *GridProxyClientimpl) Contracts(filter proxytypes.ContractFilter, limit 
 				ContractID: uint(contract.contract_id),
 				TwinID:     uint(contract.twin_id),
 				State:      contract.state,
-				CreatedAt:  uint(math.Round(float64(contract.created_at) / 1000.0)),
+				CreatedAt:  uint(contract.created_at),
 				Type:       "name",
 				Details: proxytypes.NameContractDetails{
 					Name: contract.name,
