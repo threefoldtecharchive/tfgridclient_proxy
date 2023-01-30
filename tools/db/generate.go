@@ -308,7 +308,7 @@ func generateNodes(db *sql.DB) error {
 		sru := rnd(200, 30*1024) * 1024 * 1024 * 1024 // 100GB -> 30TB
 		cru := rnd(4, 128)
 		up := flip(nodeUpRatio)
-		updatedAt := time.Now().Unix()*1000 - int64(rnd(60*60*2, 60*60*24*30*12))
+		updatedAt := time.Now().Unix() - int64(rnd(60*60*3, 60*60*24*30*12))
 		if up {
 			updatedAt = time.Now().Unix() - int64(rnd(0, 60*60*1))
 		}
@@ -332,7 +332,7 @@ func generateNodes(db *sql.DB) error {
 			uptime:            1000,
 			updated_at:        uint64(updatedAt),
 			created:           uint64(time.Now().Unix()),
-			created_at:        uint64(time.Now().Unix()) * 1000,
+			created_at:        uint64(time.Now().Unix()),
 			farming_policy_id: 1,
 			grid_version:      3,
 			certification:     "Diy",
