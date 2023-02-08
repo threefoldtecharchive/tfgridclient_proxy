@@ -558,13 +558,20 @@ func (d *PostgresDatabase) GetTwins(filter types.TwinFilter, limit types.Limit) 
 		Select(
 			"twin_id",
 			"account_id",
-			"ip",
+			"relay",
+			"public_key",
 		)
 	if filter.TwinID != nil {
 		q = q.Where("twin_id = ?", *filter.TwinID)
 	}
 	if filter.AccountID != nil {
 		q = q.Where("account_id = ?", *filter.AccountID)
+	}
+	if filter.Relay != nil {
+		q = q.Where("relay = ?", *filter.Relay)
+	}
+	if filter.PublicKey != nil {
+		q = q.Where("public_key = ?", *filter.PublicKey)
 	}
 	var count int64
 	if limit.Randomize || limit.RetCount {

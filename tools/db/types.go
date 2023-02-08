@@ -44,7 +44,8 @@ type twin struct {
 	grid_version uint64
 	twin_id      uint64
 	account_id   string
-	ip           string
+	relay        string
+	public_key   string
 }
 type public_ip struct {
 	id          string

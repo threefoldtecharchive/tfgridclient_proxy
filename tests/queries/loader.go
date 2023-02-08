@@ -212,7 +212,8 @@ func loadTwins(db *sql.DB, data *DBData) error {
 	COALESCE(grid_version, 0),
 	COALESCE(twin_id, 0),
 	COALESCE(account_id, ''),
-	COALESCE(ip, '')
+	COALESCE(relay, ''),
+	COALESCE(public_key, '')
 	FROM
 		twin;`)
 	if err != nil {
@@ -225,7 +226,8 @@ func loadTwins(db *sql.DB, data *DBData) error {
 			&twin.grid_version,
 			&twin.twin_id,
 			&twin.account_id,
-			&twin.ip,
+			&twin.relay,
+			&twin.public_key,
 		); err != nil {
 			return err
 		}

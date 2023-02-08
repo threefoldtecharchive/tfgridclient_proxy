@@ -253,7 +253,8 @@ func (g *GridProxyClientimpl) Twins(filter proxytypes.TwinFilter, limit proxytyp
 			res = append(res, proxytypes.Twin{
 				TwinID:    uint(twin.twin_id),
 				AccountID: twin.account_id,
-				IP:        twin.ip,
+				Relay:     twin.relay,
+				PublicKey: twin.public_key,
 			})
 		}
 	}

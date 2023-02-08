@@ -64,7 +64,8 @@ func generateTwins(db *sql.DB) error {
 		twin := twin{
 			id:           fmt.Sprintf("twin-%d", i),
 			account_id:   fmt.Sprintf("account-id-%d", i),
-			ip:           fmt.Sprintf("account-ip-%d", i),
+			relay:        fmt.Sprintf("relay-%d", i),
+			public_key:   fmt.Sprintf("public-key-%d", i),
 			twin_id:      i,
 			grid_version: 3,
 		}

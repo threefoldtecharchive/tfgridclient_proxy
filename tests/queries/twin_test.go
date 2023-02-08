@@ -17,7 +17,8 @@ import (
 type TwinsAggregate struct {
 	twinIDs    []uint64
 	accountIDs []string
-	ip         []string
+	relays     []string
+	publicKeys []string
 	twins      map[uint64]twin
 }
 
@@ -98,6 +99,24 @@ func randomTwinsFilter(agg *TwinsAggregate) proxytypes.TwinFilter {
 			f.AccountID = &c
 		}
 	}
+	if flip(.2) {
+		if f.TwinID != nil && flip(.4) {
+			relay := agg.twins[*f.TwinID].account_id
+			f.Relay = &relay
+		} else {
+			c := agg.relays[rand.Intn(len(agg.relays))]
+			f.Relay = &c
+		}
+	}
+	if flip(.2) {
+		if f.TwinID != nil && flip(.4) {
+			publicKey := agg.twins[*f.TwinID].account_id
+			f.PublicKey = &publicKey
+		} else {
+			c := agg.publicKeys[rand.Intn(len(agg.publicKeys))]
+			f.PublicKey = &c
+		}
+	}
 
 	return f
 }
@@ -127,7 +146,8 @@ func calcTwinsAggregates(data *DBData) (res TwinsAggregate) {
 	for _, twin := range data.twins {
 		res.twinIDs = append(res.twinIDs, twin.twin_id)
 		res.accountIDs = append(res.accountIDs, twin.account_id)
-		res.ip = append(res.ip, twin.ip)
+		res.relays = append(res.relays, twin.relay)
+		res.publicKeys = append(res.publicKeys, twin.public_key)
 	}
 	res.twins = data.twins
 	sort.Slice(res.twinIDs, func(i, j int) bool {
@@ -136,8 +156,11 @@ func calcTwinsAggregates(data *DBData) (res TwinsAggregate) {
 	sort.Slice(res.accountIDs, func(i, j int) bool {
 		return res.accountIDs[i] < res.accountIDs[j]
 	})
-	sort.Slice(res.ip, func(i, j int) bool {
-		return res.ip[i] < res.ip[j]
+	sort.Slice(res.relays, func(i, j int) bool {
+		return res.relays[i] < res.relays[j]
+	})
+	sort.Slice(res.publicKeys, func(i, j int) bool {
+		return res.publicKeys[i] < res.publicKeys[j]
 	})
 	return
 }
