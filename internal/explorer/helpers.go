@@ -216,6 +216,8 @@ func (a *App) handleTwinRequestsQueryParams(r *http.Request) (types.TwinFilter, 
 	}
 	strs := map[string]**string{
 		"account_id": &filter.AccountID,
+		"relay":      &filter.Relay,
+		"public_key": &filter.PublicKey,
 	}
 
 	if err := parseParams(r, ints, strs, nil, nil); err != nil {

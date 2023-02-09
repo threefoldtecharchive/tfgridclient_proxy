@@ -128,6 +128,8 @@ type FarmFilter struct {
 type TwinFilter struct {
 	TwinID    *uint64
 	AccountID *string
+	Relay     *string
+	PublicKey *string
 }
 
 // ContractFilter contract filters
@@ -208,7 +210,8 @@ type NodeWithNestedCapacity struct {
 type Twin struct {
 	TwinID    uint   `json:"twinId"`
 	AccountID string `json:"accountId"`
-	IP        string `json:"ip"`
+	Relay     string `json:"relay"`
+	PublicKey string `json:"publicKey"`
 }
 
 type NodeContractDetails struct {

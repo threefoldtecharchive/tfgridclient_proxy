@@ -553,7 +553,8 @@ CREATE TABLE public.twin (
     grid_version integer NOT NULL,
     twin_id integer NOT NULL,
     account_id text NOT NULL,
-    ip text NOT NULL
+    relay text,
+    public_key text
 );
 
 
