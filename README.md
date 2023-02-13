@@ -194,3 +194,12 @@ docker run --name gridproxy -e MNEMONICS="" -e SUBSTRATE="wss://tfchain.dev.grid
   ```bash
   helm install gridproxy/gridproxy
   ```
+
+# Release
+- Update the `appVersion` in `charts/Chart.yaml`. (push, open PR, merge)
+- Create and push the new tag
+  ```bash
+  git tag v0.0.0
+  git push --tags
+  ```
+- Draft new release with [Github UI Releaser](https://github.com/threefoldtech/tfgridclient_proxy/releases/new) with the pushed tag and generate the release notes.

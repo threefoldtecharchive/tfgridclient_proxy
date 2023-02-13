@@ -1,4 +1,4 @@
-name: Go
+name: Build and lint the source code
 
 on:
   push:
