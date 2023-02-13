@@ -197,9 +197,7 @@ docker run --name gridproxy -e MNEMONICS="" -e SUBSTRATE="wss://tfchain.dev.grid
 
 # Release
 - Update the `appVersion` in `charts/Chart.yaml`. (push, open PR, merge)
-- Create and push the new tag
-  ```bash
-  git tag v0.0.0
-  git push --tags
-  ```
-- Draft new release with [Github UI Releaser](https://github.com/threefoldtech/tfgridclient_proxy/releases/new) with the pushed tag and generate the release notes.
+- Draft new release with [Github UI Releaser](https://github.com/threefoldtech/tfgridclient_proxy/releases/new) 
+  - In the tags dropdown menu write the new tag `appVersion` and create it.
+  - Generate release notes
+  - Mark as release or pre-release and publish 
