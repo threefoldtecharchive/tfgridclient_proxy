@@ -8,6 +8,7 @@ image:
   repository: ghcr.io/threefoldtech/gridproxy
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
+  # the image tag is the same as `appVersion` in Chart.yaml
   # tag: "v1.7.0-rc1"
 
   env:          
