@@ -195,7 +195,7 @@ docker run --name gridproxy -e MNEMONICS="" -e SUBSTRATE="wss://tfchain.dev.grid
   helm install gridproxy/gridproxy
   ```
 
-# Release
+## Release
 - Update the `appVersion` in `charts/Chart.yaml`. (push, open PR, merge)
 - Draft new release with [Github UI Releaser](https://github.com/threefoldtech/tfgridclient_proxy/releases/new) 
   - In the tags dropdown menu write the new tag `appVersion` and create it.
