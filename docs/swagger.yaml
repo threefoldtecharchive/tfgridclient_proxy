@@ -12,61 +12,6 @@ definitions:
     - Megabyte
     - Gigabyte
     - Terabyte
-  rmbproxy.Message:
-    properties:
-      cmd:
-        example: zos.statistics.get
-        type: string
-      dat:
-        example: ""
-        type: string
-      dst:
-        example:
-        - 2
-        - 3
-        items:
-          type: integer
-        type: array
-      err:
-        example: ""
-        type: string
-      exp:
-        example: 0
-        type: integer
-      now:
-        example: 1631078674
-        type: integer
-      ret:
-        example: ""
-        type: string
-      shm:
-        example: ""
-        type: string
-      src:
-        example: 1
-        type: integer
-      try:
-        example: 2
-        type: integer
-      uid:
-        example: ""
-        type: string
-      ver:
-        example: 1
-        type: integer
-    type: object
-  rmbproxy.MessageIdentifier:
-    properties:
-      retqueue:
-        example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-        type: string
-    type: object
-  rmbproxy.PingMessage:
-    properties:
-      ping:
-        example: pong
-        type: string
-    type: object
   types.Capacity:
     properties:
       cru:
@@ -295,7 +240,9 @@ definitions:
     properties:
       accountId:
         type: string
-      ip:
+      publicKey:
+        type: string
+      relay:
         type: string
       twinId:
         type: integer
@@ -745,21 +692,6 @@ paths:
       summary: Show the details for specific node
       tags:
       - GridProxy
-  /ping:
-    get:
-      consumes:
-      - application/json
-      description: ping the server to check if it is running
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/rmbproxy.PingMessage'
-      summary: ping the server
-      tags:
-      - ping
   /stats:
     get:
       consumes:
@@ -791,85 +723,6 @@ paths:
       summary: Show stats about the grid
       tags:
       - GridProxy
-  /twin/{twin_id}:
-    post:
-      consumes:
-      - application/json
-      description: submit the message
-      parameters:
-      - description: rmb.Message
-        in: body
-        name: msg
-        required: true
-        schema:
-          $ref: '#/definitions/rmbproxy.Message'
-      - description: twin id
-        in: path
-        name: twin_id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/rmbproxy.MessageIdentifier'
-        "400":
-          description: Bad Request
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-        "502":
-          description: Bad Gateway
-          schema:
-            type: string
-      summary: submit the message
-      tags:
-      - RMB
-  /twin/{twin_id}/{retqueue}:
-    get:
-      consumes:
-      - application/json
-      description: Get the message result
-      parameters:
-      - description: twin id
-        in: path
-        name: twin_id
-        required: true
-        type: integer
-      - description: message retqueue
-        in: path
-        name: retqueue
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/rmbproxy.Message'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-        "502":
-          description: Bad Gateway
-          schema:
-            type: string
-      summary: Get the message result
-      tags:
-      - RMB
   /twins:
     get:
       consumes:

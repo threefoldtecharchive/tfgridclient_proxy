@@ -1,4 +1,0 @@
-exec: /etc/ygg_entrypoint.sh
-log: stdout
-after:
-  - redis

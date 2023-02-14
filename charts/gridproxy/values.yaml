@@ -11,21 +11,9 @@ image:
   # tag: "v1.7.0-rc1"
 
   env:          
-    - name: "MNEMONICS"
-      value: ""
     - name: "SERVER_PORT"
       value: ""
     - name: "EXPLORER"
-      value: ""
-    - name: "SUBSTRATE"
-      value: ""
-    - name: "REDIS"
-      value: ""
-    - name: "PUBLIC_KEY"
-      value: "" 
-    - name: "PRIVATE_KEY"
-      value: ""
-    - name: "PEERS"
       value: ""
     - name: "POSTGRES_HOST"
       value: "postgres"
@@ -37,8 +25,6 @@ image:
       value: "postgres"
     - name: "POSTGRES_PASSWORD"
       value: "123"
-    - name: "RMB_TIMEOUT"
-      value: "30"
 
 imagePullSecrets: []
 nameOverride: ""

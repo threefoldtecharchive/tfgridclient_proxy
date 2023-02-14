@@ -28,11 +28,8 @@ To list all the available tasks for running:
 
 ## Prerequisites
 
-1. A [msgbusd](https://github.com/threefoldtech/rmb_go) instance must be running on the node. This client uses RMB (message bus) to send messages to nodes, and get the responses.
-2. A valid MNEMONICS.
-3. [yggdrasil](https://yggdrasil-network.github.io/installation.html) service running with a valid ip assigned to the MNEMONICS on [polkadot](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Ftfchain.dev.grid.tf%2Fws#/accounts).
-4. Golang compiler > 1.13 to run the grid proxy server.
-5. Postgres database
+1. Golang compiler > 1.13 to run the grid proxy server.
+2. Postgres database
 
 ## Generate swagger doc files
 
@@ -54,10 +51,6 @@ To list all the available tasks for running:
 
 ## Development Run
 
-- Start the msgbus with your MNEMONICS ID
-    ```sh
-    msgbusd --mnemonics "YOUR MNEMONICS" --substrate "wss://tfchain.dev.grid.tf"
-    ```
 - To run in development envornimnet see [here](tools/db/README.md) how to generate test db or load a db dump then use:
     ```sh
     go run cmds/proxy_server/main.go --address :8080 --log-level debug -no-cert --postgres-host 127.0.0.1 --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres
@@ -67,10 +60,6 @@ To list all the available tasks for running:
 | Option | Description |
 | --- | --- |
 | -address | Server ip address (default `":443"`)  |
-| -ca | certificate authority used to generate certificate (default `"https://acme-staging-v02.api.letsencrypt.org/directory"`)  |
-| -cert-cache-dir | path to store generated certs in (default `"/tmp/certs"`)  |
-| -domain | domain on which the server will be served  |
-| -email | email address to generate certificate with  |
 | -log-level | log level `[debug\|info\|warn\|error\|fatal\|panic]` (default `"info"`)  |
 | -no-cert | start the server without certificate  |
 | -postgres-db | postgres database  |
@@ -78,9 +67,6 @@ To list all the available tasks for running:
 | -postgres-password | postgres password  |
 | -postgres-port | postgres port (default 5432)  |
 | -postgres-user | postgres username  |
-| -redis | redis url (default `"tcp://127.0.0.1:6379"`)  |
-| -substrate-user | substrate url (default`"wss://tfchain.dev.grid.tf/ws"`)  |
-| -rmb-timeout | timeout for rmb requests (default `30` seconds) |
 | -v | shows the package version |
 
 
@@ -88,7 +74,6 @@ To list all the available tasks for running:
 
 ## Production Run
 
-- Start the msgbus systemd service with a machine MNEMONICS linked to its yggdrasil IP or public ip if there, [download and more info](https://github.com/threefoldtech/go-rmb)
 - Download the latest binary [here](https://github.com/threefoldtech/tfgridclient_proxy/releases)
 - add the execution permission to the binary and move it to the bin directory
 
@@ -108,7 +93,7 @@ After=network.target
 After=msgbus.service
 
 [Service]
-ExecStart=gridproxy-server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory --substrate wss://tfchain.dev.grid.tf/ws --postgres-host 127.0.0.1 --postgres-db db --postgres-password password --postgres-user postgres
+ExecStart=gridproxy-server --postgres-host 127.0.0.1 --postgres-db db --postgres-password password --postgres-user postgres
 Type=simple
 Restart=always
 User=root
@@ -139,10 +124,6 @@ EOF
   ```
 
 - The command options:
-  - domain: the host domain which will generate ssl certificate to.
-  - email: the mail used to run generate the ssl certificate.
-  - ca: certificate authority server url
-  - substrate: substrate websocket link.
   - postgre-\*: postgres connection info.
 
 ## To upgrade the machine
@@ -161,18 +142,12 @@ systemctl daemon-reload
 
 ## Dockerfile
 
-- get public and private key for a yggdrasil configuration
-
 To build & run dockerfile
 
 ```bash
 docker build -t threefoldtech/gridproxy .
-docker run --name gridproxy -e MNEMONICS="" -e SUBSTRATE="wss://tfchain.dev.grid.tf/ws" -e PUBLIC_KEY="5011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e PRIVATE_KEY="ff5b3012dbec23e86e2fde7dcd3c951781e87fe505be225488b50a6bb27662f75011157c2451b238c99247b9f0793f66e5b77998272c00676d23767fe3d576d8" -e POSTGRES_HOST="127.0.0.1" -e POSTGRES_PORT="5432" -e POSTGRES_DB="db" -e POSTGRES_USER="postgres" -e POSTGRES_PASSWORD="password" -e RMB_TIMEOUT="30" --cap-add=NET_ADMIN threefoldtech/gridproxy
+docker run --name gridproxy -e POSTGRES_HOST="127.0.0.1" -e POSTGRES_PORT="5432" -e POSTGRES_DB="db" -e POSTGRES_USER="postgres" -e POSTGRES_PASSWORD="password" --cap-add=NET_ADMIN threefoldtech/gridproxy
 ```
-
-- PUBLIC_KEY: yggdrasil public key
-- PRIVATE_KEY: yggdrasil private key
-- PEERS: yggdrasil peers
 
 ## Update helm package
 

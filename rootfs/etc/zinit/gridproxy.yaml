@@ -1,4 +1,3 @@
-exec: sh -c "/usr/bin/server --address $SERVER_PORT --redis $REDIS --substrate $SUBSTRATE --no-cert --postgres-host $POSTGRES_HOST --postgres-port $POSTGRES_PORT --postgres-db $POSTGRES_DB --postgres-user $POSTGRES_USER --postgres-password $POSTGRES_PASSWORD --rmb-timeout $RMB_TIMEOUT"
+exec: sh -c "/usr/bin/server --address $SERVER_PORT --no-cert --postgres-host $POSTGRES_HOST --postgres-port $POSTGRES_PORT --postgres-db $POSTGRES_DB --postgres-user $POSTGRES_USER --postgres-password $POSTGRES_PASSWORD"
 log: stdout
-after:
-  - msgbus
+

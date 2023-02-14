@@ -1,2 +1,0 @@
-exec: redis-server --daemonize yes
-log: stdout
