@@ -60,6 +60,10 @@ To list all the available tasks for running:
 | Option | Description |
 | --- | --- |
 | -address | Server ip address (default `":443"`)  |
+| -ca | certificate authority used to generate certificate (default `"https://acme-staging-v02.api.letsencrypt.org/directory"`)  |
+| -cert-cache-dir | path to store generated certs in (default `"/tmp/certs"`)  |
+| -domain | domain on which the server will be served  |
+| -email | email address to generate certificate with  |
 | -log-level | log level `[debug\|info\|warn\|error\|fatal\|panic]` (default `"info"`)  |
 | -no-cert | start the server without certificate  |
 | -postgres-db | postgres database  |
@@ -93,7 +97,7 @@ After=network.target
 After=msgbus.service
 
 [Service]
-ExecStart=gridproxy-server --postgres-host 127.0.0.1 --postgres-db db --postgres-password password --postgres-user postgres
+ExecStart=gridproxy-server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory --postgres-host 127.0.0.1 --postgres-db db --postgres-password password --postgres-user postgres
 Type=simple
 Restart=always
 User=root
@@ -124,6 +128,9 @@ EOF
   ```
 
 - The command options:
+  - domain: the host domain which will generate ssl certificate to.
+  - email: the mail used to run generate the ssl certificate.
+  - ca: certificate authority server url
   - postgre-\*: postgres connection info.
 
 ## To upgrade the machine
