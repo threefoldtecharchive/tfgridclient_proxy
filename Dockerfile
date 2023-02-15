@@ -11,7 +11,7 @@ RUN git clone --depth 1 --branch $YGG_VERSION https://github.com/yggdrasil-netwo
 RUN ./build && go build -o /src/genkeys cmd/genkeys/main.go
 
 RUN git clone https://github.com/threefoldtech/tfgridclient_proxy && cd tfgridclient_proxy/cmds/proxy_server &&\
-    CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s -X main.GitCommit=$(shell git describe --tags --abbrev=0) -extldflags '-static'"  -o server &&\
+    CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s -X main.GitCommit=$(git describe --tags --abbrev=0) -extldflags '-static'"  -o server &&\
     chmod +x server
 
 RUN git clone https://github.com/threefoldtech/rmb_go && cd rmb_go/cmds/msgbusd &&\
