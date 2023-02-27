@@ -673,6 +673,29 @@ const docTemplate = `{
                 }
             }
         },
+        "/ping": {
+            "get": {
+                "description": "ping the server to check if it is running",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ping"
+                ],
+                "summary": "ping the server",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/explorer.PingMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/stats": {
             "get": {
                 "description": "Get statistics about the grid",
@@ -791,6 +814,15 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "explorer.PingMessage": {
+            "type": "object",
+            "properties": {
+                "ping": {
+                    "type": "string",
+                    "example": "pong"
+                }
+            }
+        },
         "gridtypes.Unit": {
             "type": "integer",
             "enum": [

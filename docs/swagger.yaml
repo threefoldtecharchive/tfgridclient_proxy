@@ -1,5 +1,11 @@
 basePath: /
 definitions:
+  explorer.PingMessage:
+    properties:
+      ping:
+        example: pong
+        type: string
+    type: object
   gridtypes.Unit:
     enum:
     - 1024
@@ -692,6 +698,21 @@ paths:
       summary: Show the details for specific node
       tags:
       - GridProxy
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: ping the server to check if it is running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/explorer.PingMessage'
+      summary: ping the server
+      tags:
+      - ping
   /stats:
     get:
       consumes:
