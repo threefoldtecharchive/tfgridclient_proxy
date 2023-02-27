@@ -13,8 +13,6 @@ image:
   env:          
     - name: "SERVER_PORT"
       value: ""
-    - name: "EXPLORER"
-      value: ""
     - name: "POSTGRES_HOST"
       value: "postgres"
     - name: "POSTGRES_PORT"
