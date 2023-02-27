@@ -56,3 +56,7 @@ func (n *NodeInfo) Deserialize(data []byte) error {
 	}
 	return nil
 }
+
+type PingMessage struct {
+	Ping string `json:"ping" example:"pong"`
+}
