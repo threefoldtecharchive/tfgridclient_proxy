@@ -1,4 +1,4 @@
-package rmbproxy
+package certmanager
 
 import (
 	"crypto"
@@ -89,8 +89,9 @@ func readTLSCert(cert []byte, key []byte) (*x509.Certificate, error) {
 }
 
 // EnsureCertificate checks the current certificate's expiry, and generates
-//                   a new one if no cert is found or its expiry date is less
-//                   than 30 day from now. And returns the certificate data.
+//
+//	a new one if no cert is found or its expiry date is less
+//	than 30 day from now. And returns the certificate data.
 func (c *CertificateManager) EnsureCertificate() (CertificateData, error) {
 	certPath := filepath.Join(c.config.CacheDir, "cert.pem")
 	keyPath := filepath.Join(c.config.CacheDir, "key.pem")
@@ -303,7 +304,8 @@ func (p *Provider) handler(w http.ResponseWriter, req *http.Request) {
 }
 
 // ListenForChallenges handles http cert verification requests and redirects
-//                     all other requests to https
+//
+//	all other requests to https
 func (c CertificateManager) ListenForChallenges() error {
 	log.Info().Msg("Creating server")
 	router := mux.NewRouter().StrictSlash(true)

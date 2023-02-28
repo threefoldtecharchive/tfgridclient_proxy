@@ -1,4 +1,0 @@
-exec: sh -c "/usr/bin/msgbusd --mnemonics \"$MNEMONICS\" --substrate $SUBSTRATE"
-log: stdout
-after:
-  - ygg

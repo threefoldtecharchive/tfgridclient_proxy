@@ -10,11 +10,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+	"github.com/threefoldtech/grid_proxy_server/internal/certmanager"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
-	"github.com/threefoldtech/grid_proxy_server/internal/rmbproxy"
 	logging "github.com/threefoldtech/grid_proxy_server/pkg"
-	"github.com/threefoldtech/substrate-client"
 )
 
 const (
@@ -26,42 +25,36 @@ const (
 var GitCommit string
 
 type flags struct {
-	debug             string
-	redis             string
-	postgresHost      string
-	postgresPort      int
-	postgresDB        string
-	postgresUser      string
-	postgresPassword  string
-	address           string
-	substrate         string
-	domain            string
-	TLSEmail          string
-	CA                string
-	certCacheDir      string
-	version           bool
-	nocert            bool
-	rmbTimeoutSeconds int
+	debug            string
+	postgresHost     string
+	postgresPort     int
+	postgresDB       string
+	postgresUser     string
+	postgresPassword string
+	address          string
+	version          bool
+	nocert           bool
+	domain           string
+	TLSEmail         string
+	CA               string
+	certCacheDir     string
 }
 
 func main() {
 	f := flags{}
 	flag.StringVar(&f.debug, "log-level", "info", "log level [debug|info|warn|error|fatal|panic]")
-	flag.StringVar(&f.substrate, "substrate", "wss://tfchain.dev.grid.tf/ws", "substrate url")
 	flag.StringVar(&f.address, "address", ":443", "explorer running ip address")
-	flag.StringVar(&f.domain, "domain", "", "domain on which the server will be served")
-	flag.StringVar(&f.TLSEmail, "email", "", "tmail address to generate certificate with")
-	flag.StringVar(&f.CA, "ca", "https://acme-staging-v02.api.letsencrypt.org/directory", "certificate authority used to generate certificate")
 	flag.StringVar(&f.postgresHost, "postgres-host", "", "postgres host")
 	flag.IntVar(&f.postgresPort, "postgres-port", 5432, "postgres port")
 	flag.StringVar(&f.postgresDB, "postgres-db", "", "postgres database")
 	flag.StringVar(&f.postgresUser, "postgres-user", "", "postgres username")
 	flag.StringVar(&f.postgresPassword, "postgres-password", "", "postgres password")
-	flag.StringVar(&f.redis, "redis", "tcp://127.0.0.1:6379", "redis url")
 	flag.BoolVar(&f.version, "v", false, "shows the package version")
-	flag.StringVar(&f.certCacheDir, "cert-cache-dir", CertDefaultCacheDir, "path to store generated certs in")
 	flag.BoolVar(&f.nocert, "no-cert", false, "start the server without certificate")
-	flag.IntVar(&f.rmbTimeoutSeconds, "rmb-timeout", 30, "rmb requests timeout (default 30 sec)")
+	flag.StringVar(&f.domain, "domain", "", "domain on which the server will be served")
+	flag.StringVar(&f.TLSEmail, "email", "", "tmail address to generate certificate with")
+	flag.StringVar(&f.CA, "ca", "https://acme-v02.api.letsencrypt.org/directory", "certificate authority used to generate certificate")
+	flag.StringVar(&f.certCacheDir, "cert-cache-dir", CertDefaultCacheDir, "path to store generated certs in")
 	flag.Parse()
 
 	// shows version and exit
@@ -76,14 +69,9 @@ func main() {
 	if f.TLSEmail == "" {
 		log.Fatal().Err(errors.New("email is required"))
 	}
-
 	logging.SetupLogging(f.debug)
-	substrate, err := substrate.NewManager(f.substrate).Substrate()
-	if err != nil {
-		log.Fatal().Err(errors.Wrap(err, "error in connecting to substrate"))
-	}
-	defer substrate.Close()
-	s, err := createServer(f, GitCommit, substrate)
+
+	s, err := createServer(f, GitCommit)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create mux server")
 	}
@@ -108,19 +96,19 @@ func app(s *http.Server, f flags) error {
 		return nil
 	}
 
-	config := rmbproxy.CertificateConfig{
+	config := certmanager.CertificateConfig{
 		Domain:   f.domain,
 		Email:    f.TLSEmail,
 		CA:       f.CA,
 		CacheDir: f.certCacheDir,
 	}
-	cm := rmbproxy.NewCertificateManager(config)
+	cm := certmanager.NewCertificateManager(config)
 	go func() {
 		if err := cm.ListenForChallenges(); err != nil {
 			log.Error().Err(err).Msg("error occurred when listening for challenges")
 		}
 	}()
-	kpr, err := rmbproxy.NewKeypairReloader(cm)
+	kpr, err := certmanager.NewKeypairReloader(cm)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to initiate key reloader")
 	}
@@ -139,7 +127,7 @@ func app(s *http.Server, f flags) error {
 	return nil
 }
 
-func createServer(f flags, gitCommit string, substrate *substrate.Substrate) (*http.Server, error) {
+func createServer(f flags, gitCommit string) (*http.Server, error) {
 	log.Info().Msg("Creating server")
 
 	router := mux.NewRouter().StrictSlash(true)
@@ -149,10 +137,7 @@ func createServer(f flags, gitCommit string, substrate *substrate.Substrate) (*h
 	}
 
 	// setup explorer
-	if err := explorer.Setup(router, f.redis, gitCommit, db); err != nil {
-		return nil, err
-	}
-	if err := rmbproxy.Setup(router, substrate, f.rmbTimeoutSeconds); err != nil {
+	if err := explorer.Setup(router, gitCommit, db); err != nil {
 		return nil, err
 	}
 

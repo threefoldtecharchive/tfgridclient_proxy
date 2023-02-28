@@ -9,7 +9,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 	"github.com/threefoldtech/grid_proxy_server/pkg/types"
-	"github.com/threefoldtech/zos/pkg/rmb"
 )
 
 const (
@@ -346,6 +344,19 @@ func (a *App) listContracts(r *http.Request) (interface{}, mw.Response) {
 	}
 	return contracts, resp
 }
+
+// ping godoc
+// @Summary ping the server
+// @Description ping the server to check if it is running
+// @Tags ping
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} PingMessage
+// @Router /ping [get]
+func (a *App) ping(r *http.Request) (interface{}, mw.Response) {
+	return PingMessage{Ping: "pong"}, mw.Ok()
+}
+
 func (a *App) indexPage(m *mux.Router) mw.Action {
 	return func(r *http.Request) (interface{}, mw.Response) {
 		response := mw.Ok()
@@ -379,17 +390,11 @@ func (a *App) version(r *http.Request) (interface{}, mw.Response) {
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @BasePath /
-func Setup(router *mux.Router, redisServer string, gitCommit string, database db.Database) error {
-	log.Info().Str("redis address", redisServer).Msg("Preparing Redis Pool ...")
+func Setup(router *mux.Router, gitCommit string, database db.Database) error {
 
-	rmbClient, err := rmb.NewClient(redisServer, 500)
-	if err != nil {
-		return errors.Wrap(err, "couldn't connect to rmb")
-	}
 	c := cache.New(2*time.Minute, 3*time.Minute)
 	a := App{
 		db:             database,
-		rmb:            rmbClient,
 		lruCache:       c,
 		releaseVersion: gitCommit,
 	}
@@ -404,6 +409,7 @@ func Setup(router *mux.Router, redisServer string, gitCommit string, database db
 	router.HandleFunc("/gateways/{node_id:[0-9]+}", mw.AsHandlerFunc(a.getGateway))
 	router.HandleFunc("/nodes/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
 	router.HandleFunc("/gateways/{node_id:[0-9]+}/status", mw.AsHandlerFunc(a.getNodeStatus))
+	router.HandleFunc("/ping", mw.AsHandlerFunc(a.ping))
 	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage(router)))
 	router.HandleFunc("/version", mw.AsHandlerFunc(a.version))
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)

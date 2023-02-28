@@ -683,7 +683,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rmbproxy.PingMessage"
+                            "$ref": "#/definitions/explorer.PingMessage"
                         }
                     }
                 }
@@ -728,125 +728,6 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/twin/{twin_id}": {
-            "post": {
-                "description": "submit the message",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "RMB"
-                ],
-                "summary": "submit the message",
-                "parameters": [
-                    {
-                        "description": "rmb.Message",
-                        "name": "msg",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/rmbproxy.Message"
-                        }
-                    },
-                    {
-                        "type": "integer",
-                        "description": "twin id",
-                        "name": "twin_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/rmbproxy.MessageIdentifier"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "502": {
-                        "description": "Bad Gateway",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/twin/{twin_id}/{retqueue}": {
-            "get": {
-                "description": "Get the message result",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "RMB"
-                ],
-                "summary": "Get the message result",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "twin id",
-                        "name": "twin_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "message retqueue",
-                        "name": "retqueue",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/rmbproxy.Message"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "502": {
-                        "description": "Bad Gateway",
                         "schema": {
                             "type": "string"
                         }
@@ -926,6 +807,15 @@
         }
     },
     "definitions": {
+        "explorer.PingMessage": {
+            "type": "object",
+            "properties": {
+                "ping": {
+                    "type": "string",
+                    "example": "pong"
+                }
+            }
+        },
         "gridtypes.Unit": {
             "type": "integer",
             "enum": [
@@ -940,83 +830,6 @@
                 "Gigabyte",
                 "Terabyte"
             ]
-        },
-        "rmbproxy.Message": {
-            "type": "object",
-            "properties": {
-                "cmd": {
-                    "type": "string",
-                    "example": "zos.statistics.get"
-                },
-                "dat": {
-                    "type": "string",
-                    "example": ""
-                },
-                "dst": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    },
-                    "example": [
-                        2,
-                        3
-                    ]
-                },
-                "err": {
-                    "type": "string",
-                    "example": ""
-                },
-                "exp": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "now": {
-                    "type": "integer",
-                    "example": 1631078674
-                },
-                "ret": {
-                    "type": "string",
-                    "example": ""
-                },
-                "shm": {
-                    "type": "string",
-                    "example": ""
-                },
-                "src": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "try": {
-                    "type": "integer",
-                    "example": 2
-                },
-                "uid": {
-                    "type": "string",
-                    "example": ""
-                },
-                "ver": {
-                    "type": "integer",
-                    "example": 1
-                }
-            }
-        },
-        "rmbproxy.MessageIdentifier": {
-            "type": "object",
-            "properties": {
-                "retqueue": {
-                    "type": "string",
-                    "example": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                }
-            }
-        },
-        "rmbproxy.PingMessage": {
-            "type": "object",
-            "properties": {
-                "ping": {
-                    "type": "string",
-                    "example": "pong"
-                }
-            }
         },
         "types.Capacity": {
             "type": "object",
@@ -1364,7 +1177,10 @@
                 "accountId": {
                     "type": "string"
                 },
-                "ip": {
+                "publicKey": {
+                    "type": "string"
+                },
+                "relay": {
                     "type": "string"
                 },
                 "twinId": {
