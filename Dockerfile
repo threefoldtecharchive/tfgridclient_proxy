@@ -7,7 +7,7 @@ WORKDIR /src
 RUN apk add git
 
 RUN git clone https://github.com/threefoldtech/tfgridclient_proxy && cd tfgridclient_proxy/cmds/proxy_server &&\
-    CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s -X main.GitCommit=$(shell git describe --tags --abbrev=0) -extldflags '-static'"  -o gridrest &&\
+    CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s -X main.GitCommit=$(git describe --tags --abbrev=0) -extldflags '-static'"  -o gridrest &&\
     chmod +x gridrest
 
 FROM alpine:3.14
