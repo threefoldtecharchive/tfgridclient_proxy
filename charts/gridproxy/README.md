@@ -26,8 +26,11 @@
 
 - Install the chart
 
-  **Note**: EXPLORER_URL, SERVER_IP has default values you may not pass them if you want to use the defaults
+  **Note**: these envs has default values you may not pass them if you want to use the defaults
+    - SERVER_PORT: Addr optionally specifies the TCP address for the server to listen on, in the form "host:port". default `:80`
+    - POSTGRES_PORT: default `5432`
+    - POSTGRES_USER: default `postgres`
 
   ```bash
-  helm install -f values.yaml gridproxy . --set ingress.host="gridproxy.3botmain.grid.tf" --set env.POSTGRES_HOST="127.0.0.1" --set env.POSTGRES_PORT="5432" --set env.POSTGRES_DB="db" --set env.POSTGRES_USER="postgres" --set env.POSTGRES_PASSWORD="password"
+  helm install -f values.yaml gridproxy . --set ingress.host="gridproxy.dev.grid.tf" --set env.POSTGRES_HOST="127.0.0.1" --set env.POSTGRES_PORT="5432" --set env.POSTGRES_DB="db" --set env.POSTGRES_USER="postgres" --set env.POSTGRES_PASSWORD="password"
   ```
