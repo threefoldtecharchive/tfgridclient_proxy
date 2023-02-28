@@ -7,12 +7,12 @@ WORKDIR /src
 RUN apk add git
 
 RUN git clone https://github.com/threefoldtech/tfgridclient_proxy && cd tfgridclient_proxy/cmds/proxy_server &&\
-    CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s -X main.GitCommit=$(shell git describe --tags --abbrev=0) -extldflags '-static'"  -o server &&\
-    chmod +x server
+    CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s -X main.GitCommit=$(shell git describe --tags --abbrev=0) -extldflags '-static'"  -o gridrest &&\
+    chmod +x gridrest
 
 FROM alpine:3.14
 
-COPY --from=builder /src/tfgridclient_proxy/cmds/proxy_server/server /usr/bin/server
+COPY --from=builder /src/tfgridclient_proxy/cmds/proxy_server/gridrest /usr/bin/gridrest
 
 RUN wget https://github.com/threefoldtech/zinit/releases/download/v0.2.10/zinit -O /sbin/zinit \
     && chmod +x /sbin/zinit
