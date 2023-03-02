@@ -1,0 +1,30 @@
+name: Schema test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setting up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Installing all necessary packages
+        run: pip install -r tests/schema_test/requirements.txt
+      - name: Run tests
+        run: python3 -m pytest -v ./tests/schema_test --html=report.html
+      - name: Upload pytest test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: schema-pytest-results
+          path: |
+            report.html
+            assets
+        if: ${{ always() }}
