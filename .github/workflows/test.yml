@@ -2,6 +2,12 @@ name: Schema test
 
 on:
   workflow_dispatch:
+    inputs:
+      NETWORK:
+        description: 'Network to run test on'
+        required: true
+        default: 'dev'
+        type: string
   schedule:
     - cron: "0 6 * * *"
 
@@ -19,7 +25,7 @@ jobs:
       - name: Installing all necessary packages
         run: pip install -r tests/schema_test/requirements.txt
       - name: Run tests
-        run: python3 -m pytest -v ./tests/schema_test --html=report.html
+        run: NETWORK=${{ github.event.inputs.NETWORK }} python3 -m pytest -v ./tests/schema_test --html=report.html
       - name: Upload pytest test results
         uses: actions/upload-artifact@v3
         with:
