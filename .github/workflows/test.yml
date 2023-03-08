@@ -6,26 +6,66 @@ on:
       NETWORK:
         description: 'Network to run test on'
         required: true
-        default: 'dev'
-        type: string
-  schedule:
-    - cron: "0 6 * * *"
+        default: 'local'
+        type: choice
+        options: 
+        - local
+        - dev
+  push:
 
 
 jobs:
   api-tests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tfgrid-graphql
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
       - name: Setting up Python
         uses: actions/setup-python@v2
         with:
           python-version: "3.10"
+
       - name: Installing all necessary packages
         run: pip install -r tests/schema_test/requirements.txt
+
+      - name: Build
+        if: ${{ github.event.inputs.NETWORK }} != 'dev'
+        run: |
+          export PATH=/home/runner/go/bin:$PATH
+          export GIT_COMMIT=$(git rev-list -1 HEAD) 
+          go build -ldflags "-X main.GitCommit=$GIT_COMMIT" cmds/proxy_server/main.go
+          export PATH=/home/runner/go/bin:$PATH
+          pushd tools/db
+          go run . --seed 13 --postgres-host localhost --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres --reset
+          popd
+          go run cmds/proxy_server/main.go -no-cert --address :8080 --log-level debug --postgres-host localhost --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres &
+          sleep 6
+        env:
+          GO111MODULE: on
+
       - name: Run tests
         run: NETWORK=${{ github.event.inputs.NETWORK }} python3 -m pytest -v ./tests/schema_test --html=report.html
+      
       - name: Upload pytest test results
         uses: actions/upload-artifact@v3
         with:
