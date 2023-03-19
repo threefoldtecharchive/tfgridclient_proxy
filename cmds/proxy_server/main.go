@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -14,11 +16,16 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	logging "github.com/threefoldtech/grid_proxy_server/pkg"
+	"github.com/threefoldtech/rmb-sdk-go"
+	"github.com/threefoldtech/rmb-sdk-go/direct"
+	"github.com/threefoldtech/substrate-client"
 )
 
 const (
 	// CertDefaultCacheDir directory to keep the genreated certificates
 	CertDefaultCacheDir = "/tmp/certs"
+	DefaultTFChainURL   = "wss://tfchain.dev.grid.tf/ws"
+	DefaultRelayURL     = "wss://relay.dev.grid.tf"
 )
 
 // GitCommit holds the commit version
@@ -38,6 +45,9 @@ type flags struct {
 	TLSEmail         string
 	CA               string
 	certCacheDir     string
+	tfChainURL       string
+	relayURL         string
+	mnemonics        string
 }
 
 func main() {
@@ -55,6 +65,9 @@ func main() {
 	flag.StringVar(&f.TLSEmail, "email", "", "tmail address to generate certificate with")
 	flag.StringVar(&f.CA, "ca", "https://acme-v02.api.letsencrypt.org/directory", "certificate authority used to generate certificate")
 	flag.StringVar(&f.certCacheDir, "cert-cache-dir", CertDefaultCacheDir, "path to store generated certs in")
+	flag.StringVar(&f.tfChainURL, "tfchain-url", DefaultTFChainURL, "TF chain url")
+	flag.StringVar(&f.relayURL, "relay-url", DefaultRelayURL, "RMB relay url")
+	flag.StringVar(&f.mnemonics, "mnemonics", "", "Dummy user mnemonics for relay calls")
 	flag.Parse()
 
 	// shows version and exit
@@ -69,9 +82,27 @@ func main() {
 	if f.TLSEmail == "" {
 		log.Fatal().Err(errors.New("email is required"))
 	}
+	if f.mnemonics == "" {
+		log.Fatal().Msg("mnemonics are required")
+	}
 	logging.SetupLogging(f.debug)
 
-	s, err := createServer(f, GitCommit)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	subManager := substrate.NewManager(f.tfChainURL)
+	sub, err := subManager.Substrate()
+	if err != nil {
+		log.Fatal().Err(err).Msg(fmt.Sprintf("failed to connect to TF chain URL: %s", err))
+	}
+	defer sub.Close()
+
+	relayClient, err := createRMBClient(ctx, f.relayURL, f.mnemonics, sub)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create realy client")
+	}
+
+	s, err := createServer(f, GitCommit, relayClient)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create mux server")
 	}
@@ -127,7 +158,22 @@ func app(s *http.Server, f flags) error {
 	return nil
 }
 
-func createServer(f flags, gitCommit string) (*http.Server, error) {
+func createRMBClient(ctx context.Context, relayURL, mnemonics string, sub *substrate.Substrate) (rmb.Client, error) {
+	client, err := direct.NewClient(ctx, direct.KeyTypeSr25519, mnemonics, relayURL, "tfgrid_proxy", sub, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create direct RMB client: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	if err := client.Ping(ctx); err != nil {
+		return nil, fmt.Errorf("failed to ping Relay server: %s", err)
+	}
+	return client, nil
+}
+
+func createServer(f flags, gitCommit string, relayClient rmb.Client) (*http.Server, error) {
 	log.Info().Msg("Creating server")
 
 	router := mux.NewRouter().StrictSlash(true)
@@ -137,7 +183,7 @@ func createServer(f flags, gitCommit string) (*http.Server, error) {
 	}
 
 	// setup explorer
-	if err := explorer.Setup(router, gitCommit, db); err != nil {
+	if err := explorer.Setup(router, gitCommit, db, relayClient); err != nil {
 		return nil, err
 	}
 

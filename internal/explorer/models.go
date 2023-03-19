@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/pkg/types"
+	"github.com/threefoldtech/rmb-sdk-go"
 )
 
 // ErrNodeNotFound creates new error type to define node existence or server problem
@@ -26,6 +27,7 @@ type App struct {
 	db             db.Database
 	lruCache       *cache.Cache
 	releaseVersion string
+	relayClient    rmb.Client
 }
 
 type ErrorMessage struct {
