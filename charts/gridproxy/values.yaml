@@ -24,6 +24,12 @@ image:
       value: "postgres"
     - name: "POSTGRES_PASSWORD"
       value: "123"
+    - name: "MNEMONICS"
+      value: ""
+    - name: "TFCHAINURL"
+      value: "wss://tfchain.dev.grid.tf/ws"
+    - name: "RELAYURL"
+      value: "wss://relay.dev.grid.tf"
 
 imagePullSecrets: []
 nameOverride: ""

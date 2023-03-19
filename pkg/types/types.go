@@ -243,6 +243,26 @@ type Version struct {
 	Version string `json:"version"`
 }
 
+type NodeStatisticsResources struct {
+	CRU   int `json:"cru"`
+	HRU   int `json:"hru"`
+	IPV4U int `json:"ipv4u"`
+	MRU   int `json:"mru"`
+	SRU   int `json:"sru"`
+}
+
+type NodeStatisticsUsers struct {
+	Deployments int `json:"deployments"`
+	Workloads   int `json:"workloads"`
+}
+
+type NodeStatistics struct {
+	System NodeStatisticsResources `json:"system"`
+	Total  NodeStatisticsResources `json:"total"`
+	Used   NodeStatisticsResources `json:"used"`
+	Users  NodeStatisticsUsers     `json:"users"`
+}
+
 // NodeStatus is used for status endpoint to decode json in
 type NodeStatus struct {
 	Status string `json:"status"`

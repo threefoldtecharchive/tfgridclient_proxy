@@ -17,6 +17,7 @@ import (
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/db"
 	"github.com/threefoldtech/grid_proxy_server/internal/explorer/mw"
 	"github.com/threefoldtech/grid_proxy_server/pkg/types"
+	"github.com/threefoldtech/rmb-sdk-go"
 )
 
 const (
@@ -383,6 +384,33 @@ func (a *App) version(r *http.Request) (interface{}, mw.Response) {
 	}, response
 }
 
+// getNodeStatistics godoc
+// @Summary Show node statistics
+// @Description Get node statisitcs for more information about each node through the RMB relay
+// @Tags NodeStatistics
+// @Param node_id path int yes "Node ID"
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} types.NodeWithNestedCapacity
+// @Failure 400 {object} string
+// @Failure 404 {object} string
+// @Failure 500 {object} string
+// @Router /nodes/{node_id}/statistics  [get]
+func (a *App) getNodeStatistics(r *http.Request) (interface{}, mw.Response) {
+	nodeID := mux.Vars(r)["node_id"]
+	node, err := a.getNodeData(nodeID)
+	if err != nil {
+		return nil, errorReply(err)
+	}
+
+	var res types.NodeStatistics
+	err = a.relayClient.Call(r.Context(), uint32(node.TwinID), "zos.statistics.get", nil, &res)
+	if err != nil {
+		return nil, mw.Error(fmt.Errorf("failed to get get node statistics from relay: %w", err))
+	}
+	return res, mw.Ok()
+}
+
 // Setup is the server and do initial configurations
 // @title Grid Proxy Server API
 // @version 1.0
@@ -390,13 +418,14 @@ func (a *App) version(r *http.Request) (interface{}, mw.Response) {
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @BasePath /
-func Setup(router *mux.Router, gitCommit string, database db.Database) error {
+func Setup(router *mux.Router, gitCommit string, database db.Database, relayClient rmb.Client) error {
 
 	c := cache.New(2*time.Minute, 3*time.Minute)
 	a := App{
 		db:             database,
 		lruCache:       c,
 		releaseVersion: gitCommit,
+		relayClient:    relayClient,
 	}
 
 	router.HandleFunc("/farms", mw.AsHandlerFunc(a.listFarms))
@@ -412,6 +441,7 @@ func Setup(router *mux.Router, gitCommit string, database db.Database) error {
 	router.HandleFunc("/ping", mw.AsHandlerFunc(a.ping))
 	router.HandleFunc("/", mw.AsHandlerFunc(a.indexPage(router)))
 	router.HandleFunc("/version", mw.AsHandlerFunc(a.version))
+	router.HandleFunc("/nodes/{node_id:[0-9]+}/statistics", mw.AsHandlerFunc(a.getNodeStatistics))
 	router.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
 
 	return nil
