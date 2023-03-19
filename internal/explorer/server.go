@@ -386,7 +386,7 @@ func (a *App) version(r *http.Request) (interface{}, mw.Response) {
 
 // getNodeStatistics godoc
 // @Summary Show node statistics
-// @Description Get node statisitcs for more information about each node through the RMB relay
+// @Description Get node statistics for more information about each node through the RMB relay
 // @Tags NodeStatistics
 // @Param node_id path int yes "Node ID"
 // @Accept  json
