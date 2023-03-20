@@ -1,3 +1,3 @@
-exec: sh -c "/usr/bin/gridrest --address $SERVER_PORT --no-cert --postgres-host $POSTGRES_HOST --postgres-port $POSTGRES_PORT --postgres-db $POSTGRES_DB --postgres-user $POSTGRES_USER --postgres-password $POSTGRES_PASSWORD --tfchain-url $TFCHAINURL --relay-url $RELAYURL --mnemonics $MNEMONICS"
+exec: sh -c '/usr/bin/gridrest --address $SERVER_PORT --no-cert --postgres-host $POSTGRES_HOST --postgres-port $POSTGRES_PORT --postgres-db $POSTGRES_DB --postgres-user $POSTGRES_USER --postgres-password $POSTGRES_PASSWORD --tfchain-url $TFCHAINURL --relay-url $RELAYURL --mnemonics "$MNEMONICS"'
 log: stdout
 
