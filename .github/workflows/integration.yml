@@ -41,12 +41,14 @@ jobs:
         GO111MODULE: on
 
     - name: Test
+      env:
+        MNEMONICS: ${{ secrets.MNEMONICS }}
       run: |
         export PATH=/home/runner/go/bin:$PATH
         pushd tools/db
         go run . --seed 13 --postgres-host localhost --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres --reset
         popd
-        go run cmds/proxy_server/main.go -no-cert --address :8080 --log-level debug --postgres-host localhost --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres --mnemonics $MNEMONICS &
+        go run cmds/proxy_server/main.go -no-cert --address :8080 --log-level debug --postgres-host localhost --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres --mnemonics "$MNEMONICS" &
         sleep 6
         pushd tests/queries
         go test -v --seed 13 --postgres-host localhost --postgres-db tfgrid-graphql --postgres-password postgres --postgres-user postgres --endpoint http://localhost:8080
