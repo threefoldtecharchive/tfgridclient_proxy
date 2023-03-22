@@ -6,6 +6,9 @@ WORKDIR /src
 
 ADD . /src
 
+# git needed to get the binary version 
+RUN apk add git 
+
 RUN cd /src/cmds/proxy_server &&\
     CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s -X main.GitCommit=$(git describe --tags --abbrev=0) -extldflags '-static'"  -o gridrest &&\
     chmod +x gridrest
