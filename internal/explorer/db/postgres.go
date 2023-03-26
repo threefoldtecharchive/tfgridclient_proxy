@@ -634,7 +634,7 @@ func (d *PostgresDatabase) GetContracts(filter types.ContractFilter, limit types
 		q = q.Where("type = ?", *filter.Type)
 	}
 	if filter.State != nil {
-		q = q.Where("state = ?", *filter.State)
+		q = q.Where("state ILIKE ?", *filter.State)
 	}
 	if filter.TwinID != nil {
 		q = q.Where("twin_id = ?", *filter.TwinID)
