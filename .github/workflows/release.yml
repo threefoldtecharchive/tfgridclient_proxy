@@ -14,6 +14,12 @@ jobs:
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v3
+      
+      - name: "Get Previous tag"
+        id: previoustag
+        uses: actions-ecosystem/action-get-latest-tag@v1
+        with:
+          fallback: latest # Optional fallback tag to use when no tag can be found
 
       - name: Log in to the Container registry
         uses: docker/login-action@v2.1.0
@@ -36,3 +42,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            version=${{ steps.previoustag.outputs.tag }}
