@@ -590,7 +590,7 @@ func (d *PostgresDatabase) GetTwins(filter types.TwinFilter, limit types.Limit) 
 			Offset(int(limit.Page-1) * int(limit.Size)).
 			Order("twin.twin_id")
 	}
-	var twins []types.Twin
+	twins := []types.Twin{}
 
 	if res := q.Scan(&twins); res.Error != nil {
 		return twins, uint(count), errors.Wrap(res.Error, "failed to scan returned twins from database")
