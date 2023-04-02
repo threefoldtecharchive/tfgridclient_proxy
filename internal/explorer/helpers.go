@@ -146,6 +146,7 @@ func (a *App) handleNodeRequestsQueryParams(r *http.Request) (types.NodeFilter, 
 		"country_contains":   &filter.CountryContains,
 		"farm_name":          &filter.FarmName,
 		"farm_name_contains": &filter.FarmNameContains,
+		"certification_type": &filter.CertificationType,
 	}
 	bools := map[string]**bool{
 		"ipv4":      &filter.IPv4,

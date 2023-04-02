@@ -135,6 +135,21 @@ func TestNode(t *testing.T) {
 		assert.NoError(t, err)
 		nodePaginationCheck(t, localClient, proxyClient)
 	})
+
+	t.Run("nodes test certification_type filter", func(t *testing.T) {
+		certType := "Diy"
+		nodes, _, err := proxyClient.Nodes(proxytypes.NodeFilter{CertificationType: &certType}, proxytypes.Limit{})
+		assert.NoError(t, err)
+
+		for _, node := range nodes {
+			assert.Equal(t, node.CertificationType, certType, "certification_type filter did not work")
+		}
+
+		notExistCertType := "noCert"
+		nodes, _, err = proxyClient.Nodes(proxytypes.NodeFilter{CertificationType: &notExistCertType}, proxytypes.Limit{})
+		assert.NoError(t, err)
+		assert.Empty(t, nodes)
+	})
 }
 
 func singleNodeCheck(t *testing.T, localClient proxyclient.Client, proxyClient proxyclient.Client) {

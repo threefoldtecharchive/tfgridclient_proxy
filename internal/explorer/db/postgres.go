@@ -448,6 +448,9 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 	if filter.Rented != nil {
 		q = q.Where(`? = (COALESCE(rent_contract.contract_id, 0) != 0)`, *filter.Rented)
 	}
+	if filter.CertificationType != nil {
+		q = q.Where("node.certification ILIKE ?", *filter.CertificationType)
+	}
 
 	var count int64
 	if limit.Randomize || limit.RetCount {

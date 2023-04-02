@@ -110,6 +110,9 @@ func nodeParams(filter types.NodeFilter, limit types.Limit) string {
 	if limit.Randomize {
 		fmt.Fprintf(&builder, "randomize=true&")
 	}
+	if filter.CertificationType != nil && *filter.CertificationType != "" {
+		fmt.Fprintf(&builder, "certification_type=%s&", url.QueryEscape(*filter.CertificationType))
+	}
 
 	res := builder.String()
 	// pop the extra ? or &
