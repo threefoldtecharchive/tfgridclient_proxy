@@ -464,6 +464,9 @@ func (d *PostgresDatabase) GetNodes(filter types.NodeFilter, limit types.Limit) 
 		q = q.Limit(int(limit.Size)).
 			Offset(int(rand.Intn(int(count)) - int(limit.Size)))
 	} else {
+		if filter.AvailableFor != nil {
+			q = q.Order("(case when rent_contract is not null then 1 else 2 end)")
+		}
 		q = q.Limit(int(limit.Size)).
 			Offset(int(limit.Page-1) * int(limit.Size)).
 			Order("node_id")

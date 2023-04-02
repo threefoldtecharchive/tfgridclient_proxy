@@ -84,7 +84,7 @@ func TestNode(t *testing.T) {
 		assert.NoError(t, err)
 		remoteNodes, _, err := proxyClient.Nodes(f, l)
 		assert.NoError(t, err)
-		err = validateResults(localNodes, remoteNodes)
+		err = validateResults(localNodes, remoteNodes, false)
 		assert.NoError(t, err, serializeFilter(f))
 	})
 
@@ -114,7 +114,7 @@ func TestNode(t *testing.T) {
 			remoteNodes, _, err := proxyClient.Nodes(f, l)
 			assert.NoError(t, err)
 			assert.Equal(t, len(localNodes), len(remoteNodes))
-			err = validateResults(localNodes, remoteNodes)
+			err = validateResults(localNodes, remoteNodes, f.AvailableFor != nil)
 			assert.NoError(t, err, serializeFilter(f))
 		}
 	})
@@ -161,7 +161,7 @@ func nodePaginationCheck(t *testing.T, localClient proxyclient.Client, proxyClie
 		remoteNodes, remoteCount, err := proxyClient.Nodes(f, l)
 		assert.NoError(t, err)
 		assert.Equal(t, remoteCount, localCount, "local and remote counts are not equal")
-		err = validateResults(localNodes, remoteNodes)
+		err = validateResults(localNodes, remoteNodes, false)
 		assert.NoError(t, err, serializeFilter(f))
 		if l.Page*l.Size >= uint64(localCount) {
 			break
@@ -430,13 +430,27 @@ func calcNodesAggregates(data *DBData) (res NodesAggregate) {
 	return
 }
 
-func validateResults(local, remote []proxytypes.Node) error {
+func findValidateNodeResult(node proxytypes.Node, results []proxytypes.Node) proxytypes.Node {
+	for _, n := range results {
+		if n.NodeID == node.NodeID {
+			return n
+		}
+	}
+	return proxytypes.Node{}
+}
+
+func validateResults(local, remote []proxytypes.Node, unordered bool) error {
 	iter := local
-	if len(remote) < len(local) {
+	if len(remote) < len(local) || unordered {
 		iter = remote
 	}
 	for i := range iter {
-		if !reflect.DeepEqual(local[i], remote[i]) {
+		localNode := local[i]
+		remoteNode := local[i]
+		if unordered {
+			localNode = findValidateNodeResult(remoteNode, local)
+		}
+		if !reflect.DeepEqual(localNode, remoteNode) {
 			return fmt.Errorf("node %d mismatch: local: %+v, remote: %+v", i, local[i], remote[i])
 		}
 	}
