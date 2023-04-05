@@ -11,7 +11,6 @@ A REST API used to index a various information from the TF Chain.
 
 ## Explorer Endpoints
 
-
 | HTTP Verb | Endpoint                    | Description                        |
 | --------- | --------------------------- | ---------------------------------- |
 | GET       | `/contracts`                | Show all contracts on the chain    |

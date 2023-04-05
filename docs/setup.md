@@ -31,5 +31,6 @@ make db-fill
 ```
 
 ## Get Mnemonics
+
 1. Install [polkadot extension](https://github.com/polkadot-js/extension) on your browser.
 2. Create a new account from the extension. It is important to save the seeds.

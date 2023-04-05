@@ -13,14 +13,13 @@
 - Add a new systemd service
 
 ```bash
-# create msgbus service
 cat << EOF > /etc/systemd/system/gridproxy-server.service
 [Unit]
 Description=grid proxy server
 After=network.target
 
 [Service]
-ExecStart=gridproxy-server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory --postgres-host 127.0.0.1 --postgres-db db --postgres-password password --postgres-user postgres
+ExecStart=gridproxy-server --domain gridproxy.dev.grid.tf --email omar.elawady.alternative@gmail.com -ca https://acme-v02.api.letsencrypt.org/directory --postgres-host 127.0.0.1 --postgres-db db --postgres-password password --postgres-user postgres --mnemonics <insert user mnemonics>
 Type=simple
 Restart=always
 User=root
@@ -34,19 +33,19 @@ EOF
 
 - enable the service
 
-  ```
+  ```bash
    systemctl enable gridproxy.service
   ```
 
 - start the service
 
-  ```
+  ```bash
   systemctl start gridproxy.service
   ```
 
 - check the status
 
-  ```
+  ```bash
   systemctl status gridproxy.service
   ```
 
@@ -62,13 +61,13 @@ EOF
 
 - just replace the binary with the new one and apply
 
-```
+```bash
 systemctl restart gridproxy-server.service
 ```
 
 - it you have changes in the `/etc/systemd/system/gridproxy-server.service` you have to run this command first
 
-```
+```bash
 systemctl daemon-reload
 ```
 
@@ -103,8 +102,9 @@ docker run --name gridproxy -e POSTGRES_HOST="127.0.0.1" -e POSTGRES_PORT="5432"
   ```
 
 ## Release
+
 - Update the `appVersion` in `charts/Chart.yaml`. (push, open PR, merge)
-- Draft new release with [Github UI Releaser](https://github.com/threefoldtech/tfgridclient_proxy/releases/new) 
+- Draft new release with [Github UI Releaser](https://github.com/threefoldtech/tfgridclient_proxy/releases/new)
   - In the tags dropdown menu write the new tag `appVersion` and create it.
   - Generate release notes
-  - Mark as release or pre-release and publish 
+  - Mark as release or pre-release and publish

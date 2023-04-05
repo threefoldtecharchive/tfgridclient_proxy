@@ -7,31 +7,44 @@ The Makefile make it easier to do mostly all the frequently commands needed to w
 we are using [swaggo/swag](https://github.com/swaggo/swag) to generate swagger docs based on the annotation inside the code.
 
 - install swag executable binary
+
   ```bash
   go install github.com/swaggo/swag/cmd/swag@latest
   ```
+
 - now if you check the binary directory inside go directory you will find the executable file.
+
   ```bash
   ls $(go env GOPATH)/bin
   ```
+
 - to run swag you can either use the full path `$(go env GOPATH)/bin/swag` or export go binary to `$PATH`
+
   ```bash
   export PATH=$PATH:$(go env GOPATH)/bin
   ```
+
 - use swag to format code comments.
+
   ```bash
   swag fmt
   ```
+
 - update the docs
+
   ```bash
   swag init
   ```
+
 - to parse external types from vendor
+
   ```bash
   swag init --parseVendor
   ```
+
 - for a full generate docs command
-  ```
+
+  ```bash
   make docs
   ```
 
@@ -76,6 +89,7 @@ There is two types of tests in the project
 - Integration Tests
   - Found in `tests/queries/`
   - Run with:
+
     ```bash
     go test -v \
     --seed 13 \
@@ -86,10 +100,13 @@ There is two types of tests in the project
     --endpoint <server-ip> \
     --mnemonics <insert user mnemonics>
     ```
+
   - Or to run a specific test you can append the previous command with
+
     ```bash
     -run <TestName>
     ```
+
     You can found the TestName in the `tests/queries/*_test.go` files.
 
 To run all the tests use
