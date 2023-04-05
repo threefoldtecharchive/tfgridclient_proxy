@@ -11,7 +11,6 @@ A REST API used to index a various information from the TF Chain.
 
 ## Explorer Endpoints
 
-### V1
 
 | HTTP Verb | Endpoint                    | Description                        |
 | --------- | --------------------------- | ---------------------------------- |
@@ -25,22 +24,6 @@ A REST API used to index a various information from the TF Chain.
 | GET       | `/nodes/:node_id/status`    | Get a single node status           |
 | GET       | `/stats`                    | Show the grid statistics           |
 | GET       | `/twins`                    | Show all the twins on the chain    |
+| GET       | `/nodes/:node_id/statistics`| Get a single node ZOS statistics   |
 
 For the available filters on each node. check `/swagger/index.html` endpoint on the running instance.
-
-### V2
-
-| HTTP Verb | Endpoint                        | Description                     |
-| --------- | ------------------------------- | ------------------------------- |
-| GET       | `/api/v2/contracts`             | Show all contracts on the chain |
-| GET       | `/api/v2/farms`                 | Show all farms on the chain     |
-| GET       | `/api/v2/nodes`                 | Show all nodes on the grid      |
-| GET       | `/api/v2/nodes/:node_id`        | Get a single node details       |
-| GET       | `/api/v2/nodes/:node_id/status` | Get a single node status        |
-| GET       | `/api/v2/stats`                 | Show the grid statistics        |
-| GET       | `/api/v2/twins`                 | Show all the twins on the chain |
-
-For the changes introduced on the `/api/v2` check the [CHANGELOG](./docs/CHANGELOG.md).
-
-
-For the available filters on each node. check `/api/v2/swagger/index.html` endpoint on the running instance.

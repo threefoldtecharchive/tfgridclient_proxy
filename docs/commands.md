@@ -55,8 +55,9 @@ The server options
 | -postgres-password | postgres password                                                                                                       |
 | -postgres-port     | postgres port (default 5432)                                                                                            |
 | -postgres-user     | postgres username                                                                                                       |
-| -redis             | redis url (default `"tcp://127.0.0.1:6379"`)                                                                            |
-| -substrate-user    | substrate url (default`"wss://tfchain.dev.grid.tf/ws"`)                                                                 |
+| -tfchain-url       | tF chain url (default `"wss://tfchain.dev.grid.tf/ws"`)                                                                 |
+| -relay-url         | RMB relay url (default`"wss://relay.dev.grid.tf"`)                                                                      |
+| -mnemonics         | Dummy user mnemonics for relay calls                                                                                    |
 | -v                 | shows the package version                                                                                               |
 
 For a full server setup:
@@ -82,7 +83,8 @@ There is two types of tests in the project
     --postgres-db tfgrid-graphql \
     --postgres-password postgres \
     --postgres-user postgres \
-    --endpoint <server-ip>
+    --endpoint <server-ip> \
+    --mnemonics <insert user mnemonics>
     ```
   - Or to run a specific test you can append the previous command with
     ```bash

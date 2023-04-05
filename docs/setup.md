@@ -30,44 +30,6 @@ or easier you can fill the database tables with randomly generated data with the
 make db-fill
 ```
 
-## Get Yggdrasil IP
-
-Check the official [Guide](https://yggdrasil-network.github.io/installation-linux-deb.html).
-Or Threefold [manual](https://library.threefold.me/info/manual/#/manual__yggdrasil_client?id=new-peer-list-for-usage-in-every-yggdrasil-planetary-network-client)
-
-1. Install
-   ```bash
-   sudo apt-get install yggdrasil
-   ```
-2. Generate the conf file if not there
-   after installation a `/etc/yggdrasil.conf` file should be created, in case it didn't
-   ```bash
-   yggdrasil -genconf > /etc/yggdrasil.conf
-   ```
-3. Configure the peers
-   Add these [peers](https://github.com/threefoldtech/zos-config/blob/main/production.json) which is tracked by the operation team to the peers list in the conf file for a better communication with the other grid nodes.
-4. Reload the service & enable to run at startup
-   ```bash
-   sudo systemctl enable yggdrasil
-   sudo systemctl start yggdrasil
-   ```
-
-- Common problem: `systemctl start yggdrasil` maybe failed because of a non-existing config file. if that the case edit the ExecCommand in `/lib/systemd/system/yggdrasil.service` to use the correct path for the config file. then
-    ```bash
-    systemctl daemon-reload
-    ```
-
 ## Get Mnemonics
 1. Install [polkadot extension](https://github.com/polkadot-js/extension) on your browser.
 2. Create a new account from the extension. It is important to save the seeds.
-
-## Get Chain Twin
-After you get the mnemonics and successfully run yggdrasil on your machine.
-- On a terminal run 
-    ```bash
-    sudo yggdrasilctl getSelf
-    ```
-    and copy your `IPv6 address`
-- Go to [Dashboard](https://dashboard.dev.grid.tf/). and sign in with your account.
-- Edit your twin details and add your `Ygg IP`. now you have an identity on the chain.
-
