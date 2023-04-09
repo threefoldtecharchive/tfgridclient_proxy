@@ -388,7 +388,7 @@ paths:
         in: query
         name: name_contains
         type: string
-      - description: certificate type DIY or Certified
+      - description: certificate type Diy or Certified
         in: query
         name: certification_type
         type: string
@@ -506,6 +506,10 @@ paths:
       - description: List of farms separated by comma to fetch nodes from (e.g. '1,2,3')
         in: query
         name: farm_ids
+        type: string
+      - description: certificate type Diy or Certified
+        in: query
+        name: certification_type
         type: string
       produces:
       - application/json
@@ -646,6 +650,10 @@ paths:
         in: query
         name: farm_ids
         type: string
+      - description: certificate type Diy or Certified
+        in: query
+        name: certification_type
+        type: string
       produces:
       - application/json
       responses:
@@ -698,6 +706,39 @@ paths:
       summary: Show the details for specific node
       tags:
       - GridProxy
+  /nodes/{node_id}/statistics:
+    get:
+      consumes:
+      - application/json
+      description: Get node statistics for more information about each node through
+        the RMB relay
+      parameters:
+      - description: Node ID
+        in: path
+        name: node_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.NodeWithNestedCapacity'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show node statistics
+      tags:
+      - NodeStatistics
   /ping:
     get:
       consumes:
