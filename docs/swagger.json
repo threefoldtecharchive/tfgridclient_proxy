@@ -206,7 +206,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "certificate type DIY or Certified",
+                        "description": "certificate type Diy or Certified",
                         "name": "certification_type",
                         "in": "query"
                     },
@@ -380,6 +380,12 @@
                         "type": "string",
                         "description": "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')",
                         "name": "farm_ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "certificate type Diy or Certified",
+                        "name": "certification_type",
                         "in": "query"
                     }
                 ],
@@ -590,6 +596,12 @@
                         "description": "List of farms separated by comma to fetch nodes from (e.g. '1,2,3')",
                         "name": "farm_ids",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "certificate type Diy or Certified",
+                        "name": "certification_type",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -630,6 +642,55 @@
                     "GridProxy"
                 ],
                 "summary": "Show the details for specific node",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Node ID",
+                        "name": "node_id",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.NodeWithNestedCapacity"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/nodes/{node_id}/statistics": {
+            "get": {
+                "description": "Get node statistics for more information about each node through the RMB relay",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NodeStatistics"
+                ],
+                "summary": "Show node statistics",
                 "parameters": [
                     {
                         "type": "integer",
