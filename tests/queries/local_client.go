@@ -498,7 +498,34 @@ func farmSatisfies(data *DBData, farm farm, f proxytypes.FarmFilter) bool {
 	if f.Dedicated != nil && *f.Dedicated != farm.dedicated_farm {
 		return false
 	}
+	if f.NodeFreeHRU != nil || f.NodeFreeMRU != nil || f.NodeFreeSRU != nil {
+		if !satisfyFarmResourceFilter(farm, data, f) {
+			return false
+		}
+	}
 	return true
+}
+
+func satisfyFarmResourceFilter(farm farm, data *DBData, f proxytypes.FarmFilter) bool {
+	for _, val := range data.nodes {
+		if val.farm_id != farm.farm_id {
+			continue
+		}
+		total := data.nodeTotalResources[val.node_id]
+		used := data.nodeUsedResources[val.node_id]
+		free := calcFreeResources(total, used)
+		if f.NodeFreeHRU != nil && free.hru < *f.NodeFreeHRU {
+			continue
+		}
+		if f.NodeFreeMRU != nil && free.mru < *f.NodeFreeMRU {
+			continue
+		}
+		if f.NodeFreeSRU != nil && free.sru < *f.NodeFreeSRU {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 func rentContractsSatisfies(contract rent_contract, f proxytypes.ContractFilter) bool {

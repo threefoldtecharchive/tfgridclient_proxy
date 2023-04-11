@@ -45,6 +45,9 @@ const (
 // @Param certification_type query string false "certificate type Diy or Certified"
 // @Param dedicated query bool false "farm is dedicated"
 // @Param stellar_address query string false "farm stellar_address"
+// @Param node_free_mru query int false "Min free reservable mru for at least a single node that belongs to the farm, in bytes"
+// @Param node_free_hru query int false "Min free reservable hru for at least a single node that belongs to the farm, in bytes"
+// @Param node_free_sru query int false "Min free reservable sru for at least a single node that belongs to the farm, in bytes"
 // @Success 200 {object} []types.Farm
 // @Failure 400 {object} string
 // @Failure 500 {object} string

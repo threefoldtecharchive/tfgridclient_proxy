@@ -89,6 +89,44 @@ func TestFarm(t *testing.T) {
 			assert.NoError(t, err, serializeFarmsFilter(f))
 		}
 	})
+
+	t.Run("farms list node free hru", func(t *testing.T) {
+		aggNode := calcNodesAggregates(&data)
+		l := proxytypes.Limit{
+			Size:     999999999999,
+			Page:     1,
+			RetCount: false,
+		}
+		filter := proxytypes.FarmFilter{
+			NodeFreeHRU: &aggNode.maxFreeHRU,
+		}
+		localFarms, _, err := localClient.Farms(filter, l)
+		assert.NoError(t, err)
+		remoteFarms, _, err := proxyClient.Farms(filter, l)
+		assert.NoError(t, err)
+
+		err = validateFarmsResults(localFarms, remoteFarms)
+		assert.NoError(t, err, serializeFarmsFilter(filter))
+	})
+	t.Run("farms list node free hru, mru", func(t *testing.T) {
+		aggNode := calcNodesAggregates(&data)
+		l := proxytypes.Limit{
+			Size:     999999999999,
+			Page:     1,
+			RetCount: false,
+		}
+		filter := proxytypes.FarmFilter{
+			NodeFreeHRU: &aggNode.maxFreeHRU,
+			NodeFreeMRU: &aggNode.maxFreeMRU,
+		}
+		localFarms, _, err := localClient.Farms(filter, l)
+		assert.NoError(t, err)
+		remoteFarms, _, err := proxyClient.Farms(filter, l)
+		assert.NoError(t, err)
+
+		err = validateFarmsResults(localFarms, remoteFarms)
+		assert.NoError(t, err, serializeFarmsFilter(filter))
+	})
 }
 
 func calcFarmsAggregates(data *DBData) (res FarmsAggregate) {

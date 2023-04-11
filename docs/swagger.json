@@ -221,6 +221,24 @@
                         "description": "farm stellar_address",
                         "name": "stellar_address",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min free reservable mru for at least a single node that belongs to the farm, in bytes",
+                        "name": "node_free_mru",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min free reservable hru for at least a single node that belongs to the farm, in bytes",
+                        "name": "node_free_hru",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Min free reservable sru for at least a single node that belongs to the farm, in bytes",
+                        "name": "node_free_sru",
+                        "in": "query"
                     }
                 ],
                 "responses": {

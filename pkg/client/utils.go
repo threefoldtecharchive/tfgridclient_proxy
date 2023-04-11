@@ -166,6 +166,15 @@ func farmParams(filter types.FarmFilter, limit types.Limit) string {
 	if limit.Randomize {
 		fmt.Fprintf(&builder, "randomize=true&")
 	}
+	if filter.NodeFreeMRU != nil && *filter.NodeFreeMRU != 0 {
+		fmt.Fprintf(&builder, "node_free_mru=%d&", *filter.NodeFreeMRU)
+	}
+	if filter.NodeFreeHRU != nil && *filter.NodeFreeHRU != 0 {
+		fmt.Fprintf(&builder, "node_free_hru=%d&", *filter.NodeFreeHRU)
+	}
+	if filter.NodeFreeSRU != nil && *filter.NodeFreeSRU != 0 {
+		fmt.Fprintf(&builder, "node_free_sru=%d&", *filter.NodeFreeSRU)
+	}
 
 	res := builder.String()
 	// pop the extra ? or &

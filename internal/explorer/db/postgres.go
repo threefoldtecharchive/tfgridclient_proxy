@@ -287,13 +287,13 @@ func (d *PostgresDatabase) farmTableQuery() *gorm.DB {
 	return d.gormDB.
 		Table("farm").
 		Select(
-			"farm.farm_id",
-			"name",
-			"twin_id",
-			"pricing_policy_id",
-			"certification",
-			"stellar_address",
-			"dedicated_farm as dedicated",
+			"DISTINCT ON (farm.farm_id) farm.farm_id",
+			"farm.name",
+			"farm.twin_id",
+			"farm.pricing_policy_id",
+			"farm.certification",
+			"farm.stellar_address",
+			"farm.dedicated_farm as dedicated",
 			"COALESCE(public_ip.public_ips, '[]') as public_ips",
 		).
 		Joins(
@@ -501,6 +501,25 @@ func (d *PostgresDatabase) shouldRetry(resError error) bool {
 // GetFarms return farms filtered and paginated
 func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) ([]Farm, uint, error) {
 	q := d.farmTableQuery()
+
+	if filter.NodeFreeHRU != nil || filter.NodeFreeMRU != nil || filter.NodeFreeSRU != nil {
+		q = q.Joins(
+			"LEFT JOIN node on farm.farm_id = node.farm_id",
+		).Joins(
+			"LEFT JOIN nodes_resources_view on node.node_id = nodes_resources_view.node_id",
+		)
+
+		if filter.NodeFreeMRU != nil {
+			q = q.Where("EXISTS( select node.node_id WHERE nodes_resources_view.free_mru >= ?)", *filter.NodeFreeMRU)
+		}
+		if filter.NodeFreeHRU != nil {
+			q = q.Where("EXISTS( select node.node_id WHERE nodes_resources_view.free_hru >= ?)", *filter.NodeFreeHRU)
+		}
+		if filter.NodeFreeSRU != nil {
+			q = q.Where("EXISTS( select node.node_id WHERE nodes_resources_view.free_sru >= ?)", *filter.NodeFreeSRU)
+		}
+	}
+
 	if filter.FreeIPs != nil {
 		q = q.Where("(SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id and public_ip.contract_id = 0) >= ?", *filter.FreeIPs)
 	}
@@ -508,33 +527,33 @@ func (d *PostgresDatabase) GetFarms(filter types.FarmFilter, limit types.Limit) 
 		q = q.Where("(SELECT count(id) from public_ip WHERE public_ip.farm_id = farm.id) >= ?", *filter.TotalIPs)
 	}
 	if filter.StellarAddress != nil {
-		q = q.Where("stellar_address = ?", *filter.StellarAddress)
+		q = q.Where("farm.stellar_address = ?", *filter.StellarAddress)
 	}
 	if filter.PricingPolicyID != nil {
-		q = q.Where("pricing_policy_id = ?", *filter.PricingPolicyID)
+		q = q.Where("farm.pricing_policy_id = ?", *filter.PricingPolicyID)
 	}
 	if filter.FarmID != nil {
 		q = q.Where("farm.farm_id = ?", *filter.FarmID)
 	}
 	if filter.TwinID != nil {
-		q = q.Where("twin_id = ?", *filter.TwinID)
+		q = q.Where("farm.twin_id = ?", *filter.TwinID)
 	}
 	if filter.Name != nil {
-		q = q.Where("LOWER(name) = LOWER(?)", *filter.Name)
+		q = q.Where("LOWER(farm.name) = LOWER(?)", *filter.Name)
 	}
 
 	if filter.NameContains != nil {
 		escaped := strings.Replace(*filter.NameContains, "%", "\\%", -1)
 		escaped = strings.Replace(escaped, "_", "\\_", -1)
-		q = q.Where("name ILIKE ?", fmt.Sprintf("%%%s%%", escaped))
+		q = q.Where("farm.name ILIKE ?", fmt.Sprintf("%%%s%%", escaped))
 	}
 
 	if filter.CertificationType != nil {
-		q = q.Where("certification = ?", *filter.CertificationType)
+		q = q.Where("farm.certification = ?", *filter.CertificationType)
 	}
 
 	if filter.Dedicated != nil {
-		q = q.Where("dedicated_farm = ?", *filter.Dedicated)
+		q = q.Where("farm.dedicated_farm = ?", *filter.Dedicated)
 	}
 	var count int64
 	if limit.Randomize || limit.RetCount {

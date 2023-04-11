@@ -123,6 +123,9 @@ type FarmFilter struct {
 	NameContains      *string
 	CertificationType *string
 	Dedicated         *bool
+	NodeFreeMRU       *uint64
+	NodeFreeHRU       *uint64
+	NodeFreeSRU       *uint64
 }
 
 // TwinFilter twin filters

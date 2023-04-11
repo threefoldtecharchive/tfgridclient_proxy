@@ -400,6 +400,21 @@ paths:
         in: query
         name: stellar_address
         type: string
+      - description: Min free reservable mru for at least a single node that belongs
+          to the farm, in bytes
+        in: query
+        name: node_free_mru
+        type: integer
+      - description: Min free reservable hru for at least a single node that belongs
+          to the farm, in bytes
+        in: query
+        name: node_free_hru
+        type: integer
+      - description: Min free reservable sru for at least a single node that belongs
+          to the farm, in bytes
+        in: query
+        name: node_free_sru
+        type: integer
       produces:
       - application/json
       responses:

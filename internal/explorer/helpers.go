@@ -186,6 +186,9 @@ func (a *App) handleFarmRequestsQueryParams(r *http.Request) (types.FarmFilter, 
 		"pricing_policy_id": &filter.PricingPolicyID,
 		"farm_id":           &filter.FarmID,
 		"twin_id":           &filter.TwinID,
+		"node_free_mru":     &filter.NodeFreeMRU,
+		"node_free_hru":     &filter.NodeFreeHRU,
+		"node_free_sru":     &filter.NodeFreeSRU,
 	}
 	strs := map[string]**string{
 		"name":               &filter.Name,
